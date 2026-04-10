@@ -56,17 +56,36 @@ Tables are created automatically on first startup. For manual setup or reference
 | `players` | Tracks which server each player is on |
 | `warps` | Admin warps (name, location, server) |
 | `player_warps` | Player warps (owner, name, location, public/private) |
-| `tpa_requests` | Active TPA requests with expiry |
+| `tpa_requests` | Active TPA requests with sent_at timestamp |
 
 ## Project Structure
 
 ```
 telehop-plugin/
-├── common/          Shared code (DB, models, services)
-├── paper/           Paper backend plugin
-├── velocity/        Velocity proxy plugin
-├── docs/            Documentation
-└── sql/             Database schema reference
+├── common/                Shared code (DB, models, services)
+├── paper/                 Paper backend plugin
+│   └── src/.../paper/
+│       ├── Bootstrap.java         Startup wiring (replaces god-class onEnable)
+│       ├── NetworkPaperPlugin.java Thin lifecycle entry point
+│       ├── config/
+│       │   ├── PaperSettings.java  Immutable config record
+│       │   └── StorageManager.java Runtime-mutable values (storage.yml)
+│       ├── handler/
+│       │   └── PacketHandler.java  Cross-server packet dispatch
+│       ├── command/
+│       │   ├── tpa/               TPA commands
+│       │   ├── warp/              Warp + player-warp commands
+│       │   ├── admin/             Admin commands (/telehop, /tp, /tphere)
+│       │   ├── SpawnCommand.java
+│       │   └── RtpCommand.java
+│       ├── service/
+│       │   ├── ServiceRegistry.java Central service holder
+│       │   ├── TeleportService.java Spawn, warp, pending teleport logic
+│       │   └── ...
+│       └── gui/
+├── velocity/              Velocity proxy plugin
+├── docs/                  Documentation
+└── sql/                   Database schema reference
 ```
 
 ## Building

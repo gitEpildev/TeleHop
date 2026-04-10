@@ -28,6 +28,12 @@ public class RtpManager {
         return now < next;
     }
 
+    /** Returns seconds remaining on the cooldown, or 0 if none. */
+    public int remainingCooldown(Player player) {
+        long diff = cooldowns.getOrDefault(player.getUniqueId().toString(), 0L) - System.currentTimeMillis();
+        return diff > 0 ? (int) Math.ceil(diff / 1000.0) : 0;
+    }
+
     public void markCooldown(Player player, int cooldownSeconds) {
         cooldowns.put(player.getUniqueId().toString(), System.currentTimeMillis() + cooldownSeconds * 1000L);
     }

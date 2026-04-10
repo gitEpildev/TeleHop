@@ -1,4 +1,4 @@
-package com.telehop.paper.command;
+package com.telehop.paper.command.warp;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;

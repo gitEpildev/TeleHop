@@ -25,9 +25,9 @@ public class TpaRequestCache {
         cache.remove(key(sender, target));
     }
 
-    public List<TpaRequestRecord> expired(Instant now) {
+    public List<TpaRequestRecord> expired(long timeoutSeconds) {
         return cache.values().stream()
-                .filter(r -> !r.expiry().isAfter(now))
+                .filter(r -> r.isExpired(timeoutSeconds))
                 .toList();
     }
 }

@@ -34,7 +34,8 @@ public class RtpCommand extends BaseCommand {
         }
         if (!plugin.permissionService().has(player, PermissionNodes.RTP_BYPASS_COOLDOWN)
                 && plugin.rtpManager().onCooldown(player)) {
-            player.sendMessage(plugin.msg("rtp-cooldown"));
+            int remaining = plugin.rtpManager().remainingCooldown(player);
+            player.sendMessage(plugin.msg("rtp-cooldown", Map.of("seconds", String.valueOf(remaining))));
             return;
         }
         plugin.rtpManager().markCooldown(player, plugin.settings().rtpCooldownSeconds());

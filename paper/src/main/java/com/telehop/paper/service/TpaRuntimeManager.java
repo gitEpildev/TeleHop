@@ -43,6 +43,12 @@ public class TpaRuntimeManager {
         return System.currentTimeMillis() < cooldowns.getOrDefault(playerUuid, 0L);
     }
 
+    /** Returns seconds remaining on the cooldown, or 0 if none. */
+    public int remainingCooldown(UUID playerUuid) {
+        long diff = cooldowns.getOrDefault(playerUuid, 0L) - System.currentTimeMillis();
+        return diff > 0 ? (int) Math.ceil(diff / 1000.0) : 0;
+    }
+
     public void markCooldown(UUID playerUuid, int cooldownSeconds) {
         cooldowns.put(playerUuid, System.currentTimeMillis() + cooldownSeconds * 1000L);
     }

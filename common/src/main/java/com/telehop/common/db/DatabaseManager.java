@@ -41,6 +41,13 @@ public class DatabaseManager {
                     st.execute(statement);
                 }
             }
+            for (String migration : SqlSchema.migrations()) {
+                try (Statement st = connection.createStatement()) {
+                    st.execute(migration);
+                } catch (SQLException ignored) {
+                    // migration already applied or column doesn't exist — safe to skip
+                }
+            }
         }
     }
 

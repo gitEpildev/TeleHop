@@ -1,8 +1,19 @@
 # Configuration Reference
 
+TeleHop uses two files on each Paper server:
+
+| File | Purpose |
+|------|---------|
+| `config.yml` | Static settings (MySQL, server identity, features, TPA/RTP timing). Never written by the plugin at runtime. |
+| `storage.yml` | Runtime-mutable values (spawn location). Written by the plugin when changed in-game. |
+
+The split prevents `/telehop reload` or server restarts from overwriting values that were set in-game.
+
+On first startup, spawn values are automatically migrated from `config.yml` into `storage.yml`.
+
 ## Paper `config.yml`
 
-> **Reload vs Restart:** Most settings (language, feature toggles, RTP, TPA, spawn) can be reloaded live with `/telehop reload`. However, **MySQL connection settings** (`mysql.*`) require a full server restart — the connection pool is created once at startup and is not recreated on reload.
+> **Reload vs Restart:** Most settings (language, feature toggles, RTP, TPA) can be reloaded live with `/telehop reload`. However, **MySQL connection settings** (`mysql.*`) require a full server restart — the connection pool is created once at startup and is not recreated on reload.
 
 ### Language
 
@@ -56,7 +67,6 @@ Reloadable with `/telehop reload`.
 | `rtp.gui.region-menu.rows` | int | `3` | Region picker rows (1-6) |
 | `rtp.gui.dimension-menu.title` | string | `"Select Dimension"` | Dimension picker GUI title |
 | `rtp.gui.dimension-menu.rows` | int | `3` | Dimension picker rows (1-6) |
-| `spawn.location.*` | — | `0.5, 100, 0.5` | Spawn point (world, x, y, z, yaw, pitch) |
 | `teleport.show-countdown` | boolean | `true` | Show an action-bar countdown (5... 4... 3...) during RTP and TPA warmup delays. The format is controlled by the `countdown-actionbar` language key. |
 | `audit.enabled` | boolean | `false` | Log teleports and admin actions |
 
@@ -101,3 +111,18 @@ One region = no picker GUI. Two+ regions = region picker opens first.
 | `messaging.requestTimeoutMs` | long | `10000` | Request timeout (ms) |
 | `servers.hub` | string | `lobby` | Hub server name (must match `velocity.toml`) |
 | `servers.backends` | string | `lobby` | Comma-separated server list |
+
+---
+
+## Paper `storage.yml`
+
+This file is managed by the plugin — do not include it in your default config template. It is created automatically on first startup (migrating values from `config.yml` if they exist).
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `spawn.world` | string | `"world"` | World name for spawn |
+| `spawn.x` | double | `0.5` | Spawn X |
+| `spawn.y` | double | `100.0` | Spawn Y |
+| `spawn.z` | double | `0.5` | Spawn Z |
+| `spawn.yaw` | double | `0.0` | Spawn yaw (rotation) |
+| `spawn.pitch` | double | `0.0` | Spawn pitch |

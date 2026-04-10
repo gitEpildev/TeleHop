@@ -47,9 +47,21 @@ public final class SqlSchema {
                   sender_uuid VARCHAR(36) NOT NULL,
                   target_uuid VARCHAR(36) NOT NULL,
                   type VARCHAR(16) NOT NULL,
-                  expiry BIGINT NOT NULL,
+                  sent_at BIGINT NOT NULL,
                   PRIMARY KEY (sender_uuid, target_uuid)
                 )
+                """
+        );
+    }
+
+    /**
+     * Migration statements for existing databases upgrading from
+     * the old {@code expiry} column to {@code sent_at}.
+     */
+    public static List<String> migrations() {
+        return List.of(
+                """
+                ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL
                 """
         );
     }

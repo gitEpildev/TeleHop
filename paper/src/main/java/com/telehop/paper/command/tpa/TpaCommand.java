@@ -1,4 +1,4 @@
-package com.telehop.paper.command;
+package com.telehop.paper.command.tpa;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
@@ -41,7 +41,8 @@ public class TpaCommand extends BaseCommand {
         }
         if (!plugin.permissionService().has(sender, PermissionNodes.TPA_BYPASS_COOLDOWN)
                 && plugin.tpaRuntimeManager().onCooldown(sender.getUniqueId())) {
-            sender.sendMessage(plugin.msg("tpa-cooldown"));
+            int remaining = plugin.tpaRuntimeManager().remainingCooldown(sender.getUniqueId());
+            sender.sendMessage(plugin.msg("tpa-cooldown", Map.of("seconds", String.valueOf(remaining))));
             return;
         }
         Player onlineTarget = Bukkit.getPlayerExact(targetName);
@@ -51,8 +52,8 @@ public class TpaCommand extends BaseCommand {
             return;
         }
 
-        Instant expiry = Instant.now().plusSeconds(plugin.settings().tpaTimeoutSeconds());
-        TpaRequestRecord request = new TpaRequestRecord(sender.getUniqueId(), targetUuid, type, expiry);
+        Instant sentAt = Instant.now();
+        TpaRequestRecord request = new TpaRequestRecord(sender.getUniqueId(), targetUuid, type, sentAt);
         plugin.tpaRuntimeManager().setIncoming(request);
         plugin.tpaService().upsert(request);
         plugin.tpaRuntimeManager().markCooldown(sender.getUniqueId(), plugin.settings().tpaCooldownSeconds());
@@ -71,7 +72,7 @@ public class TpaCommand extends BaseCommand {
                 .put("targetUuid", targetUuid.toString())
                 .put("targetName", targetName)
                 .put("type", type.name())
-                .put("expiry", String.valueOf(expiry.toEpochMilli()));
+                .put("sentAt", String.valueOf(sentAt.toEpochMilli()));
         plugin.messaging().send(packet);
     }
 }

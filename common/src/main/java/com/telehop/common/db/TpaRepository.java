@@ -22,16 +22,16 @@ public class TpaRepository {
 
     public void upsert(TpaRequestRecord request) {
         String sql = """
-                INSERT INTO tpa_requests (sender_uuid, target_uuid, type, expiry)
+                INSERT INTO tpa_requests (sender_uuid, target_uuid, type, sent_at)
                 VALUES (?, ?, ?, ?)
-                ON DUPLICATE KEY UPDATE type = VALUES(type), expiry = VALUES(expiry)
+                ON DUPLICATE KEY UPDATE type = VALUES(type), sent_at = VALUES(sent_at)
                 """;
         try (var connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, request.senderUuid().toString());
             ps.setString(2, request.targetUuid().toString());
             ps.setString(3, request.type().name());
-            ps.setLong(4, request.expiry().toEpochMilli());
+            ps.setLong(4, request.sentAt().toEpochMilli());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to upsert tpa request", e);
@@ -66,11 +66,17 @@ public class TpaRepository {
         }
     }
 
-    public List<TpaRequestRecord> findExpired(Instant now) {
-        String sql = "SELECT * FROM tpa_requests WHERE expiry <= ?";
+    /**
+     * Finds requests whose {@code sent_at + timeoutMs} has elapsed.
+     *
+     * @param timeoutMs timeout duration in milliseconds
+     */
+    public List<TpaRequestRecord> findExpired(long timeoutMs) {
+        String sql = "SELECT * FROM tpa_requests WHERE sent_at + ? <= ?";
         try (var connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setLong(1, now.toEpochMilli());
+            ps.setLong(1, timeoutMs);
+            ps.setLong(2, Instant.now().toEpochMilli());
             ResultSet rs = ps.executeQuery();
             List<TpaRequestRecord> requests = new ArrayList<>();
             while (rs.next()) {
@@ -87,7 +93,7 @@ public class TpaRepository {
                 UUID.fromString(rs.getString("sender_uuid")),
                 UUID.fromString(rs.getString("target_uuid")),
                 TpaType.valueOf(rs.getString("type")),
-                Instant.ofEpochMilli(rs.getLong("expiry"))
+                Instant.ofEpochMilli(rs.getLong("sent_at"))
         );
     }
 }

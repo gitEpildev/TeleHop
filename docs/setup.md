@@ -54,8 +54,10 @@ Server names must exactly match your `velocity.toml` `[servers]` entries.
 ## Step 3 — Install on Each Paper Server
 
 1. Place `telehop-paper-1.0.0.jar` in `plugins/`.
-2. Start the server. A config is created at `plugins/TeleHop/config.yml`.
-3. Edit the config — **`server-name` must be different on each server**:
+2. Start the server. Two config files are created:
+   - `plugins/TeleHop/config.yml` — static settings (edit this)
+   - `plugins/TeleHop/storage.yml` — runtime data like spawn location (managed by the plugin)
+3. Edit `config.yml` — **`server-name` must be different on each server**:
 
 ```yaml
 server-name: "usa"        # Must match velocity.toml

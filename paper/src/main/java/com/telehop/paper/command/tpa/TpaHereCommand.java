@@ -1,4 +1,4 @@
-package com.telehop.paper.command;
+package com.telehop.paper.command.tpa;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;

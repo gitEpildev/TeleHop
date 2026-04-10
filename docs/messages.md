@@ -61,7 +61,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 | `<count>` | Player warp / listwarps messages | Current warp count |
 | `<limit>` | Player warp messages | Warp limit (number or "unlimited") |
 | `<player>` | Player warp / listwarps messages | Another player's name |
-| `<seconds>` | RTP delay | Countdown seconds |
+| `<seconds>` | Cooldowns, countdowns, delays | Remaining or countdown seconds |
 | `<version>` | Version info | Plugin version string |
 
 ## All Message Keys
@@ -101,7 +101,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 - `request-actions` — Clickable accept/deny buttons.
 - `request-accepted`, `request-denied`, `request-expired`, `request-cancelled`
 - `request-none-pending`, `request-none-outgoing`
-- `tpa-cooldown`
+- `tpa-cooldown` — TPA on cooldown. Placeholder: `<seconds>` (remaining)
 - `tpa-warmup` — Countdown message after accepting TPA. Placeholder: `<seconds>`
 - `tpa-warmup-cancelled` — TPA cancelled because the player moved during warmup.
 
@@ -117,7 +117,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 - `rtp-searching` — Looking for safe spot.
 - `rtp-teleporting` — About to teleport.
 - `rtp-failed` — No safe spot found.
-- `rtp-cooldown` — On cooldown.
+- `rtp-cooldown` — RTP on cooldown. Placeholder: `<seconds>` (remaining)
 - `rtp-delay` — Countdown before teleporting. Placeholder: `<seconds>`
 - `rtp-cancelled` — Teleport cancelled (player moved during countdown).
 

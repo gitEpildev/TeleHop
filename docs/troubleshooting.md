@@ -76,3 +76,17 @@
 ## RTP cancelled / "you moved"
 
 If `rtp.delay-seconds` is greater than 0, the player must stand still during the warmup countdown. Moving cancels the teleport. Staff with `telehop.rtp.bypassdelay` permission skip the countdown entirely.
+
+## Upgrading from an older version
+
+### Config split (config.yml / storage.yml)
+
+Spawn location was moved from `config.yml` to `storage.yml`. On first startup after upgrading, the plugin automatically migrates your existing spawn values. No manual action needed.
+
+### TPA table migration (expiry -> sent_at)
+
+The `tpa_requests` table column `expiry` was renamed to `sent_at`. The plugin runs this migration automatically on startup. If you manage the schema manually, run:
+
+```sql
+ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL;
+```

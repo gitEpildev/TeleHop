@@ -37,6 +37,10 @@ CREATE TABLE IF NOT EXISTS tpa_requests (
   sender_uuid VARCHAR(36) NOT NULL,
   target_uuid VARCHAR(36) NOT NULL,
   type        VARCHAR(16) NOT NULL,
-  expiry      BIGINT      NOT NULL,
+  sent_at     BIGINT      NOT NULL,
   PRIMARY KEY (sender_uuid, target_uuid)
 );
+
+-- Migration for existing databases upgrading from the old 'expiry' column:
+-- ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL;
+-- (This migration runs automatically on startup)

@@ -4,7 +4,6 @@ import com.telehop.common.db.DatabaseManager;
 import com.telehop.common.db.TpaRepository;
 import com.telehop.common.model.TpaRequestRecord;
 
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -43,7 +42,12 @@ public class TpaService {
         return databaseManager.runAsync(() -> repository.delete(sender, target));
     }
 
-    public CompletableFuture<List<TpaRequestRecord>> expiredNow() {
-        return databaseManager.supplyAsync(() -> repository.findExpired(Instant.now()));
+    /**
+     * Finds all requests that have exceeded the given timeout.
+     *
+     * @param timeoutSeconds the configured TPA timeout in seconds
+     */
+    public CompletableFuture<List<TpaRequestRecord>> expiredNow(long timeoutSeconds) {
+        return databaseManager.supplyAsync(() -> repository.findExpired(timeoutSeconds * 1000L));
     }
 }
