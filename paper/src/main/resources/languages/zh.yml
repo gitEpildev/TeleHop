@@ -1,0 +1,146 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — 简体中文 (zh)
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  MiniMessage 格式。参考: https://docs.advntr.dev/minimessage/
+#
+#  占位符（请勿翻译）:
+#    <target>  — 目标玩家             <sender>  — 发送者
+#    <name>    — 传送点名称           <warps>   — 逗号分隔列表
+#    <count>   — 当前传送点数量       <limit>   — 传送点上限
+#    <player>  — 其他玩家
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+prefix: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> "
+
+# ── 通用 ────────────────────────────────────────────────────────────────
+no-permission: "<red>你没有权限使用此命令。"
+player-not-found: "<red>该玩家不在线。"
+console-not-allowed: "<red>此命令只能在游戏内使用。"
+feature-disabled: "<red>此功能在此服务器上已禁用。"
+
+# ── TPA ─────────────────────────────────────────────────────────────────
+request-sent: "<aqua>已向 <gold><target></gold> <aqua>发送传送请求。"
+request-received: "<aqua><sender></aqua> <gray>想要传送到你身边。使用</gray> <light_purple>/tpaaccept</light_purple> <gray>或</gray> <red>/tpadeny</red><gray>。</gray>"
+request-received-here: "<aqua><sender></aqua> <gray>想要你传送到他身边。使用</gray> <light_purple>/tpaaccept</light_purple> <gray>或</gray> <red>/tpadeny</red><gray>。</gray>"
+request-actions: "<click:run_command:'/tpaaccept'><light_purple><bold>[接受]</bold></light_purple></click> <click:run_command:'/tpadeny'><red><bold>[拒绝]</bold></red></click>"
+request-accepted: "<green>传送请求已接受。"
+request-denied: "<red>传送请求已拒绝。"
+request-expired: "<yellow>传送请求已过期。"
+request-cancelled: "<gold>传送请求已取消。"
+request-none-pending: "<red>你没有待处理的传送请求。"
+request-none-outgoing: "<red>你没有发出的传送请求。"
+tpa-cooldown: "<yellow>TPA 正在冷却中，请稍候。"
+tpa-warmup: "<yellow>不要移动！<gold><seconds></gold><yellow> 秒后传送..."
+tpa-warmup-cancelled: "<red>传送取消 — 你移动了。"
+
+# ── 倒计时（动作栏）──────────────────────────────────────────────────
+countdown-actionbar: "<gold>⏳ <seconds> 秒后传送..."
+countdown-chat: "<yellow><seconds>..."
+
+# ── 管理员传送点 ────────────────────────────────────────────────────────
+warp-created: "<green>传送点 <gold><name></gold> 已创建。"
+warp-deleted: "<gold>传送点 <gold><name></gold> 已删除。"
+warp-not-found: "<red>传送点 <gold><name></gold> 未找到。"
+warp-list-header: "<gray>传送点:</gray> <gold><warps></gold>"
+warp-teleporting: "<aqua>正在传送到 <gold><name></gold>..."
+
+# ── 玩家传送点 (/pwarp) ────────────────────────────────────────────────
+pwarp-created: "<green>传送点 <gold><name></gold> 已创建。<gray>(<count>/<limit>)</gray>"
+pwarp-deleted: "<gold>传送点 <gold><name></gold> 已删除。"
+pwarp-not-found: "<red>传送点 <gold><name></gold> 未找到。"
+pwarp-limit-reached: "<red>你已达到传送点上限 (<limit>)。删除一个传送点或升级你的等级。"
+pwarp-no-permission: "<red>你没有权限创建传送点。"
+pwarp-list-header: "<gray>你的传送点 (<count>/<limit>):</gray> <gold><warps></gold>"
+pwarp-list-empty: "<gray>你还没有传送点。使用 <gold>/pwarp set <name></gold> 来创建一个。"
+pwarp-teleporting: "<aqua>正在传送到 <gold><name></gold>..."
+pwarp-made-public: "<green>传送点 <gold><name></gold> 现在是<aqua>公开的</aqua>。"
+pwarp-made-private: "<green>传送点 <gold><name></gold> 现在是<red>私密的</red>。"
+pwarp-not-yours: "<red>该传送点属于其他玩家且为私密状态。"
+pwarp-player-not-found: "<red>玩家 <gold><player></gold> 未找到。"
+
+# ── 出生点 ──────────────────────────────────────────────────────────────
+spawn-sent: "<aqua>正在传送到出生点..."
+
+# ── 随机传送 ────────────────────────────────────────────────────────────
+rtp-opening: "<aqua>请选择一个区域和维度。"
+rtp-searching: "<gold>正在寻找安全的位置..."
+rtp-teleporting: "<green>正在传送..."
+rtp-failed: "<red>未找到安全的位置，请重试。"
+rtp-cooldown: "<yellow>随机传送正在冷却中，请稍候。"
+rtp-delay: "<yellow>不要移动！<gold><seconds></gold><yellow> 秒后传送..."
+rtp-cancelled: "<red>传送取消 — 你移动了。"
+
+# ── 列表 (/listwarps) ───────────────────────────────────────────────
+listwarps-none: "<gray>所有服务器上没有找到玩家传送点。"
+listwarps-header: "<gold><bold>--- 玩家传送点（共 <count> 个）---</bold></gold>"
+listwarps-player-none: "<gray><player> 没有传送点。"
+listwarps-player-header: "<gold><bold>--- <player> 的传送点（<count>）---</bold></gold>"
+
+# ── 管理 ────────────────────────────────────────────────────────────────
+reload-success: "<green>TeleHop 配置已重新加载。"
+forcedelwarp-deleted: "<gold>已强制删除 <gold><player></gold> 的传送点 <gold><name></gold>。"
+forcedelwarp-admin-deleted: "<gold>已强制删除管理员传送点 <gold><name></gold>。"
+
+# ── 版本 ─────────────────────────────────────────────────────────────
+version-info: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> <white>版本 <gold><version></gold>"
+
+# ── 帮助 (/telehop help) ────────────────────────────────────────────
+help-header: "<gold><bold>--- TeleHop 命令列表 ---</bold></gold>"
+help-general: "<yellow><bold>通用</bold></yellow>"
+help-spawn: "<gray>  <aqua>/spawn</aqua> <dark_gray>— 传送到网络出生点"
+help-rtp: "<gray>  <aqua>/rtp</aqua> <dark_gray>— 随机传送（区域/维度选择）"
+help-tpa-header: "<yellow><bold>TPA</bold></yellow>"
+help-tpa: "<gray>  <aqua>/tpa <player></aqua> <dark_gray>— 请求传送到一个玩家"
+help-tpahere: "<gray>  <aqua>/tpahere <player></aqua> <dark_gray>— 请求一个玩家传送到你身边"
+help-tpaaccept: "<gray>  <aqua>/tpaaccept</aqua> <dark_gray>— 接受传送请求"
+help-tpadeny: "<gray>  <aqua>/tpadeny</aqua> <dark_gray>— 拒绝传送请求"
+help-tpacancel: "<gray>  <aqua>/tpacancel</aqua> <dark_gray>— 取消发出的传送请求"
+help-warps-header: "<yellow><bold>管理员传送点</bold></yellow>"
+help-warp: "<gray>  <aqua>/warp <name></aqua> <dark_gray>— 传送到全局传送点"
+help-setwarp: "<gray>  <aqua>/setwarp <name></aqua> <dark_gray>— 创建/更新全局传送点"
+help-delwarp: "<gray>  <aqua>/delwarp <name></aqua> <dark_gray>— 删除全局传送点"
+help-warps-list: "<gray>  <aqua>/warps</aqua> <dark_gray>— 列出所有全局传送点"
+help-pwarps-header: "<yellow><bold>玩家传送点</bold></yellow>"
+help-pwarp-set: "<gray>  <aqua>/pwarp set <name></aqua> <dark_gray>— 创建个人传送点"
+help-pwarp-del: "<gray>  <aqua>/pwarp del <name></aqua> <dark_gray>— 删除你的传送点"
+help-pwarp-list: "<gray>  <aqua>/pwarp list</aqua> <dark_gray>— 列出你的传送点"
+help-pwarp-tp: "<gray>  <aqua>/pwarp <name></aqua> <dark_gray>— 传送到你的传送点"
+help-pwarp-tp-other: "<gray>  <aqua>/pwarp <player> <name></aqua> <dark_gray>— 传送到公开传送点"
+help-pwarp-public: "<gray>  <aqua>/pwarp public <name></aqua> <dark_gray>— 切换公开/私密"
+help-admin-header: "<yellow><bold>管理</bold></yellow>"
+help-tp: "<gray>  <aqua>/tp <player></aqua> <dark_gray>— 管理员传送（跨服）"
+help-tphere: "<gray>  <aqua>/tphere <player></aqua> <dark_gray>— 将玩家拉到你身边"
+help-listwarps: "<gray>  <aqua>/listwarps [player]</aqua> <dark_gray>— 列出所有玩家传送点"
+help-forcedelwarp: "<gray>  <aqua>/forcedelwarp <name></aqua> <dark_gray>— 强制删除管理员传送点"
+help-forcedelwarp-player: "<gray>  <aqua>/forcedelwarp <player> <name></aqua> <dark_gray>— 强制删除玩家传送点"
+help-telehop-reload: "<gray>  <aqua>/telehop reload</aqua> <dark_gray>— 重新加载配置和消息"
+help-telehop-version: "<gray>  <aqua>/telehop version</aqua> <dark_gray>— 显示插件版本"
+help-telehop-perms: "<gray>  <aqua>/telehop perms</aqua> <dark_gray>— 列出所有权限节点"
+
+# ── 权限 (/telehop perms) ───────────────────────────────────────────
+perms-header: "<gold><bold>--- TeleHop 权限列表 ---</bold></gold>"
+perms-player-header: "<yellow>  玩家（默认：所有人）"
+perms-spawn: "<gray>    <aqua>telehop.spawn</aqua> <dark_gray>— 使用 /spawn"
+perms-rtp: "<gray>    <aqua>telehop.rtp</aqua> <dark_gray>— 使用 /rtp"
+perms-warp: "<gray>    <aqua>telehop.warp</aqua> <dark_gray>— 使用 /warp 和 /warps"
+perms-pwarp: "<gray>    <aqua>telehop.pwarp</aqua> <dark_gray>— 使用 /pwarp（玩家传送点）"
+perms-tpa: "<gray>    <aqua>telehop.tpa</aqua> <dark_gray>— 使用 /tpa"
+perms-tpahere: "<gray>    <aqua>telehop.tpahere</aqua> <dark_gray>— 使用 /tpahere"
+perms-tpa-accept: "<gray>    <aqua>telehop.tpa.accept</aqua> <dark_gray>— 使用 /tpaaccept"
+perms-tpa-deny: "<gray>    <aqua>telehop.tpa.deny</aqua> <dark_gray>— 使用 /tpadeny"
+perms-tpa-cancel: "<gray>    <aqua>telehop.tpa.cancel</aqua> <dark_gray>— 使用 /tpacancel"
+perms-per-warp-header: "<yellow>  单个传送点权限"
+perms-warp-access: "<gray>    <aqua>telehop.warp.<name></aqua> <dark_gray>— 访问特定管理员传送点"
+perms-warp-limits-header: "<yellow>  玩家传送点限制（每个等级分配一个）"
+perms-warps-number: "<gray>    <aqua>telehop.warps.<1-100></aqua> <dark_gray>— 数字传送点限制"
+perms-warps-unlimited: "<gray>    <aqua>telehop.warps.unlimited</aqua> <dark_gray>— 无限传送点（默认：OP）"
+perms-admin-header: "<yellow>  管理（默认：OP）"
+perms-admin: "<gray>    <aqua>telehop.admin</aqua> <dark_gray>— /setwarp, /delwarp, /listwarps, /forcedelwarp, /telehop reload|perms"
+perms-tp: "<gray>    <aqua>telehop.tp</aqua> <dark_gray>— /tp — 跨服管理员传送"
+perms-tphere: "<gray>    <aqua>telehop.tphere</aqua> <dark_gray>— /tphere — 将玩家拉到你身边"
+perms-bypass-header: "<yellow>  绕过（默认：OP）"
+perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— 跳过随机传送冷却"
+perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— 跳过随机传送倒计时"
+perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— 跳过TPA冷却"

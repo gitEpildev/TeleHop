@@ -1,0 +1,99 @@
+name: TeleHop
+version: 1.0.0
+main: com.telehop.paper.NetworkPaperPlugin
+api-version: "1.21"
+authors: [Epildev]
+description: Cross-server teleportation for Velocity networks.
+website: https://developer.epildevconnect.uk/myhub/home
+softdepend: [LuckPerms]
+
+commands:
+  spawn:
+    description: Teleport to the network spawn.
+  rtp:
+    description: Random teleport with region and dimension selector.
+  warp:
+    description: Teleport to a global warp.
+  setwarp:
+    description: Create or update a global warp.
+  delwarp:
+    description: Delete a global warp.
+  warps:
+    description: List all global warps.
+  pwarp:
+    description: Player warps — create, delete, list, and teleport.
+    aliases: [playerwarp, pwarps]
+  tpa:
+    description: Request to teleport to a player.
+  tpahere:
+    description: Request a player to teleport to you.
+  tpaaccept:
+    description: Accept a teleport request.
+  tpadeny:
+    description: Deny a teleport request.
+  tpacancel:
+    description: Cancel your outgoing teleport request.
+  tp:
+    description: Admin teleport command.
+    permission: telehop.tp
+  tphere:
+    description: Admin pull-to-you command.
+    permission: telehop.tphere
+  telehop:
+    description: TeleHop admin — reload, version, help, perms.
+  listwarps:
+    description: List all player warps (admin).
+    permission: telehop.admin
+  forcedelwarp:
+    description: Force-delete any warp (admin or player).
+    permission: telehop.admin
+
+permissions:
+  telehop.spawn:
+    description: Use /spawn
+    default: true
+  telehop.rtp:
+    description: Use /rtp
+    default: true
+  telehop.warp:
+    description: Use /warp and /warps (admin warps)
+    default: true
+  telehop.pwarp:
+    description: Use /pwarp (player warps)
+    default: true
+  telehop.tpa:
+    description: Use /tpa
+    default: true
+  telehop.tpahere:
+    description: Use /tpahere
+    default: true
+  telehop.tpa.accept:
+    description: Use /tpaaccept
+    default: true
+  telehop.tpa.deny:
+    description: Use /tpadeny
+    default: true
+  telehop.tpa.cancel:
+    description: Use /tpacancel
+    default: true
+  telehop.tp:
+    description: Admin teleport
+    default: op
+  telehop.tphere:
+    description: Admin pull command
+    default: op
+  telehop.admin:
+    description: Admin commands — setwarp, delwarp, listwarps, forcedelwarp, telehop reload/perms
+    default: op
+  telehop.rtp.bypasscooldown:
+    description: Bypass RTP cooldown
+    default: op
+  telehop.rtp.bypassdelay:
+    description: Bypass RTP countdown delay
+    default: op
+  telehop.tpa.bypasscooldown:
+    description: Bypass TPA cooldown
+    default: op
+  telehop.warps.unlimited:
+    description: Unlimited player warps
+    default: op

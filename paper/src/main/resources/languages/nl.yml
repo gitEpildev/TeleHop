@@ -1,0 +1,146 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Nederlands (nl)
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  MiniMessage-formaat. Referentie: https://docs.advntr.dev/minimessage/
+#
+#  Placeholders (NIET vertalen):
+#    <target>  — doelspeler            <sender>  — verzendende speler
+#    <name>    — warp-naam             <warps>   — kommagescheiden lijst
+#    <count>   — huidig aantal warps   <limit>   — warplimiet
+#    <player>  — andere speler
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+prefix: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> "
+
+# ── Algemeen ────────────────────────────────────────────────────────────
+no-permission: "<red>Je hebt geen toestemming om dit commando te gebruiken."
+player-not-found: "<red>Die speler is niet online."
+console-not-allowed: "<red>Dit commando kan alleen in-game worden gebruikt."
+feature-disabled: "<red>Deze functie is uitgeschakeld op deze server."
+
+# ── TPA ─────────────────────────────────────────────────────────────────
+request-sent: "<aqua>Teleportverzoek verzonden naar <gold><target></gold><aqua>."
+request-received: "<aqua><sender></aqua> <gray>wil naar jou teleporteren. Gebruik</gray> <light_purple>/tpaaccept</light_purple> <gray>of</gray> <red>/tpadeny</red><gray>.</gray>"
+request-received-here: "<aqua><sender></aqua> <gray>wil dat je naar hen teleporteert. Gebruik</gray> <light_purple>/tpaaccept</light_purple> <gray>of</gray> <red>/tpadeny</red><gray>.</gray>"
+request-actions: "<click:run_command:'/tpaaccept'><light_purple><bold>[ACCEPTEREN]</bold></light_purple></click> <click:run_command:'/tpadeny'><red><bold>[WEIGEREN]</bold></red></click>"
+request-accepted: "<green>Teleportverzoek geaccepteerd."
+request-denied: "<red>Teleportverzoek geweigerd."
+request-expired: "<yellow>Teleportverzoek verlopen."
+request-cancelled: "<gold>Teleportverzoek geannuleerd."
+request-none-pending: "<red>Je hebt geen openstaand teleportverzoek."
+request-none-outgoing: "<red>Je hebt geen uitgaand teleportverzoek."
+tpa-cooldown: "<yellow>TPA heeft een cooldown. Even geduld."
+tpa-warmup: "<yellow>Niet bewegen! Teleporteren over <gold><seconds></gold><yellow> seconden..."
+tpa-warmup-cancelled: "<red>Teleportatie geannuleerd — je hebt bewogen."
+
+# ── Aftellen (actiebalk) ─────────────────────────────────────────────
+countdown-actionbar: "<gold>⏳ Teleporteren over <seconds>..."
+countdown-chat: "<yellow><seconds>..."
+
+# ── Admin Warps ─────────────────────────────────────────────────────────
+warp-created: "<green>Warp <gold><name></gold> aangemaakt."
+warp-deleted: "<gold>Warp <gold><name></gold> verwijderd."
+warp-not-found: "<red>Warp <gold><name></gold> niet gevonden."
+warp-list-header: "<gray>Warps:</gray> <gold><warps></gold>"
+warp-teleporting: "<aqua>Teleporteren naar warp <gold><name></gold>..."
+
+# ── Speler Warps (/pwarp) ──────────────────────────────────────────────
+pwarp-created: "<green>Warp <gold><name></gold> aangemaakt. <gray>(<count>/<limit>)</gray>"
+pwarp-deleted: "<gold>Warp <gold><name></gold> verwijderd."
+pwarp-not-found: "<red>Warp <gold><name></gold> niet gevonden."
+pwarp-limit-reached: "<red>Je hebt je warplimiet bereikt (<limit>). Verwijder een warp of upgrade je rang."
+pwarp-no-permission: "<red>Je hebt geen toestemming om warps aan te maken."
+pwarp-list-header: "<gray>Jouw warps (<count>/<limit>):</gray> <gold><warps></gold>"
+pwarp-list-empty: "<gray>Je hebt geen warps. Gebruik <gold>/pwarp set <name></gold> om er een aan te maken."
+pwarp-teleporting: "<aqua>Teleporteren naar warp <gold><name></gold>..."
+pwarp-made-public: "<green>Warp <gold><name></gold> is nu <aqua>openbaar</aqua>."
+pwarp-made-private: "<green>Warp <gold><name></gold> is nu <red>privé</red>."
+pwarp-not-yours: "<red>Die warp is van een andere speler en is privé."
+pwarp-player-not-found: "<red>Speler <gold><player></gold> niet gevonden."
+
+# ── Spawn ───────────────────────────────────────────────────────────────
+spawn-sent: "<aqua>Teleporteren naar spawn..."
+
+# ── RTP ─────────────────────────────────────────────────────────────────
+rtp-opening: "<aqua>Selecteer een regio en dimensie."
+rtp-searching: "<gold>Zoeken naar een veilige locatie..."
+rtp-teleporting: "<green>Teleporteren..."
+rtp-failed: "<red>Geen veilige locatie gevonden. Probeer het opnieuw."
+rtp-cooldown: "<yellow>RTP heeft een cooldown. Even geduld."
+rtp-delay: "<yellow>Niet bewegen! Teleporteren over <gold><seconds></gold><yellow> seconden..."
+rtp-cancelled: "<red>Teleportatie geannuleerd — je hebt bewogen."
+
+# ── Listwarps (/listwarps) ──────────────────────────────────────────
+listwarps-none: "<gray>Geen speler-warps gevonden op alle servers."
+listwarps-header: "<gold><bold>--- Speler Warps (<count> totaal) ---</bold></gold>"
+listwarps-player-none: "<gray><player> heeft geen warps."
+listwarps-player-header: "<gold><bold>--- Warps van <player> (<count>) ---</bold></gold>"
+
+# ── Admin ────────────────────────────────────────────────────────────────
+reload-success: "<green>TeleHop-configuratie herladen."
+forcedelwarp-deleted: "<gold>Warp <gold><name></gold> van <gold><player></gold> geforceerd verwijderd."
+forcedelwarp-admin-deleted: "<gold>Admin-warp <gold><name></gold> geforceerd verwijderd."
+
+# ── Versie ───────────────────────────────────────────────────────────
+version-info: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> <white>Versie <gold><version></gold>"
+
+# ── Help (/telehop help) ─────────────────────────────────────────────
+help-header: "<gold><bold>--- TeleHop Commando's ---</bold></gold>"
+help-general: "<yellow><bold>Algemeen</bold></yellow>"
+help-spawn: "<gray>  <aqua>/spawn</aqua> <dark_gray>— Teleporteer naar de netwerk-spawn"
+help-rtp: "<gray>  <aqua>/rtp</aqua> <dark_gray>— Willekeurige teleportatie (regio/dimensie GUI)"
+help-tpa-header: "<yellow><bold>TPA</bold></yellow>"
+help-tpa: "<gray>  <aqua>/tpa <player></aqua> <dark_gray>— Verzoek om naar een speler te teleporteren"
+help-tpahere: "<gray>  <aqua>/tpahere <player></aqua> <dark_gray>— Vraag een speler om naar jou te komen"
+help-tpaaccept: "<gray>  <aqua>/tpaaccept</aqua> <dark_gray>— Accepteer inkomend verzoek"
+help-tpadeny: "<gray>  <aqua>/tpadeny</aqua> <dark_gray>— Weiger inkomend verzoek"
+help-tpacancel: "<gray>  <aqua>/tpacancel</aqua> <dark_gray>— Annuleer uitgaand verzoek"
+help-warps-header: "<yellow><bold>Admin Warps</bold></yellow>"
+help-warp: "<gray>  <aqua>/warp <name></aqua> <dark_gray>— Teleporteer naar een globale warp"
+help-setwarp: "<gray>  <aqua>/setwarp <name></aqua> <dark_gray>— Maak/bewerk een globale warp"
+help-delwarp: "<gray>  <aqua>/delwarp <name></aqua> <dark_gray>— Verwijder een globale warp"
+help-warps-list: "<gray>  <aqua>/warps</aqua> <dark_gray>— Toon alle globale warps"
+help-pwarps-header: "<yellow><bold>Speler Warps</bold></yellow>"
+help-pwarp-set: "<gray>  <aqua>/pwarp set <name></aqua> <dark_gray>— Maak een persoonlijke warp"
+help-pwarp-del: "<gray>  <aqua>/pwarp del <name></aqua> <dark_gray>— Verwijder je warp"
+help-pwarp-list: "<gray>  <aqua>/pwarp list</aqua> <dark_gray>— Toon je warps"
+help-pwarp-tp: "<gray>  <aqua>/pwarp <name></aqua> <dark_gray>— Teleporteer naar je warp"
+help-pwarp-tp-other: "<gray>  <aqua>/pwarp <player> <name></aqua> <dark_gray>— Teleporteer naar een openbare warp"
+help-pwarp-public: "<gray>  <aqua>/pwarp public <name></aqua> <dark_gray>— Wissel openbaar/privé"
+help-admin-header: "<yellow><bold>Admin</bold></yellow>"
+help-tp: "<gray>  <aqua>/tp <player></aqua> <dark_gray>— Admin teleportatie (cross-server)"
+help-tphere: "<gray>  <aqua>/tphere <player></aqua> <dark_gray>— Trek speler naar jou"
+help-listwarps: "<gray>  <aqua>/listwarps [player]</aqua> <dark_gray>— Toon alle speler-warps"
+help-forcedelwarp: "<gray>  <aqua>/forcedelwarp <name></aqua> <dark_gray>— Verwijder een admin-warp geforceerd"
+help-forcedelwarp-player: "<gray>  <aqua>/forcedelwarp <player> <name></aqua> <dark_gray>— Verwijder een speler-warp geforceerd"
+help-telehop-reload: "<gray>  <aqua>/telehop reload</aqua> <dark_gray>— Herlaad configuratie en berichten"
+help-telehop-version: "<gray>  <aqua>/telehop version</aqua> <dark_gray>— Toon plugin versie"
+help-telehop-perms: "<gray>  <aqua>/telehop perms</aqua> <dark_gray>— Toon alle permissie-nodes"
+
+# ── Permissies (/telehop perms) ──────────────────────────────────────
+perms-header: "<gold><bold>--- TeleHop Permissies ---</bold></gold>"
+perms-player-header: "<yellow>  Speler (standaard: iedereen)"
+perms-spawn: "<gray>    <aqua>telehop.spawn</aqua> <dark_gray>— Gebruik /spawn"
+perms-rtp: "<gray>    <aqua>telehop.rtp</aqua> <dark_gray>— Gebruik /rtp"
+perms-warp: "<gray>    <aqua>telehop.warp</aqua> <dark_gray>— Gebruik /warp en /warps"
+perms-pwarp: "<gray>    <aqua>telehop.pwarp</aqua> <dark_gray>— Gebruik /pwarp (speler-warps)"
+perms-tpa: "<gray>    <aqua>telehop.tpa</aqua> <dark_gray>— Gebruik /tpa"
+perms-tpahere: "<gray>    <aqua>telehop.tpahere</aqua> <dark_gray>— Gebruik /tpahere"
+perms-tpa-accept: "<gray>    <aqua>telehop.tpa.accept</aqua> <dark_gray>— Gebruik /tpaaccept"
+perms-tpa-deny: "<gray>    <aqua>telehop.tpa.deny</aqua> <dark_gray>— Gebruik /tpadeny"
+perms-tpa-cancel: "<gray>    <aqua>telehop.tpa.cancel</aqua> <dark_gray>— Gebruik /tpacancel"
+perms-per-warp-header: "<yellow>  Per-Warp Toegang"
+perms-warp-access: "<gray>    <aqua>telehop.warp.<name></aqua> <dark_gray>— Toegang tot een specifieke admin-warp"
+perms-warp-limits-header: "<yellow>  Speler Warp Limieten (wijs ÉÉN per rang toe)"
+perms-warps-number: "<gray>    <aqua>telehop.warps.<1-100></aqua> <dark_gray>— Numerieke warp-limiet"
+perms-warps-unlimited: "<gray>    <aqua>telehop.warps.unlimited</aqua> <dark_gray>— Geen warp-limiet (standaard: OP)"
+perms-admin-header: "<yellow>  Admin (standaard: OP)"
+perms-admin: "<gray>    <aqua>telehop.admin</aqua> <dark_gray>— /setwarp, /delwarp, /listwarps, /forcedelwarp, /telehop reload|perms"
+perms-tp: "<gray>    <aqua>telehop.tp</aqua> <dark_gray>— /tp — cross-server admin teleportatie"
+perms-tphere: "<gray>    <aqua>telehop.tphere</aqua> <dark_gray>— /tphere — trek speler naar jou"
+perms-bypass-header: "<yellow>  Bypass (standaard: OP)"
+perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— Sla RTP-cooldown over"
+perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— Sla RTP-aftelling over"
+perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— Sla TPA-cooldown over"

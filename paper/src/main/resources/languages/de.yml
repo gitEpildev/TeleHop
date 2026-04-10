@@ -1,0 +1,146 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Deutsch (de)
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  MiniMessage-Format. Referenz: https://docs.advntr.dev/minimessage/
+#
+#  Platzhalter (NICHT übersetzen):
+#    <target>  — Zielspieler           <sender>  — Absender
+#    <name>    — Warp-Name             <warps>   — kommagetrennte Liste
+#    <count>   — aktuelle Warp-Anzahl  <limit>   — Warp-Limit
+#    <player>  — anderer Spieler
+#
+# ═══════════════════════════════════════════════════════════════════════
+
+prefix: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> "
+
+# ── Allgemein ───────────────────────────────────────────────────────────
+no-permission: "<red>Du hast keine Berechtigung, diesen Befehl zu verwenden."
+player-not-found: "<red>Dieser Spieler ist nicht online."
+console-not-allowed: "<red>Dieser Befehl kann nur im Spiel verwendet werden."
+feature-disabled: "<red>Diese Funktion ist auf diesem Server deaktiviert."
+
+# ── TPA ─────────────────────────────────────────────────────────────────
+request-sent: "<aqua>Teleportanfrage an <gold><target></gold> <aqua>gesendet."
+request-received: "<aqua><sender></aqua> <gray>möchte sich zu dir teleportieren. Verwende</gray> <light_purple>/tpaaccept</light_purple> <gray>oder</gray> <red>/tpadeny</red><gray>.</gray>"
+request-received-here: "<aqua><sender></aqua> <gray>möchte, dass du dich zu ihm teleportierst. Verwende</gray> <light_purple>/tpaaccept</light_purple> <gray>oder</gray> <red>/tpadeny</red><gray>.</gray>"
+request-actions: "<click:run_command:'/tpaaccept'><light_purple><bold>[ANNEHMEN]</bold></light_purple></click> <click:run_command:'/tpadeny'><red><bold>[ABLEHNEN]</bold></red></click>"
+request-accepted: "<green>Teleportanfrage angenommen."
+request-denied: "<red>Teleportanfrage abgelehnt."
+request-expired: "<yellow>Teleportanfrage abgelaufen."
+request-cancelled: "<gold>Teleportanfrage abgebrochen."
+request-none-pending: "<red>Du hast keine ausstehende Teleportanfrage."
+request-none-outgoing: "<red>Du hast keine ausgehende Teleportanfrage."
+tpa-cooldown: "<yellow>TPA hat eine Abklingzeit. Bitte warte."
+tpa-warmup: "<yellow>Nicht bewegen! Teleportation in <gold><seconds></gold><yellow> Sekunden..."
+tpa-warmup-cancelled: "<red>Teleportation abgebrochen — du hast dich bewegt."
+
+# ── Countdown (Aktionsleiste) ────────────────────────────────────────
+countdown-actionbar: "<gold>⏳ Teleportation in <seconds>..."
+countdown-chat: "<yellow><seconds>..."
+
+# ── Admin Warps ─────────────────────────────────────────────────────────
+warp-created: "<green>Warp <gold><name></gold> erstellt."
+warp-deleted: "<gold>Warp <gold><name></gold> gelöscht."
+warp-not-found: "<red>Warp <gold><name></gold> nicht gefunden."
+warp-list-header: "<gray>Warps:</gray> <gold><warps></gold>"
+warp-teleporting: "<aqua>Teleportiere zu Warp <gold><name></gold>..."
+
+# ── Spieler-Warps (/pwarp) ─────────────────────────────────────────────
+pwarp-created: "<green>Warp <gold><name></gold> erstellt. <gray>(<count>/<limit>)</gray>"
+pwarp-deleted: "<gold>Warp <gold><name></gold> gelöscht."
+pwarp-not-found: "<red>Warp <gold><name></gold> nicht gefunden."
+pwarp-limit-reached: "<red>Du hast dein Warp-Limit erreicht (<limit>). Lösche einen Warp oder verbessere deinen Rang."
+pwarp-no-permission: "<red>Du hast keine Berechtigung, Warps zu erstellen."
+pwarp-list-header: "<gray>Deine Warps (<count>/<limit>):</gray> <gold><warps></gold>"
+pwarp-list-empty: "<gray>Du hast keine Warps. Verwende <gold>/pwarp set <name></gold> um einen zu erstellen."
+pwarp-teleporting: "<aqua>Teleportiere zu Warp <gold><name></gold>..."
+pwarp-made-public: "<green>Warp <gold><name></gold> ist jetzt <aqua>öffentlich</aqua>."
+pwarp-made-private: "<green>Warp <gold><name></gold> ist jetzt <red>privat</red>."
+pwarp-not-yours: "<red>Dieser Warp gehört einem anderen Spieler und ist privat."
+pwarp-player-not-found: "<red>Spieler <gold><player></gold> nicht gefunden."
+
+# ── Spawn ───────────────────────────────────────────────────────────────
+spawn-sent: "<aqua>Teleportiere zum Spawn..."
+
+# ── RTP ─────────────────────────────────────────────────────────────────
+rtp-opening: "<aqua>Wähle eine Region und Dimension."
+rtp-searching: "<gold>Suche nach einem sicheren Ort..."
+rtp-teleporting: "<green>Teleportiere..."
+rtp-failed: "<red>Kein sicherer Ort gefunden. Versuche es erneut."
+rtp-cooldown: "<yellow>RTP hat eine Abklingzeit. Bitte warte."
+rtp-delay: "<yellow>Nicht bewegen! Teleportation in <gold><seconds></gold><yellow> Sekunden..."
+rtp-cancelled: "<red>Teleportation abgebrochen — du hast dich bewegt."
+
+# ── Listwarps (/listwarps) ──────────────────────────────────────────
+listwarps-none: "<gray>Keine Spieler-Warps auf allen Servern gefunden."
+listwarps-header: "<gold><bold>--- Spieler-Warps (<count> gesamt) ---</bold></gold>"
+listwarps-player-none: "<gray><player> hat keine Warps."
+listwarps-player-header: "<gold><bold>--- Warps von <player> (<count>) ---</bold></gold>"
+
+# ── Admin ────────────────────────────────────────────────────────────────
+reload-success: "<green>TeleHop-Konfiguration neu geladen."
+forcedelwarp-deleted: "<gold>Warp <gold><name></gold> von <gold><player></gold> zwangsgelöscht."
+forcedelwarp-admin-deleted: "<gold>Admin-Warp <gold><name></gold> zwangsgelöscht."
+
+# ── Version ──────────────────────────────────────────────────────────
+version-info: "<gray>[<gradient:green:aqua>TeleHop</gradient>]</gray> <white>Version <gold><version></gold>"
+
+# ── Hilfe (/telehop help) ────────────────────────────────────────────
+help-header: "<gold><bold>--- TeleHop Befehle ---</bold></gold>"
+help-general: "<yellow><bold>Allgemein</bold></yellow>"
+help-spawn: "<gray>  <aqua>/spawn</aqua> <dark_gray>— Zum Netzwerk-Spawn teleportieren"
+help-rtp: "<gray>  <aqua>/rtp</aqua> <dark_gray>— Zufällige Teleportation (Region/Dimension GUI)"
+help-tpa-header: "<yellow><bold>TPA</bold></yellow>"
+help-tpa: "<gray>  <aqua>/tpa <player></aqua> <dark_gray>— Teleportanfrage an einen Spieler"
+help-tpahere: "<gray>  <aqua>/tpahere <player></aqua> <dark_gray>— Spieler zu dir bitten"
+help-tpaaccept: "<gray>  <aqua>/tpaaccept</aqua> <dark_gray>— Anfrage annehmen"
+help-tpadeny: "<gray>  <aqua>/tpadeny</aqua> <dark_gray>— Anfrage ablehnen"
+help-tpacancel: "<gray>  <aqua>/tpacancel</aqua> <dark_gray>— Anfrage abbrechen"
+help-warps-header: "<yellow><bold>Admin-Warps</bold></yellow>"
+help-warp: "<gray>  <aqua>/warp <name></aqua> <dark_gray>— Zu einem globalen Warp teleportieren"
+help-setwarp: "<gray>  <aqua>/setwarp <name></aqua> <dark_gray>— Globalen Warp erstellen/ändern"
+help-delwarp: "<gray>  <aqua>/delwarp <name></aqua> <dark_gray>— Globalen Warp löschen"
+help-warps-list: "<gray>  <aqua>/warps</aqua> <dark_gray>— Alle globalen Warps anzeigen"
+help-pwarps-header: "<yellow><bold>Spieler-Warps</bold></yellow>"
+help-pwarp-set: "<gray>  <aqua>/pwarp set <name></aqua> <dark_gray>— Persönlichen Warp erstellen"
+help-pwarp-del: "<gray>  <aqua>/pwarp del <name></aqua> <dark_gray>— Deinen Warp löschen"
+help-pwarp-list: "<gray>  <aqua>/pwarp list</aqua> <dark_gray>— Deine Warps anzeigen"
+help-pwarp-tp: "<gray>  <aqua>/pwarp <name></aqua> <dark_gray>— Zu deinem Warp teleportieren"
+help-pwarp-tp-other: "<gray>  <aqua>/pwarp <player> <name></aqua> <dark_gray>— Zu einem öffentlichen Warp teleportieren"
+help-pwarp-public: "<gray>  <aqua>/pwarp public <name></aqua> <dark_gray>— Öffentlich/Privat umschalten"
+help-admin-header: "<yellow><bold>Admin</bold></yellow>"
+help-tp: "<gray>  <aqua>/tp <player></aqua> <dark_gray>— Admin-Teleport (cross-server)"
+help-tphere: "<gray>  <aqua>/tphere <player></aqua> <dark_gray>— Spieler zu dir ziehen"
+help-listwarps: "<gray>  <aqua>/listwarps [player]</aqua> <dark_gray>— Alle Spieler-Warps anzeigen"
+help-forcedelwarp: "<gray>  <aqua>/forcedelwarp <name></aqua> <dark_gray>— Admin-Warp zwangslöschen"
+help-forcedelwarp-player: "<gray>  <aqua>/forcedelwarp <player> <name></aqua> <dark_gray>— Spieler-Warp zwangslöschen"
+help-telehop-reload: "<gray>  <aqua>/telehop reload</aqua> <dark_gray>— Konfiguration und Nachrichten neu laden"
+help-telehop-version: "<gray>  <aqua>/telehop version</aqua> <dark_gray>— Plugin-Version anzeigen"
+help-telehop-perms: "<gray>  <aqua>/telehop perms</aqua> <dark_gray>— Alle Berechtigungsnodes anzeigen"
+
+# ── Berechtigungen (/telehop perms) ──────────────────────────────────
+perms-header: "<gold><bold>--- TeleHop Berechtigungen ---</bold></gold>"
+perms-player-header: "<yellow>  Spieler (Standard: alle)"
+perms-spawn: "<gray>    <aqua>telehop.spawn</aqua> <dark_gray>— /spawn verwenden"
+perms-rtp: "<gray>    <aqua>telehop.rtp</aqua> <dark_gray>— /rtp verwenden"
+perms-warp: "<gray>    <aqua>telehop.warp</aqua> <dark_gray>— /warp und /warps verwenden"
+perms-pwarp: "<gray>    <aqua>telehop.pwarp</aqua> <dark_gray>— /pwarp verwenden (Spieler-Warps)"
+perms-tpa: "<gray>    <aqua>telehop.tpa</aqua> <dark_gray>— /tpa verwenden"
+perms-tpahere: "<gray>    <aqua>telehop.tpahere</aqua> <dark_gray>— /tpahere verwenden"
+perms-tpa-accept: "<gray>    <aqua>telehop.tpa.accept</aqua> <dark_gray>— /tpaaccept verwenden"
+perms-tpa-deny: "<gray>    <aqua>telehop.tpa.deny</aqua> <dark_gray>— /tpadeny verwenden"
+perms-tpa-cancel: "<gray>    <aqua>telehop.tpa.cancel</aqua> <dark_gray>— /tpacancel verwenden"
+perms-per-warp-header: "<yellow>  Pro-Warp-Zugang"
+perms-warp-access: "<gray>    <aqua>telehop.warp.<name></aqua> <dark_gray>— Zugang zu einem bestimmten Admin-Warp"
+perms-warp-limits-header: "<yellow>  Spieler-Warp-Limits (EINEN pro Rang zuweisen)"
+perms-warps-number: "<gray>    <aqua>telehop.warps.<1-100></aqua> <dark_gray>— Numerisches Warp-Limit"
+perms-warps-unlimited: "<gray>    <aqua>telehop.warps.unlimited</aqua> <dark_gray>— Kein Warp-Limit (Standard: OP)"
+perms-admin-header: "<yellow>  Admin (Standard: OP)"
+perms-admin: "<gray>    <aqua>telehop.admin</aqua> <dark_gray>— /setwarp, /delwarp, /listwarps, /forcedelwarp, /telehop reload|perms"
+perms-tp: "<gray>    <aqua>telehop.tp</aqua> <dark_gray>— /tp — Cross-Server Admin-Teleport"
+perms-tphere: "<gray>    <aqua>telehop.tphere</aqua> <dark_gray>— /tphere — Spieler zu dir ziehen"
+perms-bypass-header: "<yellow>  Bypass (Standard: OP)"
+perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— RTP-Abklingzeit überspringen"
+perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— RTP-Countdown überspringen"
+perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— TPA-Abklingzeit überspringen"
