@@ -2,6 +2,11 @@ package com.telehop.common.db;
 
 import java.util.List;
 
+/**
+ * Provides the DDL statements that create TeleHop's database tables
+ * and any migration statements for upgrading existing schemas.
+ * Executed once during {@link DatabaseManager#initSchema()}.
+ */
 public final class SqlSchema {
     private SqlSchema() {
     }

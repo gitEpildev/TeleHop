@@ -9,8 +9,6 @@ import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.gui.HomeGui;
 import org.bukkit.entity.Player;
 
-import java.util.Map;
-
 @CommandAlias("home")
 public class HomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

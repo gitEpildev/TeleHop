@@ -8,6 +8,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * Business-logic layer for player homes. All operations are executed
+ * asynchronously on the {@link DatabaseManager} thread pool and return
+ * {@link CompletableFuture} to keep the server thread free.
+ */
 public class HomeService {
     private final DatabaseManager databaseManager;
     private final HomeRepository repository;

@@ -14,13 +14,27 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
+/**
+ * Manages the HikariCP connection pool and provides an async executor
+ * for all database operations. A {@link DatabaseCircuitBreaker} protects
+ * against cascading failures when MySQL is unreachable.
+ *
+ * <p>Obtain connections via {@link #dataSource()} for schema init, or
+ * use {@link #supplyAsync(Supplier)} / {@link #runAsync(Runnable)} for
+ * circuit-breaker-protected async work.</p>
+ */
 public class DatabaseManager {
     private static final AtomicInteger THREAD_ID = new AtomicInteger(1);
 
     private final HikariDataSource dataSource;
     private final ExecutorService dbExecutor;
+    private final DatabaseCircuitBreaker circuitBreaker;
 
     public DatabaseManager(DatabaseConfig config) {
+        this(config, null);
+    }
+
+    public DatabaseManager(DatabaseConfig config, java.util.logging.Logger logger) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
@@ -50,6 +64,7 @@ public class DatabaseManager {
             t.setDaemon(true);
             return t;
         });
+        this.circuitBreaker = new DatabaseCircuitBreaker(5, 30_000L, logger);
     }
 
     public void initSchema() throws SQLException {
@@ -73,12 +88,25 @@ public class DatabaseManager {
         return dataSource;
     }
 
+    /**
+     * Submits an async database read/write through the circuit breaker.
+     * If the database has too many consecutive failures, calls fail fast
+     * with {@link DatabaseCircuitBreaker.CircuitOpenException}.
+     */
     public <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier) {
-        return CompletableFuture.supplyAsync(supplier, dbExecutor);
+        return circuitBreaker.execute(() -> CompletableFuture.supplyAsync(supplier, dbExecutor));
     }
 
+    /**
+     * Submits an async fire-and-forget database operation through the circuit breaker.
+     */
     public CompletableFuture<Void> runAsync(Runnable runnable) {
-        return CompletableFuture.runAsync(runnable, dbExecutor);
+        return circuitBreaker.executeRun(() -> CompletableFuture.runAsync(runnable, dbExecutor));
+    }
+
+    /** Returns the circuit breaker for monitoring or testing. */
+    public DatabaseCircuitBreaker circuitBreaker() {
+        return circuitBreaker;
     }
 
     public void shutdown() {

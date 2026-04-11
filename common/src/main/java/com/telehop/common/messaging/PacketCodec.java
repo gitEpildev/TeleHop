@@ -6,6 +6,10 @@ import com.google.gson.GsonBuilder;
 
 import java.nio.charset.StandardCharsets;
 
+/**
+ * Encodes and decodes {@link NetworkPacket} instances to/from UTF-8 JSON bytes
+ * for transmission over the plugin messaging channel.
+ */
 public final class PacketCodec {
     private static final Gson GSON = new GsonBuilder().create();
 

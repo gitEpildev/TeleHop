@@ -5,6 +5,11 @@ import com.telehop.common.model.NetworkPacket;
 
 import java.util.concurrent.CompletableFuture;
 
+/**
+ * High-level API for sending request packets and awaiting responses.
+ * Combines {@link RequestTracker} (future management and deduplication)
+ * with {@link PacketTransport} (delivery).
+ */
 public class RequestBroker {
     private final RequestTracker tracker;
     private final PacketTransport transport;

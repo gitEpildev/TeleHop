@@ -1,5 +1,17 @@
 package com.telehop.common.db;
 
+/**
+ * Immutable configuration for a MySQL/MariaDB connection.
+ * Validated on construction — blank hosts, invalid ports, or zero pool sizes
+ * throw {@link IllegalArgumentException}.
+ *
+ * @param host     database hostname or IP
+ * @param port     database port (1–65535)
+ * @param database schema name
+ * @param username database user
+ * @param password database password
+ * @param poolSize HikariCP maximum pool size (≥ 1)
+ */
 public record DatabaseConfig(
         String host,
         int port,

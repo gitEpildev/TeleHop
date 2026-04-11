@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Data-access layer for player-owned warps stored in the {@code player_warps} table.
+ * Supports public/private visibility toggling and owner-scoped queries.
+ */
 public class PlayerWarpRepository {
     private final DataSource dataSource;
 

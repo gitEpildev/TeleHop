@@ -1,5 +1,9 @@
 package com.telehop.common;
 
+/**
+ * Central registry of all TeleHop permission node strings.
+ * Keeps permission checks type-safe and refactor-friendly.
+ */
 public final class PermissionNodes {
     public static final String TPA = "telehop.tpa";
     public static final String TPA_HERE = "telehop.tpahere";

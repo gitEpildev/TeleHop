@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Data-access layer for active TPA requests stored in the {@code tpa_requests} table.
+ * Persisted requests enable cross-server TPA flows and expiry detection.
+ */
 public class TpaRepository {
     private final DataSource dataSource;
 

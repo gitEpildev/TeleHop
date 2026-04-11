@@ -1,5 +1,11 @@
 package com.telehop.common.model;
 
+/**
+ * Identifies the operation a {@link NetworkPacket} represents.
+ * Each type maps to a specific handler on both Paper and Velocity sides.
+ *
+ * @see NetworkPacket
+ */
 public enum PacketType {
     PING,
     PLAYER_SERVER_UPDATE,
@@ -23,6 +29,7 @@ public enum PacketType {
     ADMIN_TP_REQUEST,
     HOME_TELEPORT,
     BACK_TELEPORT,
+    /** Sent when a player has TPA requests disabled; routed back to the sender's server. */
     TPA_TOGGLE_DENY,
     RESPONSE,
     ERROR

@@ -2,7 +2,7 @@
 
 ## /spawn does nothing or says "Unknown command"
 
-- Check that `telehop-paper-1.0.0.jar` is in `plugins/` and the server loaded it (look for "TeleHop" in startup log).
+- Check that `telehop-paper-1.0.1.jar` is in `plugins/` and the server loaded it (look for "TeleHop" in startup log).
 - Player needs `telehop.spawn` permission (true by default).
 
 ## /spawn doesn't send me to the lobby

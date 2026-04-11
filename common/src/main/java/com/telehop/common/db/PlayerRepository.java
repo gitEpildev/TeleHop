@@ -7,6 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 import javax.sql.DataSource;
 
+/**
+ * Data-access layer for the {@code players} table.
+ * Tracks which server each player was last seen on, enabling
+ * cross-server teleport routing.
+ */
 public class PlayerRepository {
     private final DataSource dataSource;
 

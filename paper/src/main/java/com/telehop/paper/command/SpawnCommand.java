@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.Map;
 
 @CommandAlias("spawn")
 public class SpawnCommand extends BaseCommand {

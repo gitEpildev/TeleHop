@@ -4,6 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * The fundamental unit of cross-server communication in TeleHop.
+ * Packets are JSON-serialised via {@link com.telehop.common.messaging.PacketCodec}
+ * and sent over the {@code telehop:network} plugin messaging channel.
+ *
+ * <p>Use {@link #request(PacketType, String, String)} for outbound operations
+ * and {@link #response(NetworkPacket, boolean, String)} to reply.</p>
+ */
 public class NetworkPacket {
     private UUID requestId;
     private PacketType type;

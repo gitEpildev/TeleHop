@@ -8,6 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Data-access layer for player homes stored in the {@code homes} table.
+ * All methods obtain their own connection from the pool and are safe to
+ * call from the {@link DatabaseManager} async executor.
+ */
 public class HomeRepository {
     private final DataSource dataSource;
 

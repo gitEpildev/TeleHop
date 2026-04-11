@@ -33,8 +33,8 @@ Cross-server teleportation plugin for **Paper + Velocity** networks.
 ## Quick Start
 
 1. Create a MySQL database and user
-2. Place `telehop-velocity-1.0.0.jar` on your Velocity proxy
-3. Place `telehop-paper-1.0.0.jar` on each Paper backend
+2. Place `telehop-velocity-1.0.1.jar` on your Velocity proxy
+3. Place `telehop-paper-1.0.1.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
 5. Edit `plugins/TeleHop/config/general.yml` with `server-name` on each server
 6. Restart Velocity first, then all Paper servers
@@ -49,6 +49,7 @@ See [docs/setup.md](docs/setup.md) for the full walkthrough.
 | [Commands](docs/commands.md) | Every command with syntax, description, and required permission |
 | [Permissions](docs/permissions.md) | All permission nodes, defaults, and LuckPerms examples |
 | [Configuration](docs/configuration.md) | Modular Paper `config/` layout and Velocity `config.properties` reference |
+| [Protocol](docs/protocol.md) | Plugin messaging protocol — packet types, payload fields, routing, deduplication |
 | [Warps](docs/warps.md) | Admin warps vs player warps, limits, public/private, cross-server |
 | [Homes](docs/homes.md) | Homes GUI, permission-based slots, blocked servers, world/server colours, cross-server |
 | [Messages](docs/messages.md) | Language system, all message keys, MiniMessage colors, placeholders |
@@ -145,10 +146,34 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-1.0.0.jar`
-- `velocity/target/telehop-velocity-1.0.0.jar`
+- `paper/target/telehop-paper-1.0.1.jar`
+- `velocity/target/telehop-velocity-1.0.1.jar`
 
 Requires Java 21+ and Maven 3.8+.
+
+## CI
+
+GitHub Actions runs `mvn clean verify` on every push and PR to `main`. This includes:
+- Compilation (Java 21)
+- Unit tests (JUnit 5)
+- Checkstyle code quality checks
+
+Build artifacts (Paper + Velocity JARs) are uploaded on successful pushes. See [`.github/workflows/build.yml`](.github/workflows/build.yml).
+
+## Testing
+
+Unit tests live in `common/src/test/` and cover:
+- `DatabaseConfigTest` — input validation, JDBC URL generation
+- `DatabaseCircuitBreakerTest` — state transitions (CLOSED → OPEN → HALF_OPEN), failure counting, recovery
+- `PacketCodecTest` — JSON encode/decode round-trips, payload preservation
+- `RequestTrackerTest` — future tracking, timeout, deduplication
+- `HomeServiceTest` — async delegation to repository layer (mocked)
+
+Run with:
+
+```bash
+mvn test
+```
 
 ## Author
 

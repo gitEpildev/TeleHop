@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Data-access layer for admin warps stored in the {@code warps} table.
+ * Warp names are normalised to lowercase for case-insensitive lookups.
+ */
 public class WarpRepository {
     private final DataSource dataSource;
 

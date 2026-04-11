@@ -29,7 +29,7 @@ Use `'telehop'@'localhost'` instead of `'%'` if all servers are on the same mach
 
 ## Step 2 — Install on the Velocity Proxy
 
-1. Place `telehop-velocity-1.0.0.jar` in `plugins/`.
+1. Place `telehop-velocity-1.0.1.jar` in `plugins/`.
 2. Start the proxy. A config is created at `plugins/telehop-velocity/config.properties`.
 3. Edit the config with your MySQL credentials and server list:
 
@@ -53,7 +53,7 @@ Server names must exactly match your `velocity.toml` `[servers]` entries.
 
 ## Step 3 — Install on Each Paper Server
 
-1. Place `telehop-paper-1.0.0.jar` in `plugins/`.
+1. Place `telehop-paper-1.0.1.jar` in `plugins/`.
 2. Start the server. Two config files are created:
    - `plugins/TeleHop/config.yml` — static settings (edit this)
    - `plugins/TeleHop/storage.yml` — runtime data like spawn location (managed by the plugin)
