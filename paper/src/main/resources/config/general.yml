@@ -1,0 +1,44 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — General Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  Changes here take effect after /telehop reload (no restart needed).
+
+# ── Language ──────────────────────────────────────────────────────────
+#  Which language file to use for player-facing messages.
+#  Available: en, nl, de, es, zh, pl
+#  Custom languages: add a <code>.yml file in plugins/TeleHop/languages/
+#  Any missing key automatically falls back to English.
+language: "en"
+
+# ── Server Identity ───────────────────────────────────────────────────
+#  server-name — MUST match the name registered in velocity.toml [servers].
+#                Each Paper server needs a unique name.
+#  hub-server  — The server players teleport to when they run /spawn.
+#                Must also match a velocity.toml server name.
+server-name: "lobby"
+hub-server: "lobby"
+
+# ── Server List ───────────────────────────────────────────────────────
+#  List every Paper server running TeleHop on your network.
+#  Format:  <label>: "<velocity-name>"
+#  The label is for display; the value must match velocity.toml exactly.
+servers:
+  lobby: "lobby"
+  # eu: "eu"
+  # us: "usa"
+
+# ── Cross-Server Messaging ───────────────────────────────────────────
+#  Advanced timing settings for plugin-message packets.
+#  You almost certainly don't need to change these.
+#
+#  dedupe-window-ms   — Ignores duplicate packets within this window.
+#  request-timeout-ms — How long to wait for a cross-server response.
+messaging:
+  dedupe-window-ms: 30000
+  request-timeout-ms: 10000
+
+# ── Audit Logging ─────────────────────────────────────────────────────
+#  When enabled, all teleport events are logged to the server console.
+#  Useful for debugging or monitoring; disable in production for less spam.
+audit:
+  enabled: false

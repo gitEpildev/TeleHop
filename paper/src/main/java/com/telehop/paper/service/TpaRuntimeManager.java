@@ -11,6 +11,7 @@ public class TpaRuntimeManager {
     private final Map<UUID, TpaRequestRecord> incomingByTarget = new ConcurrentHashMap<>();
     private final Map<UUID, TpaRequestRecord> outgoingBySender = new ConcurrentHashMap<>();
     private final Map<UUID, Long> cooldowns = new ConcurrentHashMap<>();
+    private final java.util.Set<UUID> tpaDisabled = ConcurrentHashMap.newKeySet();
 
     public void setIncoming(TpaRequestRecord request) {
         incomingByTarget.put(request.targetUuid(), request);
@@ -51,5 +52,24 @@ public class TpaRuntimeManager {
 
     public void markCooldown(UUID playerUuid, int cooldownSeconds) {
         cooldowns.put(playerUuid, System.currentTimeMillis() + cooldownSeconds * 1000L);
+    }
+
+    /** @return true if TPA is now disabled, false if re-enabled */
+    public boolean toggleTpa(UUID playerUuid) {
+        if (tpaDisabled.contains(playerUuid)) {
+            tpaDisabled.remove(playerUuid);
+            return false;
+        } else {
+            tpaDisabled.add(playerUuid);
+            return true;
+        }
+    }
+
+    public boolean isTpaDisabled(UUID playerUuid) {
+        return tpaDisabled.contains(playerUuid);
+    }
+
+    public void clearToggle(UUID playerUuid) {
+        tpaDisabled.remove(playerUuid);
     }
 }

@@ -33,6 +33,8 @@ commands:
     description: Deny a teleport request.
   tpacancel:
     description: Cancel your outgoing teleport request.
+  tpatoggle:
+    description: Toggle incoming TPA requests on/off.
   tp:
     description: Admin teleport command.
     permission: telehop.tp
@@ -47,6 +49,16 @@ commands:
   forcedelwarp:
     description: Force-delete any warp (admin or player).
     permission: telehop.admin
+  home:
+    description: Open the homes GUI or teleport to a home slot.
+  sethome:
+    description: Set a home at your current location.
+  forcedelhome:
+    description: Force-delete a player's home (admin).
+    permission: telehop.admin
+  back:
+    description: Return to your last location before teleporting.
+    permission: telehop.back
 
 permissions:
   telehop.spawn:
@@ -76,6 +88,15 @@ permissions:
   telehop.tpa.cancel:
     description: Use /tpacancel
     default: true
+  telehop.tpa.toggle:
+    description: Use /tpatoggle
+    default: true
+  telehop.homes:
+    description: Use /home and /sethome
+    default: true
+  telehop.homes.1:
+    description: Access 1 home slot
+    default: true
   telehop.tp:
     description: Admin teleport
     default: op
@@ -83,7 +104,13 @@ permissions:
     description: Admin pull command
     default: op
   telehop.admin:
-    description: Admin commands — setwarp, delwarp, listwarps, forcedelwarp, telehop reload/perms
+    description: Admin commands — setwarp, delwarp, listwarps, forcedelwarp, forcedelhome, telehop reload/perms
+    default: op
+  telehop.back:
+    description: Use /back (last teleport location)
+    default: op
+  telehop.back.death:
+    description: Use /back death (death location)
     default: op
   telehop.rtp.bypasscooldown:
     description: Bypass RTP cooldown

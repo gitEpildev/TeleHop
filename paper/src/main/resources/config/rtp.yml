@@ -1,0 +1,66 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — RTP (Random Teleport) Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  Controls /rtp — the random teleport command with region and dimension
+#  picker GUIs.
+#  Reloadable with /telehop reload (no restart needed).
+
+rtp:
+  # Cooldown between /rtp uses (in seconds). 0 = no cooldown.
+  # Players with telehop.rtp.bypasscooldown skip this.
+  cooldown-seconds: 30
+
+  # Warmup countdown before the teleport fires (in seconds).
+  # Set to 0 for instant teleportation.
+  # Players with telehop.rtp.bypassdelay skip this.
+  delay-seconds: 0
+
+  # If true, moving during the warmup countdown cancels the teleport.
+  # Only applies when delay-seconds > 0.
+  cancel-on-move: true
+
+  # Maximum distance from 0,0 for random coordinates.
+  # Region-specific radius is capped to this value.
+  max-radius: 25000
+
+  # ── Regions ─────────────────────────────────────────────────────────
+  #  Define one or more RTP regions. Each region can have its own world,
+  #  radius, and GUI appearance.
+  #
+  #  ONE region  → player skips the region picker and goes straight to
+  #                the dimension selector.
+  #  TWO+ regions → a region picker GUI opens first.
+  #
+  #  gui.material — Any Bukkit Material name (e.g. GRASS_BLOCK, RED_CONCRETE)
+  #  gui.name     — Display name in the GUI. Supports MiniMessage colors:
+  #                 <red>, <bold>, <gradient:red:gold>, etc.
+  #  gui.lore     — List of lore lines under the item name.
+  regions:
+    default:
+      world: "world"
+      radius: 25000
+      gui:
+        material: "GRASS_BLOCK"
+        name: "<green><bold>Default Region</bold>"
+        lore:
+          - "<gray>Random teleport in the default region"
+
+  # ── Dimension World Names ───────────────────────────────────────────
+  #  Map each dimension to the actual Minecraft world folder name.
+  #  Default Paper worlds are: world, world_nether, world_the_end.
+  dimensions:
+    overworld: "world"
+    nether: "world_nether"
+    end: "world_the_end"
+
+  # ── GUI Appearance ──────────────────────────────────────────────────
+  #  Customize the titles and sizes of the RTP picker GUIs.
+  #  Titles support MiniMessage formatting.
+  #  Rows: 1-6 (each row = 9 slots).
+  gui:
+    region-menu:
+      title: "<dark_purple>Select Region</dark_purple>"
+      rows: 3
+    dimension-menu:
+      title: "<gold>Select Dimension</gold>"
+      rows: 3

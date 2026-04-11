@@ -41,6 +41,9 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
             case RTP_REQUEST                -> handleRtpRequest(packet);
             case TELEPORT_TO_PLAYER         -> handleTeleportToPlayer(packet);
             case PWARP_TELEPORT             -> handlePwarpTeleport(packet);
+            case HOME_TELEPORT              -> handleHomeTeleport(packet);
+            case BACK_TELEPORT              -> handleBackTeleport(packet);
+            case TPA_TOGGLE_DENY            -> handleTpaToggleDeny(packet);
             case PLAYER_LIST_RESPONSE       -> handlePlayerListResponse(packet);
             default -> {}
         }
@@ -88,8 +91,20 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         UUID targetUuid = UUID.fromString(packet.get("targetUuid"));
         TpaType type = TpaType.valueOf(packet.get("type"));
         Instant sentAt = Instant.ofEpochMilli(Long.parseLong(packet.get("sentAt")));
-        TpaRequestRecord request = new TpaRequestRecord(senderUuid, targetUuid, type, sentAt);
 
+        if (!packet.getOriginServer().equalsIgnoreCase(services.settings().serverName())) {
+            Player target = Bukkit.getPlayer(targetUuid);
+            if (target != null && services.tpaRuntimeManager().isTpaDisabled(targetUuid)) {
+                NetworkPacket deny = NetworkPacket.request(
+                        PacketType.TPA_TOGGLE_DENY, services.settings().serverName(), "velocity");
+                deny.put("senderUuid", senderUuid.toString());
+                deny.put("senderTargetName", target.getName());
+                services.messaging().send(deny);
+                return;
+            }
+        }
+
+        TpaRequestRecord request = new TpaRequestRecord(senderUuid, targetUuid, type, sentAt);
         services.tpaRuntimeManager().setIncoming(request);
         services.tpaService().upsert(request);
 
@@ -147,6 +162,42 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
                 Bukkit.getScheduler().runTask(plugin, () -> player.teleportAsync(loc));
             }
         }));
+    }
+
+    private void handleHomeTeleport(NetworkPacket packet) {
+        Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
+        if (player == null) return;
+        int slot = Integer.parseInt(packet.get("homeSlot"));
+        String homeUuid = packet.get("homeUuid");
+        services.homeService().find(homeUuid, slot).thenAccept(opt -> opt.ifPresent(home -> {
+            World world = Bukkit.getWorld(home.world());
+            if (world != null) {
+                Location loc = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
+                Bukkit.getScheduler().runTask(plugin, () ->
+                        services.teleportService().teleportToHome(player, loc));
+            }
+        }));
+    }
+
+    private void handleBackTeleport(NetworkPacket packet) {
+        Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
+        if (player == null) return;
+        World world = Bukkit.getWorld(packet.get("world"));
+        if (world == null) return;
+        Location loc = new Location(world,
+                Double.parseDouble(packet.get("x")), Double.parseDouble(packet.get("y")),
+                Double.parseDouble(packet.get("z")),
+                Float.parseFloat(packet.getOrDefault("yaw", "0")),
+                Float.parseFloat(packet.getOrDefault("pitch", "0")));
+        services.teleportService().teleportBack(player, loc);
+    }
+
+    private void handleTpaToggleDeny(NetworkPacket packet) {
+        Player sender = Bukkit.getPlayer(UUID.fromString(packet.get("senderUuid")));
+        if (sender != null) {
+            String targetName = packet.getOrDefault("senderTargetName", "Unknown");
+            sender.sendMessage(plugin.msg("player-tpa-disabled", Map.of("target", targetName)));
+        }
     }
 
     private void handlePlayerListResponse(NetworkPacket packet) {

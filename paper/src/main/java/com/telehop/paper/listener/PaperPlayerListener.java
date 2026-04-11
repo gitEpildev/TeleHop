@@ -3,6 +3,7 @@ package com.telehop.paper.listener;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.paper.NetworkPaperPlugin;
+import com.telehop.paper.service.BackLocationManager;
 import com.telehop.paper.service.TeleportService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -31,11 +32,18 @@ public class PaperPlayerListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         plugin.playerService().remove(event.getPlayer().getUniqueId());
+        plugin.services().backLocationManager().remove(event.getPlayer().getUniqueId());
+        plugin.tpaRuntimeManager().clearToggle(event.getPlayer().getUniqueId());
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         plugin.services().teleportService().clearPending(event.getEntity().getUniqueId());
+        BackLocationManager backManager = plugin.services().backLocationManager();
+        if (backManager != null && event.getEntity().getLocation().getWorld() != null) {
+            backManager.saveLastDeath(event.getEntity().getUniqueId(),
+                    event.getEntity().getLocation(), plugin.settings().serverName());
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH)

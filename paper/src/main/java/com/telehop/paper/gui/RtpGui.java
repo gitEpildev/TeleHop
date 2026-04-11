@@ -5,10 +5,13 @@ import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.entity.Player;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -24,7 +27,8 @@ public class RtpGui {
     }
 
     public void openRegion(Player player) {
-        ConfigurationSection regions = plugin.getConfig().getConfigurationSection("rtp.regions");
+        FileConfiguration cfg = loadRtpConfig();
+        ConfigurationSection regions = cfg.getConfigurationSection("rtp.regions");
         if (regions == null || regions.getKeys(false).isEmpty()) {
             selectionConsumer.accept("default", "overworld");
             return;
@@ -35,8 +39,8 @@ public class RtpGui {
             return;
         }
 
-        String title = plugin.getConfig().getString("rtp.gui.region-menu.title", "<dark_purple>Select Region</dark_purple>");
-        int rows = plugin.getConfig().getInt("rtp.gui.region-menu.rows", 3);
+        String title = cfg.getString("rtp.gui.region-menu.title", "<dark_purple>Select Region</dark_purple>");
+        int rows = cfg.getInt("rtp.gui.region-menu.rows", 3);
         Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
 
         int slot = centerStartSlot(rows, regionKeys.size());
@@ -55,8 +59,9 @@ public class RtpGui {
     }
 
     private void openDimension(Player player, String region) {
-        String title = plugin.getConfig().getString("rtp.gui.dimension-menu.title", "<gold>Select Dimension</gold>");
-        int rows = plugin.getConfig().getInt("rtp.gui.dimension-menu.rows", 3);
+        FileConfiguration cfg = loadRtpConfig();
+        String title = cfg.getString("rtp.gui.dimension-menu.title", "<gold>Select Dimension</gold>");
+        int rows = cfg.getInt("rtp.gui.dimension-menu.rows", 3);
 
         Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
         gui.setItem(11, ItemBuilder.from(buildItem(Material.GRASS_BLOCK, "<green><bold>Overworld</bold>",
@@ -69,6 +74,12 @@ public class RtpGui {
                         List.of("<gray>Random teleport in The End")))
                 .asGuiItem(click -> selectionConsumer.accept(region, "end")));
         gui.open(player);
+    }
+
+    private FileConfiguration loadRtpConfig() {
+        File rtpFile = new File(plugin.getDataFolder(), "config/rtp.yml");
+        if (rtpFile.exists()) return YamlConfiguration.loadConfiguration(rtpFile);
+        return plugin.getConfig();
     }
 
     private ItemStack buildItem(Material material, String name, List<String> loreRaw) {

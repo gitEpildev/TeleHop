@@ -1,0 +1,24 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — TPA Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  Controls the behavior of /tpa, /tpahere, /tpaaccept, /tpadeny.
+#  Reloadable with /telehop reload (no restart needed).
+
+tpa:
+  # How many seconds the receiver has to accept or deny the request
+  # before it automatically expires.
+  timeout-seconds: 60
+
+  # Cooldown between sending TPA requests (in seconds).
+  # Set to 0 to disable the cooldown entirely.
+  # Players with telehop.tpa.bypasscooldown skip this.
+  cooldown-seconds: 10
+
+  # Warmup delay after accepting a TPA request (in seconds).
+  # The player sees a countdown (5... 4... 3...) before teleporting.
+  # Set to 0 for instant teleportation after accepting.
+  delay-seconds: 0
+
+  # If true, moving during the warmup countdown cancels the teleport.
+  # Only applies when delay-seconds > 0.
+  cancel-on-move: true

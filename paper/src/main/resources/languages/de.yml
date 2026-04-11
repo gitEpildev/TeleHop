@@ -144,3 +144,27 @@ perms-bypass-header: "<yellow>  Bypass (Standard: OP)"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— RTP-Abklingzeit überspringen"
 perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— RTP-Countdown überspringen"
 perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— TPA-Abklingzeit überspringen"
+
+# ── Homes ────────────────────────────────────────────────────────────────
+home-set: "<green>Home <gold><slot></gold> set at your current location."
+home-deleted: "<gold>Home <gold><slot></gold> deleted."
+home-teleporting: "<aqua>Teleporting to Home <gold><slot></gold>..."
+home-not-found: "<red>That home does not exist."
+home-no-empty-slot: "<red>All your home slots are full. Delete one first."
+home-blocked-server: "<red>You cannot set homes on this server."
+
+# ── Back ─────────────────────────────────────────────────────────────────
+back-teleporting: "<aqua>Teleporting to your last location..."
+back-no-location: "<red>No previous location found."
+back-death-teleporting: "<aqua>Teleporting to your death location..."
+back-death-no-location: "<red>No death location found."
+
+# ── TPA Toggle ───────────────────────────────────────────────────────────
+tpa-toggle-on: "<green>TPA requests <bold>enabled</bold>. Players can send you requests."
+tpa-toggle-off: "<red>TPA requests <bold>disabled</bold>. You will not receive requests."
+player-tpa-disabled: "<red><target> has TPA requests disabled."
+
+# ── ForceDelHome (admin) ─────────────────────────────────────────────────
+forcedelhome-header: "<gold><bold>--- <player>'s Homes (<count>) ---</bold></gold>"
+forcedelhome-deleted: "<gold>Force-deleted Home <gold><slot></gold>."
+forcedelhome-no-homes: "<gray><player> has no homes."

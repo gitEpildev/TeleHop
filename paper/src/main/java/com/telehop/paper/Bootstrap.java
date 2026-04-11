@@ -8,8 +8,10 @@ import com.telehop.common.model.PlayerWarpRecord;
 import com.telehop.common.service.*;
 import com.telehop.paper.command.*;
 import com.telehop.paper.command.admin.*;
+import com.telehop.paper.command.home.*;
 import com.telehop.paper.command.tpa.*;
 import com.telehop.paper.command.warp.*;
+import com.telehop.paper.config.ConfigMigrator;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.config.StorageManager;
 import com.telehop.paper.handler.PacketHandler;
@@ -40,11 +42,19 @@ public final class Bootstrap {
      *
      * @return a fully wired {@link ServiceRegistry}, or {@code null} if startup fails
      */
+    private static final String[] CONFIG_TEMPLATES = {
+            "config/general.yml", "config/database.yml", "config/features.yml",
+            "config/teleport.yml", "config/tpa.yml", "config/rtp.yml", "config/home.yml"
+    };
+
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
-        plugin.saveDefaultConfig();
+        if (ConfigMigrator.needsMigration(plugin)) {
+            ConfigMigrator.migrate(plugin);
+        }
+        initConfigFiles(plugin);
         ServiceRegistry reg = new ServiceRegistry();
 
-        PaperSettings settings = PaperSettings.from(plugin.getConfig());
+        PaperSettings settings = PaperSettings.load(plugin);
         reg.setSettings(settings);
 
         initLanguageFiles(plugin);
@@ -76,9 +86,14 @@ public final class Bootstrap {
         reg.setWarpService(new WarpService(db, new WarpRepository(db.dataSource()), new WarpCache()));
         reg.setPlayerWarpService(new PlayerWarpService(db, new PlayerWarpRepository(db.dataSource())));
         reg.setTpaService(new TpaService(db, new TpaRepository(db.dataSource()), new TpaRequestCache()));
+        reg.setHomeService(new com.telehop.common.service.HomeService(db, new HomeRepository(db.dataSource())));
         reg.warpService().refreshCache();
 
-        reg.teleportService().wire(reg.messageService(), reg.auditLogger(), reg.rtpManager());
+        BackLocationManager backManager = new BackLocationManager();
+        reg.setBackLocationManager(backManager);
+        TeleportEffectPlayer effectPlayer = new TeleportEffectPlayer(settings);
+        reg.setTeleportEffectPlayer(effectPlayer);
+        reg.teleportService().wire(reg.messageService(), reg.auditLogger(), reg.rtpManager(), effectPlayer, backManager, settings.serverName());
 
         PaperMessagingManager messaging = new PaperMessagingManager(plugin, settings.dedupeWindowMs(), settings.requestTimeoutMs());
         messaging.register();
@@ -99,8 +114,7 @@ public final class Bootstrap {
     }
 
     public static void reload(NetworkPaperPlugin plugin, ServiceRegistry reg) {
-        plugin.reloadConfig();
-        PaperSettings settings = PaperSettings.from(plugin.getConfig());
+        PaperSettings settings = PaperSettings.load(plugin);
         reg.setSettings(settings);
         initLanguageFiles(plugin);
         reg.setMessageService(buildMessageService(plugin, settings));
@@ -110,6 +124,16 @@ public final class Bootstrap {
     }
 
     // ── internal helpers ─────────────────────────────────────────────
+
+    static void initConfigFiles(NetworkPaperPlugin plugin) {
+        for (String template : CONFIG_TEMPLATES) {
+            File target = new File(plugin.getDataFolder(), template);
+            if (!target.exists()) {
+                target.getParentFile().mkdirs();
+                plugin.saveResource(template, false);
+            }
+        }
+    }
 
     static void initLanguageFiles(NetworkPaperPlugin plugin) {
         File langDir = new File(plugin.getDataFolder(), "languages");
@@ -182,6 +206,11 @@ public final class Bootstrap {
         manager.registerCommand(new TeleHopCommand(plugin));
         manager.registerCommand(new ListWarpsCommand(plugin));
         manager.registerCommand(new ForceDelWarpCommand(plugin));
+        manager.registerCommand(new HomeCommand(plugin));
+        manager.registerCommand(new SetHomeCommand(plugin));
+        manager.registerCommand(new BackCommand(plugin));
+        manager.registerCommand(new TpaToggleCommand(plugin));
+        manager.registerCommand(new ForceDelHomeCommand(plugin));
     }
 
     private static void startScheduledTasks(NetworkPaperPlugin plugin, ServiceRegistry reg) {

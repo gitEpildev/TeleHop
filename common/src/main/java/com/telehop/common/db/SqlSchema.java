@@ -50,6 +50,20 @@ public final class SqlSchema {
                   sent_at BIGINT NOT NULL,
                   PRIMARY KEY (sender_uuid, target_uuid)
                 )
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS homes (
+                  uuid    VARCHAR(36) NOT NULL,
+                  slot    INT         NOT NULL,
+                  server  VARCHAR(64) NOT NULL,
+                  world   VARCHAR(64) NOT NULL,
+                  x       DOUBLE      NOT NULL,
+                  y       DOUBLE      NOT NULL,
+                  z       DOUBLE      NOT NULL,
+                  yaw     FLOAT       NOT NULL,
+                  pitch   FLOAT       NOT NULL,
+                  PRIMARY KEY (uuid, slot)
+                )
                 """
         );
     }

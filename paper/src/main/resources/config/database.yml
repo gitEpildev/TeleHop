@@ -1,0 +1,31 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Database Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  All Paper servers AND the Velocity proxy must connect to the SAME
+#  MySQL / MariaDB database. This is how cross-server teleportation,
+#  warps, homes, and TPA requests are shared.
+#
+#  ⚠ IMPORTANT: Changes here require a FULL SERVER RESTART.
+#  The connection pool is created once at startup and is NOT recreated
+#  by /telehop reload.
+
+mysql:
+  # IP or hostname of your MySQL server.
+  host: "127.0.0.1"
+
+  # MySQL port (default 3306).
+  port: 3306
+
+  # Database name — must be the same on every server.
+  # Create it beforehand: CREATE DATABASE telehop;
+  database: "telehop"
+
+  # Credentials — the user needs SELECT, INSERT, UPDATE, DELETE, CREATE TABLE.
+  username: "telehop"
+  password: "change-me"
+
+  # Connection pool size.
+  #  5  = good for small networks (1-3 servers, <50 players)
+  #  10 = good for larger networks (4+ servers, 50-200 players)
+  #  Threads are created to match this number.
+  pool-size: 5

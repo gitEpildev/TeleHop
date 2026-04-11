@@ -78,7 +78,13 @@ public final class StorageManager {
      * so existing servers keep their spawn location after the config split.
      */
     private void migrateFromConfig() {
-        FileConfiguration cfg = plugin.getConfig();
+        File oldConfig = new File(plugin.getDataFolder(), "config.yml.old");
+        FileConfiguration cfg;
+        if (oldConfig.exists()) {
+            cfg = YamlConfiguration.loadConfiguration(oldConfig);
+        } else {
+            cfg = plugin.getConfig();
+        }
         data = new YamlConfiguration();
 
         String world = cfg.getString("spawn.location.world",

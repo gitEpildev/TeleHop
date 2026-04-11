@@ -1,0 +1,94 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Teleport Display & Effects
+# ═══════════════════════════════════════════════════════════════════════
+
+# Show action bar countdown during warmup delays (5... 4... 3... 2... 1...)
+show-countdown: true
+
+# ── Particles & Sounds ────────────────────────────────────────────────
+#  Each teleport type can have its own particle and sound effects.
+#  Set enabled: false to disable for a specific type.
+#
+#  particle.type  — Any Minecraft Particle enum name (PORTAL, HEART, etc.)
+#  particle.count — Number of particles to spawn
+#  sound.type     — Any Minecraft Sound enum name
+#  sound.volume   — 0.0 to 2.0
+#  sound.pitch    — 0.5 to 2.0
+
+effects:
+  default:
+    particle:
+      enabled: true
+      type: PORTAL
+      count: 40
+    sound:
+      enabled: true
+      type: ENTITY_ENDERMAN_TELEPORT
+      volume: 1.0
+      pitch: 1.0
+
+  spawn:
+    particle:
+      enabled: true
+      type: PORTAL
+      count: 40
+    sound:
+      enabled: true
+      type: ENTITY_ENDERMAN_TELEPORT
+      volume: 1.0
+      pitch: 1.0
+
+  tpa:
+    particle:
+      enabled: true
+      type: HEART
+      count: 20
+    sound:
+      enabled: true
+      type: ENTITY_EXPERIENCE_ORB_PICKUP
+      volume: 1.0
+      pitch: 1.2
+
+  rtp:
+    particle:
+      enabled: true
+      type: ENCHANT
+      count: 50
+    sound:
+      enabled: true
+      type: ENTITY_ENDERMAN_TELEPORT
+      volume: 1.0
+      pitch: 0.8
+
+  warp:
+    particle:
+      enabled: true
+      type: PORTAL
+      count: 40
+    sound:
+      enabled: true
+      type: ENTITY_ENDERMAN_TELEPORT
+      volume: 1.0
+      pitch: 1.0
+
+  home:
+    particle:
+      enabled: true
+      type: HAPPY_VILLAGER
+      count: 30
+    sound:
+      enabled: true
+      type: BLOCK_BEACON_ACTIVATE
+      volume: 1.0
+      pitch: 1.4
+
+  back:
+    particle:
+      enabled: true
+      type: REVERSE_PORTAL
+      count: 40
+    sound:
+      enabled: true
+      type: ENTITY_ENDERMAN_TELEPORT
+      volume: 1.0
+      pitch: 0.6

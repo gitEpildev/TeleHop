@@ -51,6 +51,10 @@ public class TpaCommand extends BaseCommand {
             sender.sendMessage(plugin.msg("player-not-found"));
             return;
         }
+        if (onlineTarget != null && plugin.tpaRuntimeManager().isTpaDisabled(targetUuid)) {
+            sender.sendMessage(plugin.msg("player-tpa-disabled", Map.of("target", targetName)));
+            return;
+        }
 
         Instant sentAt = Instant.now();
         TpaRequestRecord request = new TpaRequestRecord(sender.getUniqueId(), targetUuid, type, sentAt);

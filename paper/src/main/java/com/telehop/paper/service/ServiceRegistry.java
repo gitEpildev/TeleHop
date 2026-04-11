@@ -1,6 +1,7 @@
 package com.telehop.paper.service;
 
 import com.telehop.common.db.DatabaseManager;
+import com.telehop.common.service.HomeService;
 import com.telehop.common.service.PlayerService;
 import com.telehop.common.service.PlayerWarpService;
 import com.telehop.common.service.TpaService;
@@ -78,4 +79,16 @@ public final class ServiceRegistry {
 
     public TeleportService teleportService() { return teleportService; }
     public void setTeleportService(TeleportService teleportService) { this.teleportService = teleportService; }
+
+    private HomeService homeService;
+    public HomeService homeService() { return homeService; }
+    public void setHomeService(HomeService homeService) { this.homeService = homeService; }
+
+    private BackLocationManager backLocationManager;
+    public BackLocationManager backLocationManager() { return backLocationManager; }
+    public void setBackLocationManager(BackLocationManager backLocationManager) { this.backLocationManager = backLocationManager; }
+
+    private TeleportEffectPlayer teleportEffectPlayer;
+    public TeleportEffectPlayer teleportEffectPlayer() { return teleportEffectPlayer; }
+    public void setTeleportEffectPlayer(TeleportEffectPlayer teleportEffectPlayer) { this.teleportEffectPlayer = teleportEffectPlayer; }
 }

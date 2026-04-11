@@ -1,0 +1,41 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Feature Toggles
+# ═══════════════════════════════════════════════════════════════════════
+#  Enable or disable entire modules on this server.
+#
+#  When a feature is set to false, its commands still exist in-game but
+#  they display a "feature disabled" message instead of working. This
+#  avoids confusing "unknown command" errors for players.
+#
+#  Example: set "rtp: false" on the lobby server if you only want RTP
+#  available on survival servers.
+#
+#  Reloadable with /telehop reload (no restart needed).
+
+features:
+  # /spawn — teleport to the network hub
+  spawn: true
+
+  # /rtp — random teleport with region/dimension picker
+  rtp: true
+
+  # /tpa, /tpahere, /tpaaccept, /tpadeny, /tpacancel
+  tpa: true
+
+  # /warp, /setwarp, /delwarp, /warps — admin warps
+  warps: true
+
+  # /pwarp — player-created personal warps
+  player-warps: true
+
+  # /tp, /tphere — admin teleport commands
+  admin-tp: true
+
+  # /home, /sethome — player homes with GUI
+  homes: true
+
+  # /back, /back death — return to previous location
+  back: true
+
+  # /tpatoggle — let players block incoming TPA requests
+  tpa-toggle: true

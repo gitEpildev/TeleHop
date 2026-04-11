@@ -44,6 +44,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             case TRANSFER_PLAYER      -> routeTransfer(packet);
             case TPA_CREATE            -> routeToTarget(packet, packet.get("targetUuid"));
             case TPA_DENY              -> routeToTarget(packet, packet.get("senderUuid"));
+            case TPA_TOGGLE_DENY       -> routeToTarget(packet, packet.get("senderUuid"));
             case TPA_CANCEL            -> {
                 String targetUuid = packet.get("targetUuid");
                 if (targetUuid != null) routeToTarget(packet, targetUuid);
@@ -101,6 +102,22 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                             .put("uuid", player.getUniqueId().toString())
                             .put("pwarpOwner", action.payload().get("pwarpOwner"))
                             .put("pwarpName", action.payload().get("pwarpName")),
+                    player.getUniqueId());
+            case "HOME" -> sendWithRetry(currentServer,
+                    NetworkPacket.request(PacketType.HOME_TELEPORT, "velocity", currentServer)
+                            .put("uuid", player.getUniqueId().toString())
+                            .put("homeSlot", action.payload().get("homeSlot"))
+                            .put("homeUuid", action.payload().get("homeUuid")),
+                    player.getUniqueId());
+            case "BACK" -> sendWithRetry(currentServer,
+                    NetworkPacket.request(PacketType.BACK_TELEPORT, "velocity", currentServer)
+                            .put("uuid", player.getUniqueId().toString())
+                            .put("world", action.payload().get("world"))
+                            .put("x", action.payload().get("x"))
+                            .put("y", action.payload().get("y"))
+                            .put("z", action.payload().get("z"))
+                            .put("yaw", action.payload().get("yaw"))
+                            .put("pitch", action.payload().get("pitch")),
                     player.getUniqueId());
             default -> {}
         }

@@ -1,0 +1,87 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Homes Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  Controls /home and /sethome — player-owned teleport locations that
+#  persist across restarts and work cross-server.
+#
+#  Reloadable with /telehop reload (no restart needed).
+
+homes:
+  # Maximum number of home slots available (1-5).
+  # Players unlock individual slots via permissions:
+  #   telehop.homes.1 — 1 slot  (default: everyone)
+  #   telehop.homes.2 — 2 slots
+  #   telehop.homes.3 — 3 slots
+  #   telehop.homes.4 — 4 slots
+  #   telehop.homes.5 — 5 slots
+  #
+  # The highest matching permission determines how many slots a player
+  # can use. Use LuckPerms to assign higher slots to ranks:
+  #   lp group vip permission set telehop.homes.3
+  #   lp group mvp permission set telehop.homes.5
+  max-slots: 5
+
+  # If true, setting a home opens a small confirmation GUI first.
+  # If false, clicking an empty slot immediately sets the home.
+  confirm-set: true
+
+  # Title displayed at the top of the /home chest GUI.
+  # Supports MiniMessage formatting: <red>, <bold>, <gradient:...>, etc.
+  gui-title: "<gradient:red:gold>Your Homes</gradient>"
+
+  # Number of rows in the homes GUI (1-6). 3 rows = single chest.
+  # Beds are centered in the middle row.
+  gui-rows: 3
+
+  # ── Bed Colours ─────────────────────────────────────────────────────
+  #  Customize the bed item shown for each slot state.
+  #  Use any Minecraft bed Material name:
+  #    WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
+  #    LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
+  #    PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED
+  #
+  #  bed-set    — Home is set (player has a home in this slot).
+  #  bed-empty  — Slot is available (player has permission but no home yet).
+  #  bed-locked — Slot is locked (player doesn't have the permission).
+  bed-set: "LIME_BED"
+  bed-empty: "RED_BED"
+  bed-locked: "LIGHT_BLUE_BED"
+
+  # ── Blocked Servers ─────────────────────────────────────────────────────
+  #  List of servers where players CANNOT set new homes.
+  #  Players can still open the /home GUI and teleport to existing homes,
+  #  but empty slots will show "Cannot set homes on this server" and
+  #  /sethome will be blocked.
+  #  Useful for hub/lobby servers where you don't want homes to be placed.
+  #  Server names are case-insensitive.
+  blocked-servers:
+    - "lobby"
+
+  # ── Location Display ──────────────────────────────────────────────────
+  #  Whether to show x, y, z coordinates in the home lore tooltip.
+  #  Set to false to hide coordinates for a cleaner look or for privacy.
+  show-location: true
+
+  # ── World Colours ──────────────────────────────────────────────────────
+  #  Customise the display name & colour for each dimension in the GUI.
+  #  Uses MiniMessage format: <green>, <red>, <gradient:...>, <bold>, etc.
+  world-colors:
+    overworld: "<green>Overworld</green>"
+    nether: "<gradient:red:gold>Nether</gradient>"
+    the-end: "<gradient:dark_purple:blue>The End</gradient>"
+
+  # ── Server Colours ─────────────────────────────────────────────────────
+  #  Assign a colour/format to each server name shown in the home lore.
+  #  The key is the server name (case-insensitive), the value is the
+  #  MiniMessage-formatted display text.
+  #  Any server not listed here will display in plain white.
+  #
+  #  Example:
+  #    server-colors:
+  #      lobby: "<gray>Lobby"
+  #      usa: "<red>USA"
+  #      eu: "<blue>EU"
+  server-colors:
+    lobby: "<gray>Lobby"
+    usa: "<red>USA"
+    eu: "<blue>EU"

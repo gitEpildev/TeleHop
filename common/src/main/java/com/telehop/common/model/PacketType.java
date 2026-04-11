@@ -21,6 +21,9 @@ public enum PacketType {
     SPAWN_REQUEST,
     TELEPORT_TO_PLAYER,
     ADMIN_TP_REQUEST,
+    HOME_TELEPORT,
+    BACK_TELEPORT,
+    TPA_TOGGLE_DENY,
     RESPONSE,
     ERROR
 }
