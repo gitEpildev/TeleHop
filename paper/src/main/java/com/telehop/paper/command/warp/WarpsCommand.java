@@ -4,10 +4,12 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import com.telehop.common.PermissionNodes;
+import com.telehop.common.model.WarpRecord;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @CommandAlias("warps")
 public class WarpsCommand extends BaseCommand {
@@ -27,7 +29,8 @@ public class WarpsCommand extends BaseCommand {
             player.sendMessage(plugin.msg("no-permission"));
             return;
         }
-        String joined = String.join(", ", plugin.listWarpNames());
+        String joined = plugin.warpService().listCached().stream()
+                .map(WarpRecord::name).collect(Collectors.joining(", "));
         player.sendMessage(plugin.msg("warp-list-header", Map.of("warps", joined.isBlank() ? "-" : joined)));
     }
 }

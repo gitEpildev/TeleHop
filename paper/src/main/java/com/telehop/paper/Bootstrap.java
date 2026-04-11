@@ -78,6 +78,8 @@ public final class Bootstrap {
         reg.setTpaService(new TpaService(db, new TpaRepository(db.dataSource()), new TpaRequestCache()));
         reg.warpService().refreshCache();
 
+        reg.teleportService().wire(reg.messageService(), reg.auditLogger(), reg.rtpManager());
+
         PaperMessagingManager messaging = new PaperMessagingManager(plugin, settings.dedupeWindowMs(), settings.requestTimeoutMs());
         messaging.register();
         messaging.setHandler(new PacketHandler(plugin, reg));

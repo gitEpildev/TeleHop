@@ -63,7 +63,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         services.pendingTeleportManager().setPending(playerId, location);
         Player player = Bukkit.getPlayer(playerId);
         if (player != null) {
-            plugin.executePendingTeleport(player);
+            services.teleportService().executePendingTeleport(player);
         }
     }
 
@@ -72,14 +72,14 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player != null) {
             services.warpService().find(warpName)
-                    .thenAccept(warp -> warp.ifPresent(w -> plugin.teleportToWarp(player, w)));
+                    .thenAccept(warp -> warp.ifPresent(w -> services.teleportService().teleportToWarp(player, w)));
         }
     }
 
     private void handleSpawnRequest(NetworkPacket packet) {
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player != null) {
-            plugin.teleportToSpawn(player);
+            services.teleportService().teleportToSpawn(player);
         }
     }
 
@@ -120,7 +120,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handleRtpRequest(NetworkPacket packet) {
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player != null) {
-            plugin.executeLocalRtp(player,
+            services.teleportService().executeLocalRtp(player,
                     packet.getOrDefault("region", "default"),
                     packet.getOrDefault("dimension", "overworld"));
         }

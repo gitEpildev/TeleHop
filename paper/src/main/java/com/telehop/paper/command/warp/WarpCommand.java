@@ -40,7 +40,7 @@ public class WarpCommand extends BaseCommand {
             WarpRecord warp = optionalWarp.get();
             player.sendMessage(plugin.msg("warp-teleporting", Map.of("name", name)));
             if (warp.server().equalsIgnoreCase(plugin.settings().serverName())) {
-                plugin.teleportToWarp(player, warp);
+                plugin.services().teleportService().teleportToWarp(player, warp);
             } else {
                 NetworkPacket packet = NetworkPacket.request(PacketType.TRANSFER_PLAYER, plugin.settings().serverName(), "velocity")
                         .put("uuid", player.getUniqueId().toString())

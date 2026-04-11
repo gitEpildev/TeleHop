@@ -54,7 +54,7 @@ public class ListWarpsCommand extends BaseCommand {
                     if (w.isPublic()) sb.append(" <dark_gray>[public]");
                     sb.append("<gray>@").append(w.server());
                 }
-                player.sendMessage(plugin.mm("<yellow>" + ownerName + " <gray>(" + playerWarps.size() + "): " + sb));
+                player.sendMessage(plugin.messageService().deserialize("<yellow>" + ownerName + " <gray>(" + playerWarps.size() + "): " + sb));
             }
         });
     }
@@ -73,7 +73,7 @@ public class ListWarpsCommand extends BaseCommand {
             player.sendMessage(plugin.msg("listwarps-player-header", java.util.Map.of("player", targetName, "count", String.valueOf(warps.size()))));
             for (PlayerWarpRecord w : warps) {
                 String pub = w.isPublic() ? "<green>[public]" : "<red>[private]";
-                player.sendMessage(plugin.mm("<gray>  <aqua>" + w.name() + " " + pub +
+                player.sendMessage(plugin.messageService().deserialize("<gray>  <aqua>" + w.name() + " " + pub +
                         " <dark_gray>— " + w.server() + " " + w.world() +
                         " (" + (int) w.x() + ", " + (int) w.y() + ", " + (int) w.z() + ")"));
             }

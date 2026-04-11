@@ -3,6 +3,7 @@ package com.telehop.paper.listener;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.paper.NetworkPaperPlugin;
+import com.telehop.paper.service.TeleportService;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -20,7 +21,7 @@ public class PaperPlayerListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        plugin.executePendingTeleport(event.getPlayer());
+        plugin.services().teleportService().executePendingTeleport(event.getPlayer());
         NetworkPacket packet = NetworkPacket.request(PacketType.PLAYER_SERVER_UPDATE, plugin.settings().serverName(), "velocity");
         packet.put("uuid", event.getPlayer().getUniqueId().toString());
         packet.put("server", plugin.settings().serverName());
@@ -34,14 +35,15 @@ public class PaperPlayerListener implements Listener {
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        plugin.clearPendingTeleport(event.getEntity().getUniqueId());
+        plugin.services().teleportService().clearPending(event.getEntity().getUniqueId());
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onRespawn(PlayerRespawnEvent event) {
-        plugin.clearPendingTeleport(event.getPlayer().getUniqueId());
+        TeleportService tp = plugin.services().teleportService();
+        tp.clearPending(event.getPlayer().getUniqueId());
         if (plugin.settings().serverName().equalsIgnoreCase(plugin.settings().hubServer())) {
-            event.setRespawnLocation(plugin.getSpawnLocation());
+            event.setRespawnLocation(tp.getSpawnLocation());
         }
     }
 }

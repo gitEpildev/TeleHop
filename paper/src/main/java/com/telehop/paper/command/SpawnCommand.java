@@ -44,7 +44,7 @@ public class SpawnCommand extends BaseCommand {
         player.sendMessage(plugin.msg("spawn-sent"));
 
         if (plugin.settings().serverName().equalsIgnoreCase(plugin.settings().hubServer())) {
-            plugin.teleportToSpawn(player);
+            plugin.services().teleportService().teleportToSpawn(player);
         } else {
             NetworkPacket packet = NetworkPacket.request(PacketType.TRANSFER_PLAYER, plugin.settings().serverName(), "velocity")
                     .put("uuid", player.getUniqueId().toString())

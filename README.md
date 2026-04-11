@@ -65,7 +65,7 @@ telehop-plugin/
 ├── common/                Shared code (DB, models, services)
 ├── paper/                 Paper backend plugin
 │   └── src/.../paper/
-│       ├── Bootstrap.java         Startup wiring (replaces god-class onEnable)
+│       ├── Bootstrap.java         Startup wiring
 │       ├── NetworkPaperPlugin.java Thin lifecycle entry point
 │       ├── config/
 │       │   ├── PaperSettings.java  Immutable config record
@@ -80,10 +80,26 @@ telehop-plugin/
 │       │   └── RtpCommand.java
 │       ├── service/
 │       │   ├── ServiceRegistry.java Central service holder
-│       │   ├── TeleportService.java Spawn, warp, pending teleport logic
+│       │   ├── TeleportService.java Spawn, warp, RTP, pending teleport logic
+│       │   ├── MessageService.java  Language keys + MiniMessage deserialisation
 │       │   └── ...
 │       └── gui/
 ├── velocity/              Velocity proxy plugin
+│   └── src/.../velocity/
+│       ├── VelocityBootstrap.java            Startup wiring
+│       ├── NetworkVelocityPlugin.java        Thin lifecycle entry point
+│       ├── config/
+│       │   └── VelocitySettings.java         Immutable config record
+│       ├── handler/
+│       │   └── VelocityPacketHandler.java    Cross-server packet dispatch + routing
+│       ├── service/
+│       │   ├── VelocityServiceRegistry.java  Central service holder
+│       │   ├── VelocityPlayerTracker.java    Player-to-server mapping
+│       │   └── PendingActionManager.java     Queued post-transfer actions
+│       ├── messaging/
+│       │   └── VelocityMessagingManager.java Plugin-message channel
+│       └── model/
+│           └── PendingAction.java
 ├── docs/                  Documentation
 └── sql/                   Database schema reference
 ```

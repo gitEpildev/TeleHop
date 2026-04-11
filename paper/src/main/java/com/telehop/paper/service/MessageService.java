@@ -56,4 +56,9 @@ public class MessageService {
         }
         return miniMessage.deserialize(base);
     }
+
+    /** Deserialise an arbitrary MiniMessage string (not a language key). */
+    public Component deserialize(String miniMessageString) {
+        return miniMessage.deserialize(miniMessageString);
+    }
 }

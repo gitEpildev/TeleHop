@@ -167,7 +167,7 @@ public class PlayerWarpCommand extends BaseCommand {
                 return;
             }
             plugin.playerWarpService().delete(targetUuid, warpName).thenRun(() ->
-                    player.sendMessage(plugin.mm("<gold>Deleted warp <aqua>" + warpName +
+                    player.sendMessage(plugin.messageService().deserialize("<gold>Deleted warp <aqua>" + warpName +
                             "</aqua> from player <aqua>" + targetName + "</aqua>.")));
         });
     }

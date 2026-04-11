@@ -60,7 +60,8 @@ public class RtpCommand extends BaseCommand {
     private void startRtp(Player player, String region, String dimension) {
         String normalizedRegion = region.toLowerCase(Locale.ROOT);
         String normalizedDimension = dimension.toLowerCase(Locale.ROOT);
-        String targetServer = plugin.regionServer(region).orElse(plugin.settings().serverName());
+        String mapped = plugin.settings().servers().get(region.toLowerCase());
+        String targetServer = mapped != null ? mapped : plugin.settings().serverName();
         plugin.auditLogger().log("rtp-select player=" + player.getName() + " region=" + normalizedRegion + " dimension=" + normalizedDimension + " targetServer=" + targetServer);
         if (!targetServer.equalsIgnoreCase(plugin.settings().serverName())) {
             NetworkPacket packet = NetworkPacket.request(PacketType.TRANSFER_PLAYER, plugin.settings().serverName(), "velocity")
@@ -72,6 +73,6 @@ public class RtpCommand extends BaseCommand {
             plugin.messaging().send(packet);
             return;
         }
-        plugin.executeLocalRtp(player, normalizedRegion, normalizedDimension);
+        plugin.services().teleportService().executeLocalRtp(player, normalizedRegion, normalizedDimension);
     }
 }

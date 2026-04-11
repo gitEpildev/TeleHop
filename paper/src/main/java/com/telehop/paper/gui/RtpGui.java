@@ -37,7 +37,7 @@ public class RtpGui {
 
         String title = plugin.getConfig().getString("rtp.gui.region-menu.title", "<dark_purple>Select Region</dark_purple>");
         int rows = plugin.getConfig().getInt("rtp.gui.region-menu.rows", 3);
-        Gui gui = Gui.gui().title(plugin.mm(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
+        Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
 
         int slot = centerStartSlot(rows, regionKeys.size());
         for (String key : regionKeys) {
@@ -58,7 +58,7 @@ public class RtpGui {
         String title = plugin.getConfig().getString("rtp.gui.dimension-menu.title", "<gold>Select Dimension</gold>");
         int rows = plugin.getConfig().getInt("rtp.gui.dimension-menu.rows", 3);
 
-        Gui gui = Gui.gui().title(plugin.mm(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
+        Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
         gui.setItem(11, ItemBuilder.from(buildItem(Material.GRASS_BLOCK, "<green><bold>Overworld</bold>",
                         List.of("<gray>Random teleport in the Overworld")))
                 .asGuiItem(click -> selectionConsumer.accept(region, "overworld")));
@@ -75,11 +75,11 @@ public class RtpGui {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(plugin.mm(name));
+            meta.displayName(plugin.messageService().deserialize(name));
             if (!loreRaw.isEmpty()) {
                 List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
                 for (String line : loreRaw) {
-                    lore.add(plugin.mm(line));
+                    lore.add(plugin.messageService().deserialize(line));
                 }
                 meta.lore(lore);
             }
