@@ -1,0 +1,52 @@
+name: CodeQL Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Run weekly so dependency-level CVEs that were introduced upstream are
+  # caught even without new commits.
+  schedule:
+    - cron: '0 3 * * 1' # every Monday at 03:00 UTC
+
+permissions:
+  security-events: write # required to upload SARIF results
+  actions: read
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze Java
+    runs-on: ubuntu-latest
+    # CodeQL analysis can be slow; give it plenty of room.
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Initialise the CodeQL toolchain.  Using `security-and-quality` runs
+      # both the standard security queries and extended quality checks.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java
+          queries: security-and-quality
+
+      # Build without tests — CodeQL only needs the compiled bytecode.
+      - name: Build for CodeQL
+        run: mvn -B compile -DskipTests --no-transfer-progress
+
+      # Run the analysis and upload the SARIF report to the Security tab.
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:java

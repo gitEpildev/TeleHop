@@ -1,0 +1,149 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same ref so pushes during a build don't waste
+# minutes.  Push events use the branch ref; PR events use the PR number.
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  checks: write        # needed to publish JUnit test results as check annotations
+  pull-requests: write # needed to post the coverage comment on PRs
+
+# ---------------------------------------------------------------------------
+# Shared Java setup parameters used by every job.
+# ---------------------------------------------------------------------------
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+
+  # -------------------------------------------------------------------------
+  # Job 1 – Checkstyle
+  # Runs first, fast feedback on style violations before waiting for tests.
+  # -------------------------------------------------------------------------
+  checkstyle:
+    name: Checkstyle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Run Checkstyle
+        run: mvn -B checkstyle:check --no-transfer-progress
+
+  # -------------------------------------------------------------------------
+  # Job 2 – Tests + Coverage
+  # Runs unit tests for the common module and collects JaCoCo coverage.
+  # On pull requests a coverage summary is posted as a PR comment.
+  # -------------------------------------------------------------------------
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Run Tests
+        run: mvn -B test -pl common --no-transfer-progress
+
+      # Publish individual test case results as check-run annotations so
+      # failures are visible inline in the Files tab on a PR.
+      - name: Publish JUnit Results
+        if: always()
+        uses: mikepenz/action-junit-report@v4
+        with:
+          report_paths: '**/target/surefire-reports/TEST-*.xml'
+          check_name: JUnit Test Results
+          fail_on_failure: true
+          detailed_summary: true
+
+      # Upload the HTML + XML JaCoCo report as a workflow artifact so
+      # developers can download and browse it locally.
+      - name: Upload Coverage Report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: common/target/site/jacoco/
+          if-no-files-found: ignore
+
+      # On pull requests post a coverage summary comment and fail if overall
+      # line coverage drops below 70 % or changed-file coverage below 75 %.
+      - name: Post Coverage Comment
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.7.1
+        with:
+          paths: common/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: 70
+          min-coverage-changed-files: 75
+          title: Test Coverage Report
+          update-comment: true
+
+  # -------------------------------------------------------------------------
+  # Job 3 – Build
+  # Assembles the final shaded JARs only after checkstyle and tests pass.
+  # Artifacts are uploaded for push-to-main runs only so they don't pile up
+  # on every feature-branch PR.
+  # -------------------------------------------------------------------------
+  build:
+    name: Build JARs
+    runs-on: ubuntu-latest
+    needs: [checkstyle, test]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      # Tests already ran in the `test` job — skip them here to avoid
+      # re-running the suite a second time.
+      - name: Build
+        run: mvn -B package -DskipTests --no-transfer-progress
+
+      - name: Upload Paper JAR
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telehop-paper
+          path: paper/target/telehop-paper-*.jar
+          if-no-files-found: error
+
+      - name: Upload Velocity JAR
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: telehop-velocity
+          path: velocity/target/telehop-velocity-*.jar
+          if-no-files-found: error

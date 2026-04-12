@@ -1,0 +1,73 @@
+name: Release
+
+# Triggered when a version tag is pushed, e.g. git tag v1.2.0 && git push --tags
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write # required to create a GitHub Release and upload assets
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  release:
+    name: Build & Publish Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history so the release-notes generator can see all commits
+          # since the previous tag.
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      # ---------------------------------------------------------------------------
+      # Guard: tag version must match the <version> declared in pom.xml.
+      # This prevents accidentally releasing a stale or wrong build.
+      # ---------------------------------------------------------------------------
+      - name: Validate tag matches pom.xml version
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --no-transfer-progress)
+          echo "Tag version : $TAG_VERSION"
+          echo "POM version : $POM_VERSION"
+          if [ "$TAG_VERSION" != "$POM_VERSION" ]; then
+            echo "::error::Tag version ($TAG_VERSION) does not match pom.xml version ($POM_VERSION)."
+            echo "::error::Update <version> in pom.xml and commit before tagging."
+            exit 1
+          fi
+
+      # ---------------------------------------------------------------------------
+      # Full build including checkstyle and tests.  No skipping on a release.
+      # ---------------------------------------------------------------------------
+      - name: Build, Checkstyle & Test
+        run: mvn -B clean verify --no-transfer-progress
+
+      # ---------------------------------------------------------------------------
+      # Create the GitHub Release and attach both JARs.
+      # Release notes are auto-generated from commit messages between this tag
+      # and the previous one.
+      # ---------------------------------------------------------------------------
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: TeleHop ${{ github.ref_name }}
+          files: |
+            paper/target/telehop-paper-*.jar
+            velocity/target/telehop-velocity-*.jar
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-') }}

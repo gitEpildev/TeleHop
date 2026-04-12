@@ -1,0 +1,33 @@
+# Auto-label configuration for actions/labeler@v5
+# Labels are applied to PRs based on which files changed.
+# Create these labels in the GitHub repository settings first.
+
+common:
+  - changed-files:
+      - any-glob-to-any-file: 'common/**'
+
+paper:
+  - changed-files:
+      - any-glob-to-any-file: 'paper/**'
+
+velocity:
+  - changed-files:
+      - any-glob-to-any-file: 'velocity/**'
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file: '.github/**'
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file: 'docs/**'
+      - any-glob-to-any-file: '*.md'
+
+dependencies:
+  - changed-files:
+      - any-glob-to-any-file: 'pom.xml'
+      - any-glob-to-any-file: '**/pom.xml'
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: '**/src/test/**'

@@ -1,0 +1,120 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [main]
+    # Re-run all checks whenever the PR title is edited or new commits arrive.
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+
+  # -------------------------------------------------------------------------
+  # Conventional Commits title check
+  # PR titles must follow  <type>(<optional scope>): <description>
+  # Valid types: feat | fix | docs | style | refactor | perf | test |
+  #              chore | ci | build | revert
+  # -------------------------------------------------------------------------
+  title:
+    name: PR Title (Conventional Commits)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Validate PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            chore
+            ci
+            build
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Z].+$
+          subjectPatternError: |
+            The PR title subject "{subject}" must start with an uppercase letter.
+            Example: feat: Add cross-server warp cooldown
+
+  # -------------------------------------------------------------------------
+  # Sanity check – no compiled build artifacts should ever be committed.
+  # Maven's `target/` directories are in .gitignore, but this catches
+  # accidental force-adds or bad .gitignore edits.
+  # -------------------------------------------------------------------------
+  no-build-artifacts:
+    name: No Build Artifacts Committed
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check for target/ directories in the index
+        run: |
+          BAD=$(git ls-files | grep -E '^[^/]+/target/' || true)
+          if [ -n "$BAD" ]; then
+            echo "::error::Committed build artifacts detected — remove target/ files from version control:"
+            echo "$BAD"
+            exit 1
+          fi
+          echo "No build artifacts committed."
+
+  # -------------------------------------------------------------------------
+  # Diff size guard
+  # Very large PRs are hard to review and often hide bugs.  Warn (but don't
+  # block) when a PR touches more than 800 non-generated lines.
+  # -------------------------------------------------------------------------
+  diff-size:
+    name: PR Diff Size
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Count changed lines (excluding generated / docs)
+        id: diff
+        run: |
+          LINES=$(git diff --stat origin/${{ github.base_ref }}...HEAD \
+            -- '*.java' '*.xml' '*.yml' '*.yaml' \
+            | tail -1 \
+            | grep -oP '\d+(?= insertion)' || echo 0)
+          echo "changed_lines=$LINES" >> "$GITHUB_OUTPUT"
+          echo "Changed Java/XML/YAML lines: $LINES"
+
+      - name: Warn on large diff
+        if: ${{ fromJson(steps.diff.outputs.changed_lines) > 800 }}
+        run: |
+          echo "::warning::This PR changes ${{ steps.diff.outputs.changed_lines }} lines. \
+          Consider splitting it into smaller, focused PRs to make review easier."
+
+  # -------------------------------------------------------------------------
+  # Auto-label based on which paths changed.
+  # Label definitions live in .github/labeler.yml.
+  # -------------------------------------------------------------------------
+  label:
+    name: Auto-label
+    runs-on: ubuntu-latest
+    # Labeling requires write access — only run on PRs from the same repo, not
+    # from forks (where GITHUB_TOKEN has read-only permissions).
+    if: github.event.pull_request.head.repo.full_name == github.repository
+
+    steps:
+      - name: Apply labels
+        uses: actions/labeler@v5
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          sync-labels: true
