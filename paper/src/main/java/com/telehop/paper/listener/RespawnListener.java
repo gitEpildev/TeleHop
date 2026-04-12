@@ -62,9 +62,9 @@ public final class RespawnListener implements Listener {
             return;
         }
 
-        if (plugin.permissionService().has(player, PermissionNodes.RESPAWN_BYPASS)) {
+        if (plugin.permissionService().hasExplicit(player, PermissionNodes.RESPAWN_BYPASS)) {
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
-                    + " has bypass permission — skipping.");
+                    + " has explicit bypass permission — skipping.");
             return;
         }
 
@@ -95,7 +95,7 @@ public final class RespawnListener implements Listener {
         plugin.getLogger().info("[RandomRespawn] " + player.getName() + " respawning...");
 
         if (!plugin.isFeatureEnabled("random-respawn")) return;
-        if (plugin.permissionService().has(player, PermissionNodes.RESPAWN_BYPASS)) return;
+        if (plugin.permissionService().hasExplicit(player, PermissionNodes.RESPAWN_BYPASS)) return;
 
         PaperSettings settings = plugin.settings();
         if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
