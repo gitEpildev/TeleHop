@@ -6,37 +6,43 @@ on:
   pull_request:
     branches: [main]
 
-# Cancel in-progress runs for the same ref so pushes during a build don't waste
-# minutes.  Push events use the branch ref; PR events use the PR number.
+# Cancel in-progress runs for the same ref so a rapid push doesn't waste minutes.
 concurrency:
   group: ci-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 permissions:
   contents: read
-  checks: write        # needed to publish JUnit test results as check annotations
-  pull-requests: write # needed to post the coverage comment on PRs
+  checks: write
+  pull-requests: write
 
-# ---------------------------------------------------------------------------
-# Shared Java setup parameters used by every job.
-# ---------------------------------------------------------------------------
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Pipeline overview
+#
+#  checkstyle ──┐
+#  compile    ──┤──► test ──┐
+#  validate   ──┘           └──► build
+#
+#  All three gate jobs must pass before the final JAR build runs.
+#  A failure in any gate is reported immediately without waiting for the others.
+# ─────────────────────────────────────────────────────────────────────────────
+
 jobs:
 
-  # -------------------------------------------------------------------------
-  # Job 1 – Checkstyle
-  # Runs first, fast feedback on style violations before waiting for tests.
-  # -------------------------------------------------------------------------
+  # ───────────────────────────────────────────────────────────────────────────
+  # Gate 1 — Checkstyle
+  # Fast style check. Runs in parallel with compile and validate.
+  # ───────────────────────────────────────────────────────────────────────────
   checkstyle:
     name: Checkstyle
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -48,18 +54,169 @@ jobs:
       - name: Run Checkstyle
         run: mvn -B checkstyle:check --no-transfer-progress
 
-  # -------------------------------------------------------------------------
-  # Job 2 – Tests + Coverage
-  # Runs unit tests for the common module and collects JaCoCo coverage.
-  # On pull requests a coverage summary is posted as a PR comment.
-  # -------------------------------------------------------------------------
-  test:
-    name: Test & Coverage
+  # ───────────────────────────────────────────────────────────────────────────
+  # Gate 2 — Full compilation
+  # Compiles ALL modules (common, paper, velocity). This catches broken imports,
+  # missing classes, and API mismatches in paper/velocity before tests run.
+  # Without this gate, a paper-module compile error would only be caught in the
+  # final build job — after the test gate had already passed.
+  # ───────────────────────────────────────────────────────────────────────────
+  compile:
+    name: Compile All Modules
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: maven
+
+      - name: Compile
+        run: mvn -B compile --no-transfer-progress
+
+      # Compile test sources too so broken test code is caught here, not during
+      # the test run where the error message is harder to read.
+      - name: Compile test sources
+        run: mvn -B test-compile --no-transfer-progress
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Gate 3 — Structural validation
+  # Checks that don't require Maven compilation but must pass before tests.
+  # ───────────────────────────────────────────────────────────────────────────
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ── 3a. Version consistency ──────────────────────────────────────────
+      # The version in pom.xml must match the version in plugin.yml and the
+      # Velocity @Plugin annotation. Catches the common mistake of bumping one
+      # but forgetting the others.
+      - name: Check version consistency
+        run: |
+          POM_VERSION=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | tr -d '[:space:]')
+          PLUGIN_VERSION=$(grep '^version:' paper/src/main/resources/plugin.yml | sed 's/version: //' | tr -d '[:space:]"')
+          VELOCITY_VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java | head -1 | tr -d '[:space:]')
+
+          echo "pom.xml:            $POM_VERSION"
+          echo "plugin.yml:         $PLUGIN_VERSION"
+          echo "Velocity @Plugin:   $VELOCITY_VERSION"
+
+          FAIL=0
+          if [ "$POM_VERSION" != "$PLUGIN_VERSION" ]; then
+            echo "::error file=paper/src/main/resources/plugin.yml::plugin.yml version ($PLUGIN_VERSION) does not match pom.xml ($POM_VERSION)"
+            FAIL=1
+          fi
+          if [ "$POM_VERSION" != "$VELOCITY_VERSION" ]; then
+            echo "::error file=velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java::Velocity @Plugin version ($VELOCITY_VERSION) does not match pom.xml ($POM_VERSION)"
+            FAIL=1
+          fi
+          [ $FAIL -eq 0 ] && echo "All versions consistent: $POM_VERSION" || exit 1
+
+      # ── 3b. YAML syntax validation ───────────────────────────────────────
+      # Validates every config template and language file with Python's yaml
+      # parser. Catches typos like missing quotes, bad indentation, duplicate
+      # keys, etc. before they reach a live server.
+      - name: Validate YAML files
+        run: |
+          python3 - <<'PYEOF'
+          import sys, os, glob, yaml
+
+          errors = []
+          files = (
+            glob.glob("paper/src/main/resources/config/*.yml") +
+            glob.glob("paper/src/main/resources/languages/*.yml")
+          )
+          if not files:
+            print("::warning::No YAML files found to validate.")
+            sys.exit(0)
+
+          for path in sorted(files):
+            try:
+              with open(path, "r", encoding="utf-8") as f:
+                yaml.safe_load(f)
+              print(f"  OK  {path}")
+            except yaml.YAMLError as e:
+              errors.append((path, str(e)))
+              print(f"  FAIL {path}: {e}")
+
+          if errors:
+            for path, msg in errors:
+              print(f"::error file={path}::{msg}")
+            sys.exit(1)
+          else:
+            print(f"All {len(files)} YAML files are valid.")
+          PYEOF
+
+      # ── 3c. Language file key parity ────────────────────────────────────
+      # Every non-English language file must contain every key present in
+      # en.yml. Missing keys cause silent English fallback in production which
+      # is confusing for players on other locales.
+      - name: Check language file key parity
+        run: |
+          python3 - <<'PYEOF'
+          import sys, yaml, glob
+
+          def load_keys(path):
+            with open(path, encoding="utf-8") as f:
+              data = yaml.safe_load(f) or {}
+            return set(data.keys())
+
+          en_keys = load_keys("paper/src/main/resources/languages/en.yml")
+          fail = False
+
+          for path in sorted(glob.glob("paper/src/main/resources/languages/*.yml")):
+            if path.endswith("/en.yml"):
+              continue
+            lang_keys = load_keys(path)
+            missing = en_keys - lang_keys
+            extra   = lang_keys - en_keys
+            if missing:
+              for k in sorted(missing):
+                print(f"::error file={path}::Missing key '{k}' (present in en.yml)")
+              fail = True
+            if extra:
+              for k in sorted(extra):
+                print(f"::warning file={path}::Extra key '{k}' not in en.yml")
+            if not missing:
+              print(f"  OK  {path} ({len(lang_keys)} keys)")
+
+          sys.exit(1 if fail else 0)
+          PYEOF
+
+      # ── 3d. No TODO / FIXME left in source ───────────────────────────────
+      # Blocks merging if any TODO or FIXME comment survives into main.
+      # Keeps the codebase clean and forces issues into GitHub Issues instead.
+      - name: Check for TODO / FIXME in source
+        run: |
+          FOUND=$(grep -rn --include="*.java" "TODO\|FIXME" \
+            common/src/main/java paper/src/main/java velocity/src/main/java 2>/dev/null || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::TODO/FIXME comments found — resolve them or open a GitHub Issue:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "No TODO/FIXME comments found."
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Tests + Coverage
+  # Runs after compilation succeeds. Uses `verify` (not just `test`) so JaCoCo
+  # report generation is guaranteed to run.
+  # On pull requests a coverage summary is posted as a PR comment.
+  # ───────────────────────────────────────────────────────────────────────────
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    needs: [compile]
+
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -69,10 +226,8 @@ jobs:
           cache: maven
 
       - name: Run Tests
-        run: mvn -B test -pl common --no-transfer-progress
+        run: mvn -B verify -pl common --no-transfer-progress
 
-      # Publish individual test case results as check-run annotations so
-      # failures are visible inline in the Files tab on a PR.
       - name: Publish JUnit Results
         if: always()
         uses: mikepenz/action-junit-report@v4
@@ -82,8 +237,6 @@ jobs:
           fail_on_failure: true
           detailed_summary: true
 
-      # Upload the HTML + XML JaCoCo report as a workflow artifact so
-      # developers can download and browse it locally.
       - name: Upload Coverage Report
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,33 +245,29 @@ jobs:
           path: common/target/site/jacoco/
           if-no-files-found: ignore
 
-      # On pull requests post a coverage summary comment and fail if overall
-      # line coverage drops below 70 % or changed-file coverage below 75 %.
       - name: Post Coverage Comment
         if: github.event_name == 'pull_request'
         uses: madrapps/jacoco-report@v1.7.1
         with:
           paths: common/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
-          min-coverage-overall: 70
-          min-coverage-changed-files: 75
+          min-coverage-overall: 75
+          min-coverage-changed-files: 80
           title: Test Coverage Report
           update-comment: true
 
-  # -------------------------------------------------------------------------
-  # Job 3 – Build
-  # Assembles the final shaded JARs only after checkstyle and tests pass.
-  # Artifacts are uploaded for push-to-main runs only so they don't pile up
-  # on every feature-branch PR.
-  # -------------------------------------------------------------------------
+  # ───────────────────────────────────────────────────────────────────────────
+  # Final build
+  # Only runs when ALL three gates pass. Produces the shaded JARs and uploads
+  # them as artifacts on pushes to main (not on PRs, to avoid artifact spam).
+  # ───────────────────────────────────────────────────────────────────────────
   build:
     name: Build JARs
     runs-on: ubuntu-latest
-    needs: [checkstyle, test]
+    needs: [checkstyle, test, validate]
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
@@ -127,8 +276,6 @@ jobs:
           distribution: ${{ env.JAVA_DISTRIBUTION }}
           cache: maven
 
-      # Tests already ran in the `test` job — skip them here to avoid
-      # re-running the suite a second time.
       - name: Build
         run: mvn -B package -DskipTests --no-transfer-progress
 

@@ -48,6 +48,28 @@ jobs:
             Example: feat: Add cross-server warp cooldown
 
   # -------------------------------------------------------------------------
+  # Full compilation check on PRs
+  # Mirrors the compile gate in ci.yml so contributors get fast feedback on
+  # broken paper/velocity code without waiting for the full CI pipeline.
+  # -------------------------------------------------------------------------
+  compile:
+    name: Compile All Modules
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compile all modules
+        run: mvn -B compile test-compile --no-transfer-progress
+
+  # -------------------------------------------------------------------------
   # Sanity check – no compiled build artifacts should ever be committed.
   # Maven's `target/` directories are in .gitignore, but this catches
   # accidental force-adds or bad .gitignore edits.
