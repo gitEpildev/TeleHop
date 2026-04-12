@@ -100,7 +100,7 @@ When a feature is `false`, its commands still respond gracefully ("this feature 
 
 | Server type | Suggested disabled |
 |-------------|-------------------|
-| Lobby / Hub | `rtp`, `random-respawn` (homes are blocked via `home.yml` blocked-servers) |
+| Lobby / Hub | `random-respawn` (homes are blocked via `home.yml` blocked-servers) |
 | Survival | All enabled |
 | Minigame | `tpa`, `warps`, `homes`, `back`, `random-respawn` |
 
@@ -224,7 +224,7 @@ Enable or disable the entire feature in `features.yml` under `random-respawn`.
 | Key | Default | Description |
 |-----|---------|-------------|
 | `random-respawn.world` | `world` | World that safe locations are searched in. Must be loaded on this server. |
-| `random-respawn.radius` | `5000` | Max distance from 0,0 on both X and Z axes. A coordinate is chosen randomly in `[-radius, +radius]`. |
+| `random-respawn.radius` | `10000` | Max distance from 0,0 on both X and Z axes. A coordinate is chosen randomly in `[-radius, +radius]`. |
 | `random-respawn.respect-bed-spawn` | `true` | If `true` and the player's bed is accessible, they respawn at their bed instead of randomly. Set `false` to always randomize. |
 | `random-respawn.respect-anchor-spawn` | `true` | If `true` and the player's respawn anchor is charged, they respawn there instead of randomly. Set `false` to always randomize. |
 
@@ -232,18 +232,19 @@ Enable or disable the entire feature in `features.yml` under `random-respawn`.
 
 The safe-location search runs **asynchronously** the moment a player dies — while they're looking at the death screen. By the time they click "Respawn" the location is already found and waiting. The main server thread is never blocked.
 
-The system reuses the same safety checks as `/rtp`:
+Surface detection uses Paper's `HeightMap.MOTION_BLOCKING` API for reliable results even on chunks that have never been explored. Safety checks:
 - Solid non-lethal floor (no lava, magma, cactus, fire, etc.)
 - Two air blocks above (room to stand)
-- Sky access in the overworld (rejects caves and underground pockets)
 - No adjacent water or lava at foot level
+- No ice or waterlogged blocks
 - Minimum Y of 50 in the overworld
+- Nether uses a separate top-down scan (Y 120 → bedrock) to find gaps between layers
 
-**Fallback:** If no safe spot is found within 300 attempts, the player respawns at the world spawn point and a warning is logged to console.
+**Fallback:** If no safe spot is found within 200 attempts, the player respawns at the world spawn point and a warning is logged to console.
 
 **Hub server exempt:** If `server-name` matches `hub-server` in `general.yml`, random respawn is completely skipped on that server — players are sent to the set spawn point as normal. This is hardcoded and cannot be overridden by config; it ensures the lobby always behaves predictably regardless of what `features.yml` says.
 
-**Bypass:** Players with `telehop.respawn.bypass` always use the default respawn location.
+**No bypass:** Random respawn applies unconditionally to all players on survival servers. There is no bypass permission — OP, admin, and regular players all respawn randomly on death.
 
 ---
 
@@ -308,7 +309,6 @@ Assign via LuckPerms: `lp user/group <name> permission set <node> [true/false]`
 | `telehop.rtp.bypassdelay` | Skip the `/rtp` warmup countdown |
 | `telehop.tpa.bypasscooldown` | Skip the TPA send cooldown |
 | `telehop.warps.unlimited` | No player warp slot limit |
-| `telehop.respawn.bypass` | Always respawn at default location, skipping random respawn |
 
 ### Per-warp access
 
@@ -408,7 +408,6 @@ servers:
 
 ── Recommended features.yml for Lobby ─────────────────
 features:
-  rtp: false
   random-respawn: false
 
 ── All three servers share the same database.yml ───────

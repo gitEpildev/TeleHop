@@ -26,7 +26,6 @@ public final class PermissionNodes {
     public static final String HOME_LIMIT_PREFIX = "telehop.homes.";
     public static final String BACK = "telehop.back";
     public static final String BACK_DEATH = "telehop.back.death";
-    public static final String RESPAWN_BYPASS = "telehop.respawn.bypass";
 
     private PermissionNodes() {
     }

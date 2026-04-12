@@ -9,11 +9,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 - **Random Respawn** — players respawn at a random safe location on death instead of world spawn
-  - Fully async safe-location search using Paper's chunk API — no main thread blocking
+  - Fully async safe-location search using Paper's HeightMap API — no main thread blocking
   - Configurable via `config/respawn.yml` (world, radius, bed/anchor respect)
   - Feature toggle in `features.yml` under `random-respawn`
   - Automatically skipped on the hub server
-  - `telehop.respawn.bypass` permission for admins/staff (default: OP)
+  - Applies unconditionally to all players — no bypass permission, no exceptions
 - **Configuration Wiki** — `WIKI.md` extracted into `plugins/TeleHop/config/` on first run
   - Full reference for every config file, permission node, and admin command
   - Upgrade guide for migrating from previous versions
@@ -28,10 +28,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
   - PR compile check for immediate contributor feedback
 
 ### Fixed
+- Random respawn failing on unexplored chunks — the sky-light check (`getLightFromSky`) returned 0 on freshly generated chunks (neighbours not loaded), rejecting all 200 attempts; replaced with Paper's `HeightMap.MOTION_BLOCKING` for reliable surface detection
 - Random respawn race condition — previously reused RtpManager's sync-bounce pattern which was too slow; now uses dedicated `RandomRespawnService` with Paper async chunk loading
 - If the location search finishes after the player clicks "Respawn", the player is teleported on the next tick instead of being silently dropped at world spawn
 
 ### Removed
+- `telehop.respawn.bypass` permission — random respawn is now unconditional for all players on survival servers
 - Legacy monolithic `config.yml` resource — split config files under `config/` are the sole source of truth; auto-migration from old `config.yml` still works for existing installs
 
 ---

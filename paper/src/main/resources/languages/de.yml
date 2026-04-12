@@ -144,7 +144,6 @@ perms-bypass-header: "<yellow>  Bypass (Standard: OP)"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— RTP-Abklingzeit überspringen"
 perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— RTP-Countdown überspringen"
 perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— TPA-Abklingzeit überspringen"
-perms-respawn-bypass: "<gray>    <aqua>telehop.respawn.bypass</aqua> <dark_gray>— Zufälliges Respawnen überspringen, Standard verwenden"
 
 # ── Homes ────────────────────────────────────────────────────────────────
 home-set: "<green>Home <gold><slot></gold> set at your current location."

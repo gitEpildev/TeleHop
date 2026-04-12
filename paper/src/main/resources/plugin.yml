@@ -124,6 +124,3 @@ permissions:
   telehop.warps.unlimited:
     description: Unlimited player warps
     default: op
-  telehop.respawn.bypass:
-    description: Bypass random respawn — always respawn at default location
-    default: false

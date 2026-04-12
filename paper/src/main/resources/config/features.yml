@@ -42,5 +42,5 @@ features:
 
   # Random respawn on death — teleports players to a random safe
   # location in the configured world instead of the world spawn point.
-  # Players with telehop.respawn.bypass are unaffected.
+  # Applies to all players unconditionally (no bypass).
   random-respawn: true

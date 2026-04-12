@@ -144,7 +144,6 @@ perms-bypass-header: "<yellow>  绕过（默认：OP）"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— 跳过随机传送冷却"
 perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— 跳过随机传送倒计时"
 perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— 跳过TPA冷却"
-perms-respawn-bypass: "<gray>    <aqua>telehop.respawn.bypass</aqua> <dark_gray>— 跳过随机重生，使用默认位置"
 
 # ── Homes ────────────────────────────────────────────────────────────────
 home-set: "<green>Home <gold><slot></gold> set at your current location."

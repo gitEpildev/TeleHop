@@ -12,7 +12,7 @@ Cross-server teleportation plugin for **Paper + Velocity** networks.
 - **Random Teleport** `/rtp` — GUI region + dimension picker, safe landing, configurable radius
 - **Homes** `/home`, `/sethome` — GUI with configurable bed colours, permission-based slots (1–5), blocked servers, cross-server
 - **Back** `/back`, `/back death` — return to last teleport or death location, cross-server
-- **Random Respawn** — async safe-location search on death, applied at respawn; respects beds, anchors, hub server, and bypass permission
+- **Random Respawn** — async safe-location search on death, applied at respawn; respects beds and anchors; automatically skipped on the hub server; applies to all players unconditionally
 - **Admin Teleport** `/tp`, `/tphere` — cross-server admin TP
 - **Teleport Effects** — configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back)
 - **Feature Toggles** — enable/disable any module per server without removing commands
@@ -123,7 +123,8 @@ telehop-plugin/
 │       │   ├── TeleportService.java        Spawn, warp, RTP, home, back + effects
 │       │   ├── TeleportEffectPlayer.java   Particles & sounds per teleport type
 │       │   ├── RandomRespawnManager.java   Thread-safe one-shot location staging for random respawn
-│       │   ├── RtpManager.java             Safe location search (shared by /rtp and random respawn)
+│       │   ├── RandomRespawnService.java    Async safe-location search for death respawn (HeightMap-based)
+│       │   ├── RtpManager.java             Safe location search for /rtp command
 │       │   ├── BackLocationManager.java    In-memory /back locations (session-only)
 │       │   ├── TpaRuntimeManager.java      TPA requests, cooldowns, toggle state
 │       │   ├── MessageService.java         Language keys + MiniMessage deserialisation
