@@ -54,13 +54,26 @@ public final class RespawnListener implements Listener {
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
-        if (!plugin.isFeatureEnabled("random-respawn")) return;
-
         Player player = event.getEntity();
-        if (plugin.permissionService().has(player, PermissionNodes.RESPAWN_BYPASS)) return;
+        plugin.getLogger().info("[RandomRespawn] " + player.getName() + " died — processing...");
+
+        if (!plugin.isFeatureEnabled("random-respawn")) {
+            plugin.getLogger().info("[RandomRespawn] Feature disabled — skipping.");
+            return;
+        }
+
+        if (plugin.permissionService().has(player, PermissionNodes.RESPAWN_BYPASS)) {
+            plugin.getLogger().info("[RandomRespawn] " + player.getName()
+                    + " has bypass permission — skipping.");
+            return;
+        }
 
         PaperSettings settings = plugin.settings();
-        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
+        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) {
+            plugin.getLogger().info("[RandomRespawn] Hub server ("
+                    + settings.serverName() + " == " + settings.hubServer() + ") — skipping.");
+            return;
+        }
 
         World world = Bukkit.getWorld(settings.respawnWorld());
         if (world == null) {
@@ -69,39 +82,70 @@ public final class RespawnListener implements Listener {
             return;
         }
 
+        plugin.getLogger().info("[RandomRespawn] Starting async search for "
+                + player.getName() + " in world '" + settings.respawnWorld()
+                + "' radius " + settings.respawnRadius());
         CompletableFuture<Location> future = respawnService.findSafeLocation(world, settings.respawnRadius());
         respawnManager.stage(player.getUniqueId(), future);
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     public void onRespawn(PlayerRespawnEvent event) {
-        if (!plugin.isFeatureEnabled("random-respawn")) return;
-
         Player player = event.getPlayer();
+        plugin.getLogger().info("[RandomRespawn] " + player.getName() + " respawning...");
+
+        if (!plugin.isFeatureEnabled("random-respawn")) return;
         if (plugin.permissionService().has(player, PermissionNodes.RESPAWN_BYPASS)) return;
 
         PaperSettings settings = plugin.settings();
         if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
 
-        if (settings.respawnRespectBed() && event.isBedSpawn()) return;
-        if (settings.respawnRespectAnchor() && event.isAnchorSpawn()) return;
+        if (settings.respawnRespectBed() && event.isBedSpawn()) {
+            plugin.getLogger().info("[RandomRespawn] " + player.getName()
+                    + " has bed spawn — respecting bed.");
+            return;
+        }
+        if (settings.respawnRespectAnchor() && event.isAnchorSpawn()) {
+            plugin.getLogger().info("[RandomRespawn] " + player.getName()
+                    + " has anchor spawn — respecting anchor.");
+            return;
+        }
 
         CompletableFuture<Location> future = respawnManager.consume(player.getUniqueId());
-        if (future == null) return;
+        if (future == null) {
+            plugin.getLogger().warning("[RandomRespawn] No staged future for "
+                    + player.getName() + " — falling back to default.");
+            return;
+        }
 
         if (future.isDone() && !future.isCompletedExceptionally()) {
             Location location = future.getNow(null);
             if (location != null) {
+                plugin.getLogger().info("[RandomRespawn] Applying location for "
+                        + player.getName() + ": " + formatLoc(location));
                 event.setRespawnLocation(location);
+            } else {
+                plugin.getLogger().warning("[RandomRespawn] Search returned null for "
+                        + player.getName() + " — no safe location found.");
             }
         } else {
+            plugin.getLogger().info("[RandomRespawn] Future still pending for "
+                    + player.getName() + " — will teleport after respawn.");
             future.thenAccept(location -> {
                 if (location != null && player.isOnline()) {
-                    Bukkit.getScheduler().runTask(plugin, () ->
-                            player.teleportAsync(location, PlayerTeleportEvent.TeleportCause.PLUGIN));
+                    Bukkit.getScheduler().runTask(plugin, () -> {
+                        plugin.getLogger().info("[RandomRespawn] Late teleport for "
+                                + player.getName() + ": " + formatLoc(location));
+                        player.teleportAsync(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
+                    });
                 }
             });
         }
+    }
+
+    private static String formatLoc(Location loc) {
+        return String.format("%.0f, %.0f, %.0f in %s",
+                loc.getX(), loc.getY(), loc.getZ(), loc.getWorld().getName());
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
