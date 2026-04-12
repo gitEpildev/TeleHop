@@ -16,7 +16,7 @@ random-respawn:
 
   # Maximum distance from 0,0 on both X and Z axes.
   # A random coordinate in [-radius, +radius] is selected for each axis.
-  radius: 5000
+  radius: 10000
 
   # If the player has a bed set and their bed is accessible, skip
   # random respawn and send them to their bed instead.

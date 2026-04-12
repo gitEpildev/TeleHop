@@ -23,12 +23,10 @@ public class PermissionService {
         if (luckPerms != null) {
             User user = luckPerms.getUserManager().getUser(player.getUniqueId());
             if (user != null) {
-                CachedPermissionData permissions = user.getCachedData().getPermissionData();
-                if (permissions.checkPermission(node).asBoolean()) {
-                    return true;
-                }
+                return user.getCachedData().getPermissionData()
+                        .checkPermission(node).asBoolean();
             }
         }
-        return player.isOp() || player.hasPermission(node);
+        return player.hasPermission(node);
     }
 }
