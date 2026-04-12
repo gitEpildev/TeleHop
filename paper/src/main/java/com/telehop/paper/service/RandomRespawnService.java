@@ -72,34 +72,47 @@ public final class RandomRespawnService {
     }
 
     /**
-     * Checks a single X/Z column top-down for a safe standing position.
-     * Must be called when the chunk at (x, z) is loaded.
+     * Checks a single X/Z column for a safe standing position using the
+     * heightmap for reliable surface detection — avoids sky-light checks
+     * that return 0 on freshly generated (never-explored) chunks.
      */
     private Location checkColumn(World world, int x, int z) {
-        int minY = Math.max(world.getMinHeight() + 1, -63);
-        int maxY = world.getMaxHeight() - 2;
         boolean isNether = world.getEnvironment() == World.Environment.NETHER;
-        boolean isOverworld = world.getEnvironment() == World.Environment.NORMAL;
 
-        if (isNether) maxY = Math.min(maxY, 120);
+        if (isNether) {
+            return checkColumnNether(world, x, z);
+        }
 
-        for (int y = maxY; y >= minY; y--) {
+        int surfaceY = world.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
+        if (surfaceY < 50) return null;
+
+        Block floor = world.getBlockAt(x, surfaceY, z);
+        Block feet = world.getBlockAt(x, surfaceY + 1, z);
+        Block head = world.getBlockAt(x, surfaceY + 2, z);
+
+        if (!isSafeFloor(world, floor, surfaceY)) return null;
+        if (!feet.getType().isAir() || !head.getType().isAir()) return null;
+
+        Material floorType = floor.getType();
+        if (floorType == Material.ICE || floorType == Material.PACKED_ICE
+                || floorType == Material.BLUE_ICE || floorType == Material.FROSTED_ICE) return null;
+
+        if (floor.getBlockData() instanceof org.bukkit.block.data.Waterlogged wl && wl.isWaterlogged()) return null;
+        if (hasAdjacentLiquid(world, x, surfaceY + 1, z)) return null;
+
+        return new Location(world, x + 0.5, surfaceY + 1, z + 0.5);
+    }
+
+    private Location checkColumnNether(World world, int x, int z) {
+        int minY = Math.max(world.getMinHeight() + 1, -63);
+        for (int y = 120; y >= minY; y--) {
             Block floor = world.getBlockAt(x, y - 1, z);
             Block feet = world.getBlockAt(x, y, z);
             Block head = world.getBlockAt(x, y + 1, z);
 
             if (!isSafeFloor(world, floor, y)) continue;
             if (!feet.getType().isAir() || !head.getType().isAir()) continue;
-
-            if (isOverworld && feet.getLightFromSky() < 10) continue;
-
-            Material floorType = floor.getType();
-            if (floorType == Material.ICE || floorType == Material.PACKED_ICE
-                    || floorType == Material.BLUE_ICE || floorType == Material.FROSTED_ICE) continue;
-
-            if (floor.getBlockData() instanceof org.bukkit.block.data.Waterlogged wl && wl.isWaterlogged()) continue;
             if (hasAdjacentLiquid(world, x, y, z)) continue;
-            if (isOverworld && y < 50) continue;
 
             return new Location(world, x + 0.5, y, z + 0.5);
         }

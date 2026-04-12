@@ -1,6 +1,5 @@
 package com.telehop.paper.listener;
 
-import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.service.RandomRespawnManager;
@@ -62,16 +61,9 @@ public final class RespawnListener implements Listener {
             return;
         }
 
-        if (plugin.permissionService().hasExplicit(player, PermissionNodes.RESPAWN_BYPASS)) {
-            plugin.getLogger().info("[RandomRespawn] " + player.getName()
-                    + " has explicit bypass permission — skipping.");
-            return;
-        }
-
         PaperSettings settings = plugin.settings();
         if (settings.serverName().equalsIgnoreCase(settings.hubServer())) {
-            plugin.getLogger().info("[RandomRespawn] Hub server ("
-                    + settings.serverName() + " == " + settings.hubServer() + ") — skipping.");
+            plugin.getLogger().info("[RandomRespawn] Hub server — skipping.");
             return;
         }
 
@@ -95,7 +87,6 @@ public final class RespawnListener implements Listener {
         plugin.getLogger().info("[RandomRespawn] " + player.getName() + " respawning...");
 
         if (!plugin.isFeatureEnabled("random-respawn")) return;
-        if (plugin.permissionService().hasExplicit(player, PermissionNodes.RESPAWN_BYPASS)) return;
 
         PaperSettings settings = plugin.settings();
         if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
