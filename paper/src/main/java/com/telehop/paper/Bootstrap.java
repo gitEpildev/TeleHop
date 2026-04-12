@@ -45,6 +45,7 @@ import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.config.StorageManager;
 import com.telehop.paper.handler.PacketHandler;
 import com.telehop.paper.listener.PaperPlayerListener;
+import com.telehop.paper.listener.RespawnListener;
 import com.telehop.paper.messaging.PaperMessagingManager;
 import com.telehop.paper.service.AuditLogger;
 import com.telehop.paper.service.BackLocationManager;
@@ -52,6 +53,7 @@ import com.telehop.paper.service.MessageService;
 import com.telehop.paper.service.NetworkPlayerNameCache;
 import com.telehop.paper.service.PendingTeleportManager;
 import com.telehop.paper.service.PermissionService;
+import com.telehop.paper.service.RandomRespawnManager;
 import com.telehop.paper.service.RtpManager;
 import com.telehop.paper.service.ServiceRegistry;
 import com.telehop.paper.service.TeleportEffectPlayer;
@@ -83,7 +85,8 @@ public final class Bootstrap {
      */
     private static final String[] CONFIG_TEMPLATES = {
             "config/general.yml", "config/database.yml", "config/features.yml",
-            "config/teleport.yml", "config/tpa.yml", "config/rtp.yml", "config/home.yml"
+            "config/teleport.yml", "config/tpa.yml", "config/rtp.yml",
+            "config/home.yml", "config/respawn.yml", "config/WIKI.md"
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
@@ -104,6 +107,7 @@ public final class Bootstrap {
         reg.setRtpManager(new RtpManager(plugin));
         reg.setTpaRuntimeManager(new TpaRuntimeManager());
         reg.setNetworkPlayerNameCache(new NetworkPlayerNameCache());
+        reg.setRandomRespawnManager(new RandomRespawnManager());
 
         StorageManager storage = new StorageManager(plugin);
         storage.load();
@@ -140,6 +144,8 @@ public final class Bootstrap {
         reg.setMessaging(messaging);
 
         plugin.getServer().getPluginManager().registerEvents(new PaperPlayerListener(plugin), plugin);
+        plugin.getServer().getPluginManager().registerEvents(
+                new RespawnListener(plugin, reg.randomRespawnManager()), plugin);
         registerCommands(plugin, reg);
         startScheduledTasks(plugin, reg);
 

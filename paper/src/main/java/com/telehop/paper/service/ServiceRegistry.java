@@ -91,4 +91,8 @@ public final class ServiceRegistry {
     private TeleportEffectPlayer teleportEffectPlayer;
     public TeleportEffectPlayer teleportEffectPlayer() { return teleportEffectPlayer; }
     public void setTeleportEffectPlayer(TeleportEffectPlayer teleportEffectPlayer) { this.teleportEffectPlayer = teleportEffectPlayer; }
+
+    private RandomRespawnManager randomRespawnManager;
+    public RandomRespawnManager randomRespawnManager() { return randomRespawnManager; }
+    public void setRandomRespawnManager(RandomRespawnManager randomRespawnManager) { this.randomRespawnManager = randomRespawnManager; }
 }

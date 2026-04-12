@@ -144,6 +144,7 @@ perms-bypass-header: "<yellow>  Bypass (standaard: OP)"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>— Sla RTP-cooldown over"
 perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gray>— Sla RTP-aftelling over"
 perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— Sla TPA-cooldown over"
+perms-respawn-bypass: "<gray>    <aqua>telehop.respawn.bypass</aqua> <dark_gray>— Sla willekeurig respawn over, gebruik standaard"
 
 # ── Homes ────────────────────────────────────────────────────────────────
 home-set: "<green>Home <gold><slot></gold> set at your current location."

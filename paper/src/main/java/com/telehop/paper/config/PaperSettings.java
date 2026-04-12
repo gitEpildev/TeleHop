@@ -47,7 +47,11 @@ public record PaperSettings(
         String homeWorldEnd,
         Map<String, String> homeServerColors,
         Set<String> homeBlockedServers,
-        Map<String, TeleportEffect> teleportEffects
+        Map<String, TeleportEffect> teleportEffects,
+        String respawnWorld,
+        int respawnRadius,
+        boolean respawnRespectBed,
+        boolean respawnRespectAnchor
 ) {
 
     public record TeleportEffect(
@@ -68,6 +72,7 @@ public record PaperSettings(
         FileConfiguration tpaFile = loadYaml(configDir, "tpa.yml");
         FileConfiguration rtpFile = loadYaml(configDir, "rtp.yml");
         FileConfiguration homeFile = loadYaml(configDir, "home.yml");
+        FileConfiguration respawnFile = loadYaml(configDir, "respawn.yml");
 
         DatabaseConfig db = new DatabaseConfig(
                 database.getString("mysql.host", "127.0.0.1"),
@@ -96,6 +101,7 @@ public record PaperSettings(
         features.put("homes", featuresFile.getBoolean("features.homes", true));
         features.put("back", featuresFile.getBoolean("features.back", true));
         features.put("tpa-toggle", featuresFile.getBoolean("features.tpa-toggle", true));
+        features.put("random-respawn", featuresFile.getBoolean("features.random-respawn", true));
 
         Map<String, TeleportEffect> effects = loadEffects(teleportFile);
 
@@ -131,7 +137,11 @@ public record PaperSettings(
                 Collections.unmodifiableMap(loadServerColors(homeFile)),
                 homeFile.getStringList("homes.blocked-servers").stream()
                         .map(String::toLowerCase).collect(Collectors.toUnmodifiableSet()),
-                Collections.unmodifiableMap(effects)
+                Collections.unmodifiableMap(effects),
+                respawnFile.getString("random-respawn.world", "world"),
+                respawnFile.getInt("random-respawn.radius", 5000),
+                respawnFile.getBoolean("random-respawn.respect-bed-spawn", true),
+                respawnFile.getBoolean("random-respawn.respect-anchor-spawn", true)
         );
     }
 
@@ -190,7 +200,11 @@ public record PaperSettings(
                 "<gradient:dark_purple:blue>The End</gradient>",
                 Map.of(),
                 Set.of("lobby"),
-                Map.of()
+                Map.of(),
+                "world",
+                5000,
+                true,
+                true
         );
     }
 

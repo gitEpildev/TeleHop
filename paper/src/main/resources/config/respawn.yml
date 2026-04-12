@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop — Random Respawn Configuration
+# ═══════════════════════════════════════════════════════════════════════
+#  Controls where players respawn after death.
+#
+#  When enabled, a safe location is pre-computed asynchronously at the
+#  moment of death and applied at respawn — no blocking the main thread.
+#
+#  Reloadable with /telehop reload (no restart needed).
+#  Feature toggle lives in features.yml under "random-respawn".
+
+random-respawn:
+  # World that random respawn locations are generated in.
+  # Must be a world loaded on this server (e.g. world, world_nether).
+  world: "world"
+
+  # Maximum distance from 0,0 on both X and Z axes.
+  # A random coordinate in [-radius, +radius] is selected for each axis.
+  radius: 5000
+
+  # If the player has a bed set and their bed is accessible, skip
+  # random respawn and send them to their bed instead.
+  # Set to false to always randomize regardless of bed.
+  respect-bed-spawn: true
+
+  # If the player has a charged respawn anchor set, skip random respawn
+  # and send them to their anchor instead.
+  # Set to false to always randomize regardless of anchor.
+  respect-anchor-spawn: true

@@ -1,5 +1,5 @@
 name: TeleHop
-version: 1.0.1
+version: 1.0.2
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]
@@ -123,4 +123,7 @@ permissions:
     default: op
   telehop.warps.unlimited:
     description: Unlimited player warps
+    default: op
+  telehop.respawn.bypass:
+    description: Bypass random respawn — always respawn at default location
     default: op
