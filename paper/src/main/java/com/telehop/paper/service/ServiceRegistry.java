@@ -95,4 +95,8 @@ public final class ServiceRegistry {
     private RandomRespawnManager randomRespawnManager;
     public RandomRespawnManager randomRespawnManager() { return randomRespawnManager; }
     public void setRandomRespawnManager(RandomRespawnManager randomRespawnManager) { this.randomRespawnManager = randomRespawnManager; }
+
+    private RandomRespawnService randomRespawnService;
+    public RandomRespawnService randomRespawnService() { return randomRespawnService; }
+    public void setRandomRespawnService(RandomRespawnService randomRespawnService) { this.randomRespawnService = randomRespawnService; }
 }

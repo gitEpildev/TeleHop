@@ -54,6 +54,7 @@ import com.telehop.paper.service.NetworkPlayerNameCache;
 import com.telehop.paper.service.PendingTeleportManager;
 import com.telehop.paper.service.PermissionService;
 import com.telehop.paper.service.RandomRespawnManager;
+import com.telehop.paper.service.RandomRespawnService;
 import com.telehop.paper.service.RtpManager;
 import com.telehop.paper.service.ServiceRegistry;
 import com.telehop.paper.service.TeleportEffectPlayer;
@@ -108,6 +109,7 @@ public final class Bootstrap {
         reg.setTpaRuntimeManager(new TpaRuntimeManager());
         reg.setNetworkPlayerNameCache(new NetworkPlayerNameCache());
         reg.setRandomRespawnManager(new RandomRespawnManager());
+        reg.setRandomRespawnService(new RandomRespawnService(plugin));
 
         StorageManager storage = new StorageManager(plugin);
         storage.load();
@@ -145,7 +147,7 @@ public final class Bootstrap {
 
         plugin.getServer().getPluginManager().registerEvents(new PaperPlayerListener(plugin), plugin);
         plugin.getServer().getPluginManager().registerEvents(
-                new RespawnListener(plugin, reg.randomRespawnManager()), plugin);
+                new RespawnListener(plugin, reg.randomRespawnManager(), reg.randomRespawnService()), plugin);
         registerCommands(plugin, reg);
         startScheduledTasks(plugin, reg);
 
