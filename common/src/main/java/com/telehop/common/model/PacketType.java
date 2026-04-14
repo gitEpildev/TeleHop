@@ -27,6 +27,7 @@ public enum PacketType {
     SPAWN_REQUEST,
     TELEPORT_TO_PLAYER,
     ADMIN_TP_REQUEST,
+    ADMIN_TP_TO_COORDS,
     HOME_TELEPORT,
     BACK_TELEPORT,
     /** Sent when a player has TPA requests disabled; routed back to the sender's server. */

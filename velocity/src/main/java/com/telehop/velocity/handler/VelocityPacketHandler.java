@@ -52,6 +52,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             case PLAYER_LIST_REQUEST   -> handlePlayerListRequest(packet);
             case TPA_ACCEPT            -> handleTpaAccept(packet);
             case ADMIN_TP_REQUEST      -> handleAdminTeleport(packet);
+            case ADMIN_TP_TO_COORDS    -> handleAdminTpToCoords(packet);
             default -> {}
         }
     }
@@ -201,6 +202,24 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         } else {
             ensureTeleport(target, sender, targetServer, senderServer);
         }
+    }
+
+    private void handleAdminTpToCoords(NetworkPacket packet) {
+        String targetName = packet.get("targetName");
+        Optional<Player> targetOpt = proxy.getPlayer(targetName);
+        if (targetOpt.isEmpty()) return;
+
+        Player target = targetOpt.get();
+        String targetServer = target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
+        if (targetServer == null) return;
+
+        NetworkPacket forward = NetworkPacket.request(PacketType.ADMIN_TP_TO_COORDS, "velocity", targetServer)
+                .put("targetUuid", target.getUniqueId().toString())
+                .put("world", packet.get("world"))
+                .put("x", packet.get("x"))
+                .put("y", packet.get("y"))
+                .put("z", packet.get("z"));
+        sendWithRetry(targetServer, forward, target.getUniqueId());
     }
 
     private void handleAdminTeleport(NetworkPacket packet) {

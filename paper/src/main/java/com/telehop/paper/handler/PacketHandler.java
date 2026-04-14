@@ -40,6 +40,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
             case TPA_CANCEL                 -> handleTpaCancel(packet);
             case RTP_REQUEST                -> handleRtpRequest(packet);
             case TELEPORT_TO_PLAYER         -> handleTeleportToPlayer(packet);
+            case ADMIN_TP_TO_COORDS         -> handleAdminTpToCoords(packet);
             case PWARP_TELEPORT             -> handlePwarpTeleport(packet);
             case HOME_TELEPORT              -> handleHomeTeleport(packet);
             case BACK_TELEPORT              -> handleBackTeleport(packet);
@@ -147,6 +148,18 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         if (actor != null && target != null) {
             actor.teleportAsync(target.getLocation());
         }
+    }
+
+    private void handleAdminTpToCoords(NetworkPacket packet) {
+        Player target = Bukkit.getPlayer(UUID.fromString(packet.get("targetUuid")));
+        if (target == null) return;
+        World world = Bukkit.getWorld(packet.get("world"));
+        if (world == null) world = target.getWorld();
+        Location dest = new Location(world,
+                Double.parseDouble(packet.get("x")),
+                Double.parseDouble(packet.get("y")),
+                Double.parseDouble(packet.get("z")));
+        target.teleportAsync(dest);
     }
 
     private void handlePwarpTeleport(NetworkPacket packet) {

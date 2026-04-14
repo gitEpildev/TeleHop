@@ -19,6 +19,7 @@ no-permission: "<red>Nie masz uprawnień do użycia tej komendy."
 player-not-found: "<red>Ten gracz nie jest online."
 console-not-allowed: "<red>Ta komenda może być użyta tylko w grze."
 feature-disabled: "<red>Ta funkcja jest wyłączona na tym serwerze."
+invalid-coords: "<red>Nieprawidłowe współrzędne. Użycie: /tp <x> <y> <z> lub /tp <gracz> <x> <y> <z>"
 
 # ── TPA ─────────────────────────────────────────────────────────────────
 request-sent: "<aqua>Prośba o teleportację wysłana do <gold><target></gold><aqua>."
@@ -110,7 +111,7 @@ help-pwarp-tp: "<gray>  <aqua>/pwarp <name></aqua> <dark_gray>— Teleportuj do 
 help-pwarp-tp-other: "<gray>  <aqua>/pwarp <player> <name></aqua> <dark_gray>— Teleportuj do publicznego warpu"
 help-pwarp-public: "<gray>  <aqua>/pwarp public <name></aqua> <dark_gray>— Przełącz publiczny/prywatny"
 help-admin-header: "<yellow><bold>Admin</bold></yellow>"
-help-tp: "<gray>  <aqua>/tp <player></aqua> <dark_gray>— Teleportacja admina (cross-server)"
+help-tp: "<gray>  <aqua>/tp <gracz|x y z></aqua> <dark_gray>— Teleportacja admina: gracz, g1→g2 lub koordynaty (cross-server)"
 help-tphere: "<gray>  <aqua>/tphere <player></aqua> <dark_gray>— Przyciągnij gracza do siebie"
 help-listwarps: "<gray>  <aqua>/listwarps [player]</aqua> <dark_gray>— Pokaż wszystkie warpy graczy"
 help-forcedelwarp: "<gray>  <aqua>/forcedelwarp <name></aqua> <dark_gray>— Wymuś usunięcie admin warpu"

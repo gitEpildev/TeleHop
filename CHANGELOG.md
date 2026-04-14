@@ -5,6 +5,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [Unreleased]
+
+### Added
+- **Coordinate teleportation** — `/tp` now accepts `x y z` and `player x y z` forms
+  - `/tp <x> <y> <z>` — teleports the sender to coordinates in their current world
+  - `/tp <player> <x> <y> <z>` — teleports a named player to coordinates; works cross-server via a new `ADMIN_TP_TO_COORDS` packet
+  - Invalid coordinates produce a localised `invalid-coords` message in all 6 languages
+- **Permission-gated tab complete** — `/tp` and `/tphere` are now hidden from the brigadier command tree for players without `telehop.tp` / `telehop.tphere` respectively; `telehop reload` and `telehop perms` are similarly hidden from non-admins
+
+### Changed
+- `AdminTeleportCommand` extended from 2 optional strings to 4 optional strings to support coordinate forms without breaking existing player-name modes
+- `PacketType` enum gains `ADMIN_TP_TO_COORDS`
+
+---
+
 ## [1.0.2] — 2026-04-12
 
 ### Added

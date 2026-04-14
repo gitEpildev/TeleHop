@@ -78,9 +78,13 @@ Both commands work cross-server. Locations are session-only (not persisted acros
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/tp <player>` | Teleport to a player (cross-server) | `telehop.tp` |
-| `/tp <p1> <p2>` | Teleport player p1 to player p2 | `telehop.tp` |
-| `/tphere <player>` | Pull a player to your location | `telehop.tphere` |
+| `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
+| `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
+| `/tp <x> <y> <z>` | Teleport yourself to coordinates in your current world | `telehop.tp` |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` |
+| `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
+
+These commands are **hidden from tab complete** for players who do not have the required permission.
 
 ## Admin Warp & Home Management
 
@@ -97,6 +101,8 @@ Both commands work cross-server. Locations are session-only (not persisted acros
 | Command | Description | Permission |
 |---------|-------------|------------|
 | `/telehop` | Show all commands (help) | Everyone |
-| `/telehop reload` | Reload config, messages, and warp cache | `telehop.admin` |
 | `/telehop version` | Show plugin version | Everyone |
+| `/telehop reload` | Reload config, messages, and warp cache | `telehop.admin` |
 | `/telehop perms` | List all permission nodes with descriptions | `telehop.admin` |
+
+Admin-only subcommands (`reload`, `perms`) are hidden from tab complete for players without `telehop.admin`.

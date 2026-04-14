@@ -72,6 +72,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 - `player-not-found` — Target player not online.
 - `console-not-allowed` — Player-only command used from console.
 - `feature-disabled` — Shown when a feature toggle is set to `false` in config.
+- `invalid-coords` — Shown when `/tp` is called with non-numeric coordinate arguments.
 
 ### Admin Warps
 - `warp-created` — After `/setwarp`. Placeholder: `<name>`
