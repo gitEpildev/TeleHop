@@ -13,8 +13,10 @@ language: "en"
 # ── Server Identity ───────────────────────────────────────────────────
 #  server-name — MUST match the name registered in velocity.toml [servers].
 #                Each Paper server needs a unique name.
-#  hub-server  — The server players teleport to when they run /spawn.
+#  hub-server  — The default server players teleport to when they run /spawn.
 #                Must also match a velocity.toml server name.
+#                When regions are configured (see below), this is used as
+#                the fallback hub if the server isn't in any region.
 server-name: "lobby"
 hub-server: "lobby"
 
@@ -26,6 +28,38 @@ servers:
   lobby: "lobby"
   # eu: "eu"
   # us: "usa"
+
+# ── Multi-Proxy Support ──────────────────────────────────────────────
+#  Set to true when running multiple Velocity proxies (e.g. a USA and EU
+#  proxy). This enables region-aware spawn routing so /spawn sends players
+#  to their regional lobby instead of a single global hub.
+#
+#  When false (default), /spawn always uses hub-server above.
+multi-proxy:
+  enabled: false
+
+# ── Region Mapping ───────────────────────────────────────────────────
+#  Groups servers into regions, each with its own hub (lobby).
+#  Used for region-aware /spawn routing when multi-proxy is enabled.
+#
+#  When a player runs /spawn, TeleHop checks which region their current
+#  server belongs to and sends them to that region's hub.
+#
+#  If the server isn't in any region, falls back to hub-server above.
+#
+#  Example for a USA + EU setup:
+#    regions:
+#      usa:
+#        servers:
+#          - usa
+#          - lobby-usa
+#        hub: lobby-usa
+#      eu:
+#        servers:
+#          - eu
+#          - lobby-eu
+#        hub: lobby-eu
+regions: {}
 
 # ── Cross-Server Messaging ───────────────────────────────────────────
 #  Advanced timing settings for plugin-message packets.

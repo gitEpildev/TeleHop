@@ -54,23 +54,25 @@ public final class RespawnListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
-        plugin.getLogger().info("[RandomRespawn] " + player.getName() + " died — processing...");
 
-        if (!plugin.isFeatureEnabled("random-respawn")) {
-            plugin.getLogger().info("[RandomRespawn] Feature disabled — skipping.");
-            return;
-        }
+        if (!plugin.isFeatureEnabled("random-respawn")) return;
 
         PaperSettings settings = plugin.settings();
-        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) {
-            plugin.getLogger().info("[RandomRespawn] Hub server — skipping.");
+        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
+
+        String deathWorld = player.getWorld().getName();
+        if (settings.isRespawnExcludedWorld(deathWorld)) {
+            plugin.getLogger().info("[RandomRespawn] " + player.getName()
+                    + " died in excluded world '" + deathWorld + "' - skipping.");
             return;
         }
+
+        plugin.getLogger().info("[RandomRespawn] " + player.getName() + " died - processing...");
 
         World world = Bukkit.getWorld(settings.respawnWorld());
         if (world == null) {
             plugin.getLogger().warning("[RandomRespawn] World '" + settings.respawnWorld()
-                    + "' not found — falling back to default respawn.");
+                    + "' not found - falling back to default respawn.");
             return;
         }
 

@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.telehop</groupId>
         <artifactId>telehop-parent</artifactId>
-        <version>1.0.2</version>
+        <version>1.1.0</version>
     </parent>
 
     <artifactId>telehop-paper</artifactId>
@@ -17,6 +17,12 @@
             <groupId>com.telehop</groupId>
             <artifactId>telehop-common</artifactId>
             <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>redis.clients</groupId>
+                    <artifactId>jedis</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>io.papermc.paper</groupId>

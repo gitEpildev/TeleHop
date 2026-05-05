@@ -6,6 +6,7 @@ import com.telehop.common.service.PlayerServerCache;
 import com.telehop.common.service.PlayerService;
 import com.telehop.velocity.config.VelocitySettings;
 import com.telehop.velocity.handler.VelocityPacketHandler;
+import com.telehop.velocity.messaging.RedisCrossProxyBridge;
 import com.telehop.velocity.messaging.VelocityMessagingManager;
 import com.telehop.velocity.service.PendingActionManager;
 import com.telehop.velocity.service.VelocityPlayerTracker;
@@ -48,6 +49,15 @@ public final class VelocityBootstrap {
 
         reg.setPendingActionManager(new PendingActionManager());
 
+        if (settings.multiProxyEnabled()) {
+            logger.info("Multi-proxy mode enabled (proxyId={}). Initializing Redis bridge...",
+                    settings.redisConfig().proxyId());
+            RedisCrossProxyBridge bridge = new RedisCrossProxyBridge(settings.redisConfig(), logger);
+            bridge.start();
+            reg.setRedisBridge(bridge);
+            tracker.setRedisBridge(bridge);
+        }
+
         VelocityMessagingManager messaging = new VelocityMessagingManager(
                 proxy, settings.dedupeWindowMs(), settings.requestTimeoutMs());
         messaging.register();
@@ -57,12 +67,17 @@ public final class VelocityBootstrap {
         reg.setMessaging(messaging);
         reg.setPacketHandler(packetHandler);
 
-        logger.info("TeleHop-Velocity enabled.");
+        if (reg.redisBridge() != null) {
+            reg.redisBridge().setPacketHandler(packetHandler::handle);
+        }
+
+        logger.info("TeleHop-Velocity v1.1.0 enabled.");
         return reg;
     }
 
     public static void shutdown(VelocityServiceRegistry reg) {
         if (reg == null) return;
+        if (reg.redisBridge() != null) reg.redisBridge().shutdown();
         if (reg.messaging() != null) reg.messaging().shutdown();
         if (reg.databaseManager() != null) reg.databaseManager().shutdown();
     }

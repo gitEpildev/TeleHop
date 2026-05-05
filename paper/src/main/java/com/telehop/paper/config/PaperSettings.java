@@ -10,8 +10,10 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -47,12 +49,19 @@ public record PaperSettings(
         String homeWorldEnd,
         Map<String, String> homeServerColors,
         Set<String> homeBlockedServers,
+        List<String> homeBlockedServerPrefixes,
         Map<String, TeleportEffect> teleportEffects,
         String respawnWorld,
         int respawnRadius,
         boolean respawnRespectBed,
-        boolean respawnRespectAnchor
+        boolean respawnRespectAnchor,
+        List<String> respawnExcludedWorlds,
+        boolean multiProxyEnabled,
+        Map<String, RegionConfig> regions
 ) {
+
+    public record RegionConfig(List<String> servers, String hub) {}
+
 
     public record TeleportEffect(
             boolean particleEnabled, Particle particleType, int particleCount,
@@ -105,6 +114,12 @@ public record PaperSettings(
 
         Map<String, TeleportEffect> effects = loadEffects(teleportFile);
 
+        List<String> blockedPrefixes = homeFile.getStringList("homes.blocked-server-prefixes").stream()
+                .map(String::toLowerCase).toList();
+
+        boolean multiProxy = general.getBoolean("multi-proxy.enabled", false);
+        Map<String, RegionConfig> regionMap = loadRegions(general);
+
         return new PaperSettings(
                 general.getString("server-name", "lobby"),
                 general.getString("hub-server", "lobby"),
@@ -137,11 +152,16 @@ public record PaperSettings(
                 Collections.unmodifiableMap(loadServerColors(homeFile)),
                 homeFile.getStringList("homes.blocked-servers").stream()
                         .map(String::toLowerCase).collect(Collectors.toUnmodifiableSet()),
+                Collections.unmodifiableList(blockedPrefixes),
                 Collections.unmodifiableMap(effects),
                 respawnFile.getString("random-respawn.world", "world"),
                 respawnFile.getInt("random-respawn.radius", 5000),
                 respawnFile.getBoolean("random-respawn.respect-bed-spawn", true),
-                respawnFile.getBoolean("random-respawn.respect-anchor-spawn", true)
+                respawnFile.getBoolean("random-respawn.respect-anchor-spawn", true),
+                Collections.unmodifiableList(new ArrayList<>(
+                        respawnFile.getStringList("random-respawn.excluded-worlds"))),
+                multiProxy,
+                Collections.unmodifiableMap(regionMap)
         );
     }
 
@@ -200,20 +220,62 @@ public record PaperSettings(
                 "<gradient:dark_purple:blue>The End</gradient>",
                 Map.of(),
                 Set.of("lobby"),
+                List.of(),
                 Map.of(),
                 "world",
                 5000,
                 true,
-                true
+                true,
+                List.of(),
+                false,
+                Map.of()
         );
     }
 
     public boolean isHomeBlockedOnCurrentServer() {
-        return homeBlockedServers.contains(serverName.toLowerCase());
+        return isHomeBlockedOnServer(serverName);
+    }
+
+    public boolean isHomeBlockedOnServer(String server) {
+        String lower = server.toLowerCase();
+        if (homeBlockedServers.contains(lower)) return true;
+        return homeBlockedServerPrefixes.stream().anyMatch(lower::startsWith);
+    }
+
+    /**
+     * Resolves the regional hub for a given server name.
+     * If regions are configured and the server belongs to a region, returns that region's hub.
+     * Otherwise falls back to {@link #hubServer()}.
+     */
+    public String getRegionalHub(String currentServer) {
+        if (!multiProxyEnabled || regions.isEmpty()) return hubServer;
+        String lower = currentServer.toLowerCase();
+        for (RegionConfig region : regions.values()) {
+            for (String s : region.servers()) {
+                if (s.equalsIgnoreCase(lower)) return region.hub();
+            }
+        }
+        return hubServer;
     }
 
     public boolean isFeatureEnabled(String feature) {
         return features.getOrDefault(feature, true);
+    }
+
+    /**
+     * Returns true if the given world name matches any entry in the
+     * excluded-worlds list. Supports trailing * for prefix matching.
+     */
+    public boolean isRespawnExcludedWorld(String worldName) {
+        if (respawnExcludedWorlds.isEmpty()) return false;
+        for (String pattern : respawnExcludedWorlds) {
+            if (pattern.endsWith("*")) {
+                if (worldName.startsWith(pattern.substring(0, pattern.length() - 1))) return true;
+            } else if (pattern.equalsIgnoreCase(worldName)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String resolveServer(String label) {
@@ -229,6 +291,23 @@ public record PaperSettings(
     }
 
     // ── internal helpers ─────────────────────────────────────────────
+
+    private static Map<String, RegionConfig> loadRegions(FileConfiguration cfg) {
+        Map<String, RegionConfig> map = new LinkedHashMap<>();
+        ConfigurationSection sec = cfg.getConfigurationSection("regions");
+        if (sec == null) return map;
+        for (String key : sec.getKeys(false)) {
+            ConfigurationSection region = sec.getConfigurationSection(key);
+            if (region == null) continue;
+            List<String> servers = region.getStringList("servers");
+            String hub = region.getString("hub", "");
+            if (!hub.isBlank() && !servers.isEmpty()) {
+                map.put(key.toLowerCase(), new RegionConfig(
+                        Collections.unmodifiableList(new ArrayList<>(servers)), hub));
+            }
+        }
+        return map;
+    }
 
     private static FileConfiguration loadYaml(File dir, String name) {
         File file = new File(dir, name);

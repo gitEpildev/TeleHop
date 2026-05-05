@@ -3,6 +3,7 @@ package com.telehop.velocity.service;
 import com.telehop.common.db.DatabaseManager;
 import com.telehop.velocity.config.VelocitySettings;
 import com.telehop.velocity.handler.VelocityPacketHandler;
+import com.telehop.velocity.messaging.RedisCrossProxyBridge;
 import com.telehop.velocity.messaging.VelocityMessagingManager;
 
 /**
@@ -16,6 +17,7 @@ public final class VelocityServiceRegistry {
     private VelocityMessagingManager messaging;
     private PendingActionManager pendingActionManager;
     private VelocityPacketHandler packetHandler;
+    private RedisCrossProxyBridge redisBridge;
 
     public VelocitySettings settings() { return settings; }
     public void setSettings(VelocitySettings settings) { this.settings = settings; }
@@ -34,4 +36,8 @@ public final class VelocityServiceRegistry {
 
     public VelocityPacketHandler packetHandler() { return packetHandler; }
     public void setPacketHandler(VelocityPacketHandler packetHandler) { this.packetHandler = packetHandler; }
+
+    /** Returns the Redis bridge, or {@code null} if multi-proxy is disabled. */
+    public RedisCrossProxyBridge redisBridge() { return redisBridge; }
+    public void setRedisBridge(RedisCrossProxyBridge redisBridge) { this.redisBridge = redisBridge; }
 }

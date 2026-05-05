@@ -42,12 +42,13 @@ public class SpawnCommand extends BaseCommand {
 
         player.sendMessage(plugin.msg("spawn-sent"));
 
-        if (plugin.settings().serverName().equalsIgnoreCase(plugin.settings().hubServer())) {
+        String targetHub = plugin.settings().getRegionalHub(plugin.settings().serverName());
+        if (plugin.settings().serverName().equalsIgnoreCase(targetHub)) {
             plugin.services().teleportService().teleportToSpawn(player);
         } else {
             NetworkPacket packet = NetworkPacket.request(PacketType.TRANSFER_PLAYER, plugin.settings().serverName(), "velocity")
                     .put("uuid", player.getUniqueId().toString())
-                    .put("targetServer", plugin.settings().hubServer())
+                    .put("targetServer", targetHub)
                     .put("postAction", "SPAWN");
             plugin.messaging().send(packet);
         }

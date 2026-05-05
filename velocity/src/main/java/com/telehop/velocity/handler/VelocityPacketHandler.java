@@ -2,6 +2,7 @@ package com.telehop.velocity.handler;
 
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
+import com.telehop.velocity.messaging.RedisCrossProxyBridge;
 import com.telehop.velocity.messaging.VelocityMessagingManager;
 import com.telehop.velocity.model.PendingAction;
 import com.telehop.velocity.service.VelocityServiceRegistry;
@@ -10,16 +11,23 @@ import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import org.slf4j.Logger;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+
 import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Handles every inbound cross-server packet on the Velocity proxy.
- * Keeps routing, TPA accept, admin TP, pending-action execution, and
- * retry logic out of the plugin main class.
+ *
+ * <p>When multi-proxy is enabled, methods fall back to forwarding packets
+ * via the Redis bridge when the target player is not on this proxy.
+ * A {@code _forwarded} flag prevents infinite ping-pong between proxies.</p>
  */
 public final class VelocityPacketHandler implements VelocityMessagingManager.PacketHandler {
+    private static final String FORWARDED_KEY = "_forwarded";
+
     private final Object pluginInstance;
     private final ProxyServer proxy;
     private final Logger logger;
@@ -53,6 +61,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             case TPA_ACCEPT            -> handleTpaAccept(packet);
             case ADMIN_TP_REQUEST      -> handleAdminTeleport(packet);
             case ADMIN_TP_TO_COORDS    -> handleAdminTpToCoords(packet);
+            case CROSS_PROXY_PLAYER_LIST -> handleCrossProxyPlayerListRequest(packet);
             default -> {}
         }
     }
@@ -126,6 +135,16 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
 
     // ── private helpers ─────────────────────────────────────────────
 
+    private boolean isForwarded(NetworkPacket packet) {
+        return "true".equals(packet.getOrDefault(FORWARDED_KEY, ""));
+    }
+
+    private void forwardOnce(NetworkPacket packet) {
+        if (!hasBridge() || isForwarded(packet)) return;
+        packet.put(FORWARDED_KEY, "true");
+        bridge().forwardPacket(packet);
+    }
+
     private void routeToTarget(NetworkPacket packet, String targetUuidString) {
         String targetName = packet.getOrDefault("targetName", "");
         if (!targetName.isBlank()) {
@@ -140,26 +159,68 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                     return;
                 }
             }
+            // Try resolving by name via Redis for cross-proxy
+            if (targetUuidString == null && hasBridge()) {
+                Optional<UUID> resolved = services.playerTracker().resolveUuidByName(targetName);
+                if (resolved.isPresent()) {
+                    targetUuidString = resolved.get().toString();
+                    packet.put("targetUuid", targetUuidString);
+                }
+            }
         }
-        if (targetUuidString == null) return;
+        if (targetUuidString == null) {
+            notifySender(packet, "Player not found.");
+            return;
+        }
         UUID targetUuid = UUID.fromString(targetUuidString);
-        services.playerTracker().resolveServer(targetUuid).thenAccept(server -> server.ifPresent(s -> {
-            packet.setTargetServer(s);
-            services.messaging().sendToServer(s, packet);
-        }));
+
+        if (services.playerTracker().isLocal(targetUuid)) {
+            services.playerTracker().resolveServer(targetUuid).thenAccept(server -> server.ifPresent(s -> {
+                packet.setTargetServer(s);
+                services.messaging().sendToServer(s, packet);
+            }));
+        } else {
+            forwardOnce(packet);
+        }
     }
 
     private void handlePlayerListRequest(NetworkPacket packet) {
         String originServer = packet.getOriginServer();
         if (originServer == null || originServer.isBlank()) return;
+
+        String localNames = proxy.getAllPlayers().stream()
+                .map(Player::getUsername)
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .reduce((a, b) -> a + "," + b)
+                .orElse("");
+
+        if (hasBridge() && services.settings().globalPlayerList()) {
+            bridge().requestRemotePlayerList(services.settings().crossProxyTimeoutMs())
+                    .thenAccept(remoteNames -> {
+                        String combined = mergeNameLists(localNames, remoteNames);
+                        NetworkPacket response = NetworkPacket.request(
+                                PacketType.PLAYER_LIST_RESPONSE, "velocity", originServer)
+                                .put("names", combined);
+                        services.messaging().sendToServer(originServer, response);
+                    });
+        } else {
+            NetworkPacket response = NetworkPacket.request(
+                    PacketType.PLAYER_LIST_RESPONSE, "velocity", originServer)
+                    .put("names", localNames);
+            services.messaging().sendToServer(originServer, response);
+        }
+    }
+
+    private void handleCrossProxyPlayerListRequest(NetworkPacket packet) {
+        String correlationId = packet.get("correlationId");
+        if (correlationId == null || !hasBridge()) return;
+
         String names = proxy.getAllPlayers().stream()
                 .map(Player::getUsername)
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .reduce((a, b) -> a + "," + b)
                 .orElse("");
-        NetworkPacket response = NetworkPacket.request(PacketType.PLAYER_LIST_RESPONSE, "velocity", originServer)
-                .put("names", names);
-        services.messaging().sendToServer(originServer, response);
+        bridge().sendPlayerListResponse(correlationId, names);
     }
 
     private void routeTransfer(NetworkPacket packet) {
@@ -168,7 +229,10 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         String postAction = packet.getOrDefault("postAction", "");
 
         Optional<Player> playerOpt = proxy.getPlayer(uuid);
-        if (playerOpt.isEmpty()) return;
+        if (playerOpt.isEmpty()) {
+            forwardOnce(packet);
+            return;
+        }
         Optional<RegisteredServer> destination = proxy.getServer(targetServer);
         if (destination.isEmpty()) return;
         Player player = playerOpt.get();
@@ -189,25 +253,84 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
 
         Optional<Player> senderOpt = proxy.getPlayer(senderUuid);
         Optional<Player> targetOpt = proxy.getPlayer(targetUuid);
-        if (senderOpt.isEmpty() || targetOpt.isEmpty()) return;
 
-        Player sender = senderOpt.get();
-        Player target = targetOpt.get();
-        String hubServer = services.settings().hubServer();
-        String targetServer = target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer);
-        String senderServer = sender.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer);
+        if (senderOpt.isPresent() && targetOpt.isPresent()) {
+            Player sender = senderOpt.get();
+            Player target = targetOpt.get();
+            String hubServer = services.settings().hubServer();
+            String targetServer = target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer);
+            String senderServer = sender.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer);
 
-        if ("TPA".equalsIgnoreCase(type)) {
-            ensureTeleport(sender, target, senderServer, targetServer);
-        } else {
-            ensureTeleport(target, sender, targetServer, senderServer);
+            if ("TPA".equalsIgnoreCase(type)) {
+                ensureTeleport(sender, target, senderServer, targetServer);
+            } else {
+                ensureTeleport(target, sender, targetServer, senderServer);
+            }
+            return;
         }
+
+        // Cross-proxy: one player is local, the other is remote.
+        // The local player (actor) needs to be transferred to the remote player's server.
+        if (senderOpt.isPresent() || targetOpt.isPresent()) {
+            Player localPlayer;
+            UUID remoteUuid;
+            if ("TPA".equalsIgnoreCase(type)) {
+                // TPA = sender moves to target
+                if (senderOpt.isPresent()) {
+                    localPlayer = senderOpt.get();
+                    remoteUuid = targetUuid;
+                } else {
+                    // Target is here but sender isn't -- forward so sender's proxy handles it
+                    forwardOnce(packet);
+                    return;
+                }
+            } else {
+                // TPAHERE = target moves to sender
+                if (targetOpt.isPresent()) {
+                    localPlayer = targetOpt.get();
+                    remoteUuid = senderUuid;
+                } else {
+                    forwardOnce(packet);
+                    return;
+                }
+            }
+
+            services.playerTracker().resolveServer(remoteUuid).thenAccept(serverOpt -> {
+                if (serverOpt.isEmpty()) {
+                    localPlayer.sendMessage(Component.text("Could not locate the other player's server.", NamedTextColor.RED));
+                    return;
+                }
+                String remoteServer = serverOpt.get();
+                Optional<RegisteredServer> dest = proxy.getServer(remoteServer);
+                if (dest.isEmpty()) {
+                    localPlayer.sendMessage(Component.text("Server '" + remoteServer + "' is not available.", NamedTextColor.RED));
+                    return;
+                }
+
+                PendingAction action = new PendingAction(localPlayer.getUniqueId(), remoteServer, "TELEPORT_TO_PLAYER")
+                        .put("actorUuid", localPlayer.getUniqueId().toString())
+                        .put("targetUuid", remoteUuid.toString());
+                services.pendingActionManager().put(action);
+                logger.info("Cross-proxy TPA: transferring {} to server {} to meet {}",
+                        localPlayer.getUsername(), remoteServer, remoteUuid);
+                localPlayer.sendMessage(Component.text("Teleporting...", NamedTextColor.GREEN));
+                localPlayer.createConnectionRequest(dest.get()).fireAndForget();
+            });
+            return;
+        }
+
+        // Neither player is on this proxy -- don't forward (prevents loop)
+        logger.debug("TPA_ACCEPT: neither player is on this proxy, ignoring (sender={}, target={})",
+                senderUuid, targetUuid);
     }
 
     private void handleAdminTpToCoords(NetworkPacket packet) {
         String targetName = packet.get("targetName");
         Optional<Player> targetOpt = proxy.getPlayer(targetName);
-        if (targetOpt.isEmpty()) return;
+        if (targetOpt.isEmpty()) {
+            forwardOnce(packet);
+            return;
+        }
 
         Player target = targetOpt.get();
         String targetServer = target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(null);
@@ -228,11 +351,16 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         switch (mode) {
             case "SELF_TO_TARGET" -> {
                 Player sender = proxy.getPlayer(UUID.fromString(packet.get("senderUuid"))).orElse(null);
-                Player target = proxy.getPlayer(packet.get("targetName")).orElse(null);
+                String tgtName = packet.get("targetName");
+                Player target = proxy.getPlayer(tgtName).orElse(null);
                 if (sender != null && target != null) {
                     ensureTeleport(sender, target,
                             sender.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer),
                             target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer));
+                } else if (sender != null) {
+                    resolveAndTransfer(sender, tgtName);
+                } else {
+                    forwardOnce(packet);
                 }
             }
             case "TARGET_TO_SENDER" -> {
@@ -242,19 +370,56 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                     ensureTeleport(target, sender,
                             target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer),
                             sender.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer));
+                } else {
+                    forwardOnce(packet);
                 }
             }
             case "PLAYER_TO_PLAYER" -> {
                 Player player = proxy.getPlayer(packet.get("playerName")).orElse(null);
-                Player target = proxy.getPlayer(packet.get("targetName")).orElse(null);
+                String tgtName2 = packet.get("targetName");
+                Player target = proxy.getPlayer(tgtName2).orElse(null);
                 if (player != null && target != null) {
                     ensureTeleport(player, target,
                             player.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer),
                             target.getCurrentServer().map(s -> s.getServerInfo().getName()).orElse(hubServer));
+                } else if (player != null) {
+                    resolveAndTransfer(player, tgtName2);
+                } else {
+                    forwardOnce(packet);
                 }
             }
             default -> {}
         }
+    }
+
+    private void resolveAndTransfer(Player actor, String targetName) {
+        Optional<UUID> targetUuid = services.playerTracker().resolveUuidByName(targetName);
+        if (targetUuid.isEmpty()) {
+            actor.sendMessage(Component.text("Player '" + targetName + "' is not online.", NamedTextColor.RED));
+            return;
+        }
+
+        services.playerTracker().resolveServer(targetUuid.get()).thenAccept(serverOpt -> {
+            if (serverOpt.isEmpty()) {
+                actor.sendMessage(Component.text("Could not find the server for '" + targetName + "'.", NamedTextColor.RED));
+                return;
+            }
+            String remoteServer = serverOpt.get();
+            Optional<RegisteredServer> dest = proxy.getServer(remoteServer);
+            if (dest.isEmpty()) {
+                actor.sendMessage(Component.text("Server '" + remoteServer + "' is not registered on this proxy.", NamedTextColor.RED));
+                return;
+            }
+
+            PendingAction action = new PendingAction(actor.getUniqueId(), remoteServer, "TELEPORT_TO_PLAYER")
+                    .put("actorUuid", actor.getUniqueId().toString())
+                    .put("targetUuid", targetUuid.get().toString());
+            services.pendingActionManager().put(action);
+            logger.info("Cross-proxy admin TP: transferring {} to server {} to reach {}",
+                    actor.getUsername(), remoteServer, targetName);
+            actor.sendMessage(Component.text("Teleporting to " + targetName + "...", NamedTextColor.GREEN));
+            actor.createConnectionRequest(dest.get()).fireAndForget();
+        });
     }
 
     private void ensureTeleport(Player actor, Player target, String actorServer, String targetServer) {
@@ -292,5 +457,28 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                 () -> sendWithRetry(serverName, packet, playerUuid, attemptsLeft - 1))
                 .delay(Duration.ofMillis(500))
                 .schedule();
+    }
+
+    private void notifySender(NetworkPacket packet, String message) {
+        String senderUuidStr = packet.getOrDefault("senderUuid", "");
+        if (senderUuidStr.isBlank()) return;
+        try {
+            proxy.getPlayer(UUID.fromString(senderUuidStr))
+                    .ifPresent(p -> p.sendMessage(Component.text(message, NamedTextColor.RED)));
+        } catch (Exception ignored) {}
+    }
+
+    private String mergeNameLists(String local, String remote) {
+        if (remote == null || remote.isBlank()) return local;
+        if (local.isBlank()) return remote;
+        return local + "," + remote;
+    }
+
+    private boolean hasBridge() {
+        return services.redisBridge() != null;
+    }
+
+    private RedisCrossProxyBridge bridge() {
+        return services.redisBridge();
     }
 }

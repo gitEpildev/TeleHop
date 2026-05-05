@@ -34,6 +34,9 @@ If the plugin detects a `config.yml` but no `config/general.yml`, it performs a 
 | `messaging.dedupe-window-ms` | long | `30000` | Packet dedup window (ms) |
 | `messaging.request-timeout-ms` | long | `10000` | Cross-server response timeout (ms) |
 | `audit.enabled` | boolean | `false` | Log teleports and admin actions |
+| `multi-proxy.enabled` | boolean | `false` | Enable region-aware spawn routing for multi-proxy setups |
+| `regions.<name>.servers` | list | `[]` | Servers belonging to this region |
+| `regions.<name>.hub` | string | — | Hub/lobby server for this region |
 
 ## `config/database.yml`
 
@@ -124,7 +127,8 @@ rtp:
 | `homes.bed-set` | string | `"LIME_BED"` | Bed material for occupied home slots |
 | `homes.bed-empty` | string | `"RED_BED"` | Bed material for available (empty) slots |
 | `homes.bed-locked` | string | `"LIGHT_BLUE_BED"` | Bed material for locked (no permission) slots |
-| `homes.blocked-servers` | list | `["lobby"]` | Servers where `/sethome` is blocked. Players can still teleport to existing homes. |
+| `homes.blocked-servers` | list | `["lobby"]` | Servers where `/sethome` is blocked (exact match). Players can still teleport to existing homes. |
+| `homes.blocked-server-prefixes` | list | `[]` | Block `/sethome` on servers whose name starts with any of these strings (e.g. `"lobby"` matches `lobby-usa`, `lobby-eu`). |
 | `homes.show-location` | boolean | `true` | Show x/y/z coordinates in the home GUI tooltip |
 | `homes.world-colors.overworld` | string | `"<green>Overworld</green>"` | Display name for overworld dimensions (MiniMessage) |
 | `homes.world-colors.nether` | string | `"<gradient:red:gold>Nether</gradient>"` | Display name for nether dimensions (MiniMessage) |
@@ -163,6 +167,14 @@ Any server not listed displays in plain white.
 | `messaging.requestTimeoutMs` | long | `10000` | Request timeout (ms) |
 | `servers.hub` | string | `lobby` | Hub server name |
 | `servers.backends` | string | `lobby` | Comma-separated server list |
+| `proxy.id` | string | `proxy-1` | Unique ID for this proxy (multi-proxy only) |
+| `multi-proxy.enabled` | boolean | `false` | Enable cross-proxy communication via Redis |
+| `multi-proxy.global-player-list` | boolean | `true` | Include remote proxy players in lists |
+| `multi-proxy.cross-proxy-timeout-ms` | long | `15000` | Timeout for cross-proxy requests |
+| `redis.host` | string | `127.0.0.1` | Redis host (multi-proxy only) |
+| `redis.port` | int | `6379` | Redis port |
+| `redis.password` | string | — | Redis auth password |
+| `redis.channel-prefix` | string | `telehop` | Redis channel prefix |
 
 ---
 

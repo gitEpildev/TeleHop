@@ -123,6 +123,18 @@ The Velocity proxy has no language setting -- it doesn't send player-facing mess
 
 ---
 
+## Multi-Proxy Setup
+
+If you run multiple Velocity proxies (e.g. regional proxies for USA and EU), see the dedicated **[Multi-Proxy Setup Guide](multi-proxy.md)** for full instructions.
+
+In short, you need to:
+1. Set `multi-proxy.enabled=true` and a unique `proxy.id` on each Velocity proxy
+2. Configure Redis connection on each proxy
+3. Set `multi-proxy.enabled: true` and configure `regions` on each Paper server
+4. Restart Velocity proxies; `/telehop reload` on Paper servers
+
+---
+
 ## LuckPerms Setup for Player Warp Limits
 
 To give players a warp limit, assign `telehop.warps.<number>` per rank:

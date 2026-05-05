@@ -27,3 +27,9 @@ random-respawn:
   # and send them to their anchor instead.
   # Set to false to always randomize regardless of anchor.
   respect-anchor-spawn: true
+
+  # Worlds where random respawn is disabled. Deaths in these worlds
+  # will use the default respawn logic instead.
+  # Supports prefix matching with a trailing * (e.g. "pvpindex_arena_*").
+  excluded-worlds:
+    - "pvpindex_arena_*"

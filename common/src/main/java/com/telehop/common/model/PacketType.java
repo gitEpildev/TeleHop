@@ -32,6 +32,12 @@ public enum PacketType {
     BACK_TELEPORT,
     /** Sent when a player has TPA requests disabled; routed back to the sender's server. */
     TPA_TOGGLE_DENY,
+    /** Wraps any packet for delivery to another proxy via Redis. */
+    CROSS_PROXY_FORWARD,
+    /** Request/response for aggregated player list across all proxies. */
+    CROSS_PROXY_PLAYER_LIST,
+    /** Broadcasts player join/leave/switch events to other proxies. */
+    CROSS_PROXY_PLAYER_UPDATE,
     RESPONSE,
     ERROR
 }

@@ -36,14 +36,22 @@ rtp:
   #                 <red>, <bold>, <gradient:red:gold>, etc.
   #  gui.lore     — List of lore lines under the item name.
   regions:
-    default:
+    usa:
       world: "world"
       radius: 25000
       gui:
-        material: "GRASS_BLOCK"
-        name: "<green><bold>Default Region</bold>"
+        material: "RED_CONCRETE"
+        name: "<red><bold>USA</bold>"
         lore:
-          - "<gray>Random teleport in the default region"
+          - "<gray>Random teleport on the US server"
+    eu:
+      world: "world"
+      radius: 25000
+      gui:
+        material: "BLUE_CONCRETE"
+        name: "<aqua><bold>EU</bold>"
+        lore:
+          - "<gray>Random teleport on the EU server"
 
   # ── Dimension World Names ───────────────────────────────────────────
   #  Map each dimension to the actual Minecraft world folder name.

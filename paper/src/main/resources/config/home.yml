@@ -57,6 +57,18 @@ homes:
   blocked-servers:
     - "lobby"
 
+  # ── Blocked Server Prefixes ──────────────────────────────────────────
+  #  In addition to exact matches above, you can block servers by prefix.
+  #  Any server whose name starts with one of these strings will be blocked.
+  #  Useful in multi-proxy setups where lobby names follow a pattern
+  #  like lobby-usa, lobby-eu, lobby-asia, etc.
+  #  Case-insensitive.
+  #
+  #  Example:
+  #    blocked-server-prefixes:
+  #      - "lobby"    # blocks lobby-usa, lobby-eu, etc.
+  blocked-server-prefixes: []
+
   # ── Location Display ──────────────────────────────────────────────────
   #  Whether to show x, y, z coordinates in the home lore tooltip.
   #  Set to false to hide coordinates for a cleaner look or for privacy.

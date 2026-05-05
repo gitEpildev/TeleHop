@@ -7,7 +7,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.0] — 2026-05-03
+
 ### Added
+- **Multi-proxy support** — opt-in Redis-based cross-proxy communication so two or more Velocity proxies can share the same backend servers
+  - New `RedisCrossProxyBridge` for Velocity-to-Velocity pub/sub via Redis
+  - TPA requests, admin teleports, transfers, and player list queries all work across proxy boundaries
+  - Player location broadcasts keep all proxies aware of every player's current server
+  - Configurable via `multi-proxy.enabled`, `proxy.id`, Redis connection, and `global-player-list` in `config.properties`
+  - Zero overhead when disabled — no Redis connection, no extra threads
+- **Region-aware /spawn routing** — new `regions` config in `general.yml` maps servers to regional hubs
+  - Players on `eu` server get sent to `lobby-eu`, players on `usa` get sent to `lobby-usa`
+  - Falls back to `hub-server` if the current server isn't in any region
+- **Blocked server prefixes** — `blocked-server-prefixes` in `home.yml` blocks home-setting on servers by name prefix
+  - Example: `lobby` matches `lobby-usa`, `lobby-eu`, `lobby-asia`
+  - Works alongside existing exact-match `blocked-servers`
+- **Cross-proxy player list** — when `global-player-list` is true, `/tpa` tab-complete shows players from all proxies
 - **Coordinate teleportation** — `/tp` now accepts `x y z` and `player x y z` forms
   - `/tp <x> <y> <z>` — teleports the sender to coordinates in their current world
   - `/tp <player> <x> <y> <z>` — teleports a named player to coordinates; works cross-server via a new `ADMIN_TP_TO_COORDS` packet
@@ -15,8 +32,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - **Permission-gated tab complete** — `/tp` and `/tphere` are now hidden from the brigadier command tree for players without `telehop.tp` / `telehop.tphere` respectively; `telehop reload` and `telehop perms` are similarly hidden from non-admins
 
 ### Changed
+- `VelocitySettings` now includes `multiProxyEnabled`, `globalPlayerList`, `crossProxyTimeoutMs`, and `RedisConfig`
+- `PaperSettings` now includes `multiProxyEnabled`, `regions`, and `homeBlockedServerPrefixes`
+- `SpawnCommand` uses region-aware hub resolution instead of a single `hub-server`
+- `VelocityPlayerTracker` supports cross-proxy player lookups via Redis global map
+- `VelocityPacketHandler` falls back to Redis forwarding when target player is not on the local proxy
+- `PacketType` enum gains `ADMIN_TP_TO_COORDS`, `CROSS_PROXY_FORWARD`, `CROSS_PROXY_PLAYER_LIST`, `CROSS_PROXY_PLAYER_UPDATE`
 - `AdminTeleportCommand` extended from 2 optional strings to 4 optional strings to support coordinate forms without breaking existing player-name modes
-- `PacketType` enum gains `ADMIN_TP_TO_COORDS`
+- Jedis 5.1.0 added as a dependency (shaded in Velocity JAR)
 
 ---
 
