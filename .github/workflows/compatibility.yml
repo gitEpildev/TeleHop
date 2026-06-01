@@ -1,0 +1,308 @@
+name: Compatibility Matrix
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: compat-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+
+  paper-adapters:
+    name: "Paper ${{ matrix.mc-version }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - mc-version: "1.21.x"
+            module: paper-versions/paper.1.21.x
+            adapter-class: com/telehop/paper/v1_21/Paper121Adapter.class
+            java-build: "21"
+            java-runtime: "21"
+
+          - mc-version: "26.1.x"
+            module: paper-versions/paper.26.1.x
+            adapter-class: com/telehop/paper/v26_1/Paper261Adapter.class
+            java-build: "25"
+            java-runtime: "25"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      - name: Configure Maven Toolchains
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>21</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+
+      - name: Set JAVA_HOME to 21
+        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
+
+      - name: Compile adapter module
+        run: mvn -B compile -pl paper-versions/paper-version-api,${{ matrix.module }} -am --no-transfer-progress
+
+      - name: Verify adapter class exists
+        run: |
+          CLASSFILE="${{ matrix.module }}/target/classes/${{ matrix.adapter-class }}"
+          if [ -f "$CLASSFILE" ]; then
+            echo "Adapter class compiled successfully."
+          else
+            echo "::error::Adapter class not found: $CLASSFILE"
+            exit 1
+          fi
+
+      - name: Check bytecode version
+        run: |
+          CLASSFILE="${{ matrix.module }}/target/classes/${{ matrix.adapter-class }}"
+          MAJOR=$(javap -verbose "$CLASSFILE" 2>/dev/null | grep "major version" | awk '{print $NF}')
+          case "$MAJOR" in
+            65) JAVA_VER="21" ;;
+            66) JAVA_VER="22" ;;
+            67) JAVA_VER="23" ;;
+            68) JAVA_VER="24" ;;
+            69) JAVA_VER="25" ;;
+            *) JAVA_VER="unknown ($MAJOR)" ;;
+          esac
+          echo "Bytecode major version: $MAJOR (Java $JAVA_VER)"
+          echo "BYTECODE_JAVA=$JAVA_VER" >> $GITHUB_ENV
+
+      - name: Write job summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ### Paper ${{ matrix.mc-version }} Adapter
+
+          | Property | Value |
+          |----------|-------|
+          | Minecraft Version | ${{ matrix.mc-version }} |
+          | Adapter Module | \`${{ matrix.module }}\` |
+          | Build JDK | ${{ matrix.java-build }} |
+          | Runtime JDK | ${{ matrix.java-runtime }} |
+          | Bytecode Target | Java ${{ env.BYTECODE_JAVA }} |
+          | Status | Compiled successfully |
+          EOF
+
+  velocity:
+    name: Velocity 3.3+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      - name: Configure Maven Toolchains
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>21</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+
+      - name: Set JAVA_HOME to 21
+        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
+
+      - name: Compile Velocity module
+        run: mvn -B compile -pl velocity -am --no-transfer-progress
+
+      - name: Extract Velocity API version
+        id: vel-ver
+        run: |
+          VEL_API=$(grep -m1 '<velocity.api.version>' pom.xml | sed 's/.*<velocity.api.version>\(.*\)<\/velocity.api.version>.*/\1/' | tr -d '[:space:]')
+          echo "api=$VEL_API" >> $GITHUB_OUTPUT
+
+      - name: Write job summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          ### Velocity Proxy
+
+          | Property | Value |
+          |----------|-------|
+          | Velocity API | ${{ steps.vel-ver.outputs.api }} |
+          | Build JDK | 21 |
+          | Runtime JDK | 21+ |
+          | Status | Compiled successfully |
+          EOF
+
+  shaded-jar:
+    name: Shaded JAR (all adapters)
+    runs-on: ubuntu-latest
+    needs: [paper-adapters, velocity]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      - name: Configure Maven Toolchains
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/toolchains.xml << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <toolchains>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>21</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
+            </toolchain>
+            <toolchain>
+              <type>jdk</type>
+              <provides><version>25</version></provides>
+              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
+            </toolchain>
+          </toolchains>
+          EOF
+
+      - name: Set JAVA_HOME to 21
+        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
+
+      - name: Build shaded JARs
+        run: mvn -B package -DskipTests --no-transfer-progress
+
+      - name: Verify adapters in shaded Paper JAR
+        run: |
+          echo "Checking shaded JAR contents..."
+          PAPER_JAR=$(ls paper/target/telehop-paper-*.jar | head -1)
+          JAR_SIZE=$(du -h "$PAPER_JAR" | cut -f1)
+          echo "Paper JAR: $PAPER_JAR ($JAR_SIZE)"
+
+          FOUND_121=$(jar tf "$PAPER_JAR" | grep "Paper121Adapter.class" || true)
+          FOUND_261=$(jar tf "$PAPER_JAR" | grep "Paper261Adapter.class" || true)
+          FOUND_API=$(jar tf "$PAPER_JAR" | grep "VersionAdapter.class" || true)
+
+          FAIL=0
+          if [ -z "$FOUND_121" ]; then
+            echo "::error::Paper121Adapter not found in shaded JAR"
+            FAIL=1
+          else
+            echo "Paper121Adapter: included"
+          fi
+          if [ -z "$FOUND_261" ]; then
+            echo "::error::Paper261Adapter not found in shaded JAR"
+            FAIL=1
+          else
+            echo "Paper261Adapter: included"
+          fi
+          if [ -z "$FOUND_API" ]; then
+            echo "::error::VersionAdapter interface not found in shaded JAR"
+            FAIL=1
+          else
+            echo "VersionAdapter API: included"
+          fi
+
+          VEL_JAR=$(ls velocity/target/telehop-velocity-*.jar | head -1)
+          VEL_SIZE=$(du -h "$VEL_JAR" | cut -f1)
+          echo "Velocity JAR: $VEL_JAR ($VEL_SIZE)"
+
+          echo "PAPER_JAR_SIZE=$JAR_SIZE" >> $GITHUB_ENV
+          echo "VEL_JAR_SIZE=$VEL_SIZE" >> $GITHUB_ENV
+          [ $FAIL -eq 0 ] || exit 1
+
+      - name: Extract plugin version
+        id: plugin-ver
+        run: |
+          VER=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | tr -d '[:space:]')
+          echo "version=$VER" >> $GITHUB_OUTPUT
+
+      - name: Write compatibility summary
+        run: |
+          cat >> $GITHUB_STEP_SUMMARY << 'HEADER'
+          ## TeleHop Compatibility Report
+
+          HEADER
+
+          cat >> $GITHUB_STEP_SUMMARY << EOF
+          **Plugin Version:** ${{ steps.plugin-ver.outputs.version }}
+
+          ### Supported Platforms
+
+          | Platform | Version | Java | JAR | Status |
+          |----------|---------|------|-----|--------|
+          | Paper | 1.21.x | 21 | telehop-paper (${{ env.PAPER_JAR_SIZE }}) | Built and verified |
+          | Paper | 26.1.x | 25 | telehop-paper (${{ env.PAPER_JAR_SIZE }}) | Built and verified |
+          | Velocity | 3.3+ | 21+ | telehop-velocity (${{ env.VEL_JAR_SIZE }}) | Built and verified |
+
+          ### Version Adapter Verification
+
+          | Adapter | Class | Shaded into JAR |
+          |---------|-------|-----------------|
+          | Paper 1.21.x | \`Paper121Adapter\` | Yes |
+          | Paper 26.1.x | \`Paper261Adapter\` | Yes |
+          | API | \`VersionAdapter\` | Yes |
+
+          ### Runtime Behaviour
+
+          The Paper JAR contains both version adapters. At startup, TeleHop detects the
+          Minecraft server version and loads the correct adapter via reflection:
+
+          - **1.21.x servers** use \`Paper121Adapter\` (world name via \`World.getName()\`)
+          - **26.1.x servers** use \`Paper261Adapter\` (world name via \`World.getKey()\`)
+
+          If the server version is unsupported, TeleHop disables itself with a clear error.
+          EOF
