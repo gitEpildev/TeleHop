@@ -102,6 +102,8 @@ public final class Bootstrap {
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
+        printBanner(plugin);
+
         VersionAdapter versionAdapter = resolveVersionAdapter(plugin);
         if (versionAdapter == null) {
             plugin.getLogger().severe("Unsupported Minecraft version! TeleHop supports Paper 1.21.x and 26.1.x.");
@@ -109,7 +111,6 @@ public final class Bootstrap {
             return null;
         }
         plugin.setVersionAdapter(versionAdapter);
-        plugin.getLogger().info("Version adapter: " + versionAdapter.getClass().getSimpleName());
 
         if (ConfigMigrator.needsMigration(plugin)) {
             ConfigMigrator.migrate(plugin);
@@ -172,13 +173,22 @@ public final class Bootstrap {
         registerCommands(plugin, reg);
         startScheduledTasks(plugin, reg);
 
+        net.kyori.adventure.text.logger.slf4j.ComponentLogger clog = plugin.getComponentLogger();
+        clog.info(MINI.deserialize(
+                "<green>Startup complete! <gray>Server: <aqua>" + reg.settings().serverName()
+                        + " <gray>| Adapter: <aqua>" + versionAdapter.getClass().getSimpleName()
+                        + " <gray>| Language: <aqua>" + reg.settings().language()));
+
         return reg;
     }
 
-    public static void shutdown(ServiceRegistry reg) {
+    public static void shutdown(NetworkPaperPlugin plugin, ServiceRegistry reg) {
         if (reg == null) return;
         if (reg.messaging() != null) reg.messaging().shutdown();
         if (reg.databaseManager() != null) reg.databaseManager().shutdown();
+
+        net.kyori.adventure.text.logger.slf4j.ComponentLogger clog = plugin.getComponentLogger();
+        clog.info(MINI.deserialize("<red>TeleHop <gray>has been <red>disabled<gray>. Goodbye!"));
     }
 
     public static void reload(NetworkPaperPlugin plugin, ServiceRegistry reg) {
@@ -311,6 +321,25 @@ public final class Bootstrap {
                     reg.settings().serverName(), "velocity");
             reg.messaging().send(packet);
         }, 40L, 20L * 5L);
+    }
+
+    private static final String PLUGIN_VERSION = "2.0.0";
+
+    private static void printBanner(NetworkPaperPlugin plugin) {
+        net.kyori.adventure.text.logger.slf4j.ComponentLogger log = plugin.getComponentLogger();
+        log.info(MINI.deserialize(""));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ████████╗███████╗██╗     ███████╗██╗  ██╗ ██████╗ ██████╗</gradient>"));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ╚══██╔══╝██╔════╝██║     ██╔════╝██║  ██║██╔═══██╗██╔══██╗</gradient>"));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   █████╗  ██║     █████╗  ███████║██║   ██║██████╔╝</gradient>"));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ██╔══╝  ██║     ██╔══╝  ██╔══██║██║   ██║██╔═══╝</gradient>"));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ███████╗███████╗███████╗██║  ██║╚██████╔╝██║</gradient>"));
+        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝</gradient>"));
+        log.info(MINI.deserialize(""));
+        log.info(MINI.deserialize("  <aqua>Version: <white>" + PLUGIN_VERSION
+                + "  <gray>|  <aqua>Platform: <white>Paper"
+                + "  <gray>|  <aqua>MC: <white>" + detectMinecraftVersion(plugin)));
+        log.info(MINI.deserialize("  <aqua>Author: <white>Epildev  <gray>|  <aqua>Website: <white>developer.epildevconnect.uk"));
+        log.info(MINI.deserialize(""));
     }
 
     private static String detectMinecraftVersion(NetworkPaperPlugin plugin) {

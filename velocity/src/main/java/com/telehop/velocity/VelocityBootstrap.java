@@ -29,10 +29,13 @@ public final class VelocityBootstrap {
 
     private VelocityBootstrap() {}
 
+    private static final String PLUGIN_VERSION = "2.0.0";
+
     public static VelocityServiceRegistry init(NetworkVelocityPlugin plugin,
                                                ProxyServer proxy,
                                                Logger logger,
                                                Path dataDirectory) throws Exception {
+        printBanner(logger);
         VelocityServiceRegistry reg = new VelocityServiceRegistry();
 
         VelocitySettings settings = loadSettings(plugin, dataDirectory);
@@ -71,15 +74,37 @@ public final class VelocityBootstrap {
             reg.redisBridge().setPacketHandler(packetHandler::handle);
         }
 
-        logger.info("TeleHop-Velocity v2.0.0 enabled.");
+        logger.info("\u001b[32mStartup complete! \u001b[90mMulti-proxy: \u001b[36m{}\u001b[0m",
+                settings.multiProxyEnabled() ? "enabled" : "disabled");
         return reg;
     }
 
-    public static void shutdown(VelocityServiceRegistry reg) {
+    public static void shutdown(VelocityServiceRegistry reg, Logger logger) {
         if (reg == null) return;
         if (reg.redisBridge() != null) reg.redisBridge().shutdown();
         if (reg.messaging() != null) reg.messaging().shutdown();
         if (reg.databaseManager() != null) reg.databaseManager().shutdown();
+        logger.info("\u001b[31mTeleHop \u001b[90mhas been \u001b[31mdisabled\u001b[90m. Goodbye!\u001b[0m");
+    }
+
+    private static void printBanner(Logger logger) {
+        String cyan = "\u001b[36m";
+        String purple = "\u001b[35m";
+        String white = "\u001b[37m";
+        String grey = "\u001b[90m";
+        String reset = "\u001b[0m";
+
+        logger.info("");
+        logger.info("{}  ████████╗███████╗██╗     ███████╗██╗  ██╗ ██████╗ ██████╗{}", cyan, reset);
+        logger.info("{}  ╚══██╔══╝██╔════╝██║     ██╔════╝██║  ██║██╔═══██╗██╔══██╗{}", cyan, reset);
+        logger.info("{}     ██║   █████╗  ██║     █████╗  ███████║██║   ██║██████╔╝{}", purple, reset);
+        logger.info("{}     ██║   ██╔══╝  ██║     ██╔══╝  ██╔══██║██║   ██║██╔═══╝{}", purple, reset);
+        logger.info("{}     ██║   ███████╗███████╗███████╗██║  ██║╚██████╔╝██║{}", purple, reset);
+        logger.info("{}     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝{}", cyan, reset);
+        logger.info("");
+        logger.info("  {}Version: {}{} {}| {}Platform: {}Velocity {}| {}Author: {}Epildev{}",
+                cyan, white, PLUGIN_VERSION, grey, cyan, white, grey, cyan, white, reset);
+        logger.info("");
     }
 
     private static VelocitySettings loadSettings(NetworkVelocityPlugin plugin,

@@ -23,7 +23,7 @@ public class NetworkPaperPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        Bootstrap.shutdown(services);
+        Bootstrap.shutdown(this, services);
     }
 
     // ── public API used by commands, listeners, and the packet handler ──

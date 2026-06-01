@@ -52,7 +52,7 @@ public class NetworkVelocityPlugin {
 
     @Subscribe
     public void onProxyShutdown(ProxyShutdownEvent event) {
-        VelocityBootstrap.shutdown(services);
+        VelocityBootstrap.shutdown(services, logger);
     }
 
     @Subscribe
