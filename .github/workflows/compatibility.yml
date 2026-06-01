@@ -23,12 +23,14 @@ jobs:
       matrix:
         include:
           - mc-version: "1.21.x"
+            mc-versions-list: "1.21, 1.21.1, 1.21.3, 1.21.4, 1.21.5, 1.21.6, 1.21.7, 1.21.8, 1.21.9, 1.21.10, 1.21.11"
             module: paper-versions/paper.1.21.x
             adapter-class: com/telehop/paper/v1_21/Paper121Adapter.class
             java-build: "21"
             java-runtime: "21"
 
           - mc-version: "26.1.x"
+            mc-versions-list: "26.1.2"
             module: paper-versions/paper.26.1.x
             adapter-class: com/telehop/paper/v26_1/Paper261Adapter.class
             java-build: "25"
@@ -107,12 +109,13 @@ jobs:
 
           | Property | Value |
           |----------|-------|
-          | Minecraft Version | ${{ matrix.mc-version }} |
           | Adapter Module | \`${{ matrix.module }}\` |
           | Build JDK | ${{ matrix.java-build }} |
           | Runtime JDK | ${{ matrix.java-runtime }} |
           | Bytecode Target | Java ${{ env.BYTECODE_JAVA }} |
           | Status | Compiled successfully |
+
+          **Supported Minecraft versions:** ${{ matrix.mc-versions-list }}
           EOF
 
   velocity:
@@ -272,37 +275,48 @@ jobs:
 
       - name: Write compatibility summary
         run: |
-          cat >> $GITHUB_STEP_SUMMARY << 'HEADER'
+          cat >> $GITHUB_STEP_SUMMARY << EOF
           ## TeleHop Compatibility Report
 
-          HEADER
-
-          cat >> $GITHUB_STEP_SUMMARY << EOF
           **Plugin Version:** ${{ steps.plugin-ver.outputs.version }}
 
-          ### Supported Platforms
+          ### Supported Minecraft Versions (Paper)
 
-          | Platform | Version | Java | JAR | Status |
-          |----------|---------|------|-----|--------|
-          | Paper | 1.21.x | 21 | telehop-paper (${{ env.PAPER_JAR_SIZE }}) | Built and verified |
-          | Paper | 26.1.x | 25 | telehop-paper (${{ env.PAPER_JAR_SIZE }}) | Built and verified |
-          | Velocity | 3.3+ | 21+ | telehop-velocity (${{ env.VEL_JAR_SIZE }}) | Built and verified |
+          | Minecraft Version | Adapter | Java | Status |
+          |-------------------|---------|------|--------|
+          | 1.21 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.1 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.3 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.4 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.5 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.6 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.7 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.8 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.9 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.10 | \`Paper121Adapter\` | 21 | Supported |
+          | 1.21.11 | \`Paper121Adapter\` | 21 | Supported |
+          | 26.1.2 | \`Paper261Adapter\` | 25 | Supported |
 
-          ### Version Adapter Verification
+          ### Supported Proxy Versions (Velocity)
 
-          | Adapter | Class | Shaded into JAR |
-          |---------|-------|-----------------|
-          | Paper 1.21.x | \`Paper121Adapter\` | Yes |
-          | Paper 26.1.x | \`Paper261Adapter\` | Yes |
-          | API | \`VersionAdapter\` | Yes |
+          | Velocity Version | Java | Status |
+          |------------------|------|--------|
+          | 3.3.0+ | 21+ | Supported |
+
+          ### Build Artefacts
+
+          | JAR | Size | Adapters Included |
+          |-----|------|-------------------|
+          | telehop-paper | ${{ env.PAPER_JAR_SIZE }} | \`Paper121Adapter\`, \`Paper261Adapter\`, \`VersionAdapter\` API |
+          | telehop-velocity | ${{ env.VEL_JAR_SIZE }} | N/A (proxy bridge) |
 
           ### Runtime Behaviour
 
-          The Paper JAR contains both version adapters. At startup, TeleHop detects the
-          Minecraft server version and loads the correct adapter via reflection:
+          The Paper JAR ships as a single file containing both version adapters. At startup,
+          TeleHop detects the server's Minecraft version and loads the correct adapter:
 
-          - **1.21.x servers** use \`Paper121Adapter\` (world name via \`World.getName()\`)
-          - **26.1.x servers** use \`Paper261Adapter\` (world name via \`World.getKey()\`)
+          - **1.21 through 1.21.11** \`Paper121Adapter\` (world name via \`World.getName()\`)
+          - **26.1.x** \`Paper261Adapter\` (world name via \`World.getKey()\`)
 
-          If the server version is unsupported, TeleHop disables itself with a clear error.
+          If the server runs an unsupported version, TeleHop disables itself with a clear error message.
           EOF
