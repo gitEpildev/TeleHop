@@ -304,8 +304,8 @@ Requires Java 21+ and Maven 3.8+.
 
 **Epildev** — [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · Discord: `Epildev`
 
-Developed by [Epildevconnect Ltd](https://developer.epildevconnect.uk/myhub/home).
+Developed by [Epildevconnect Ltd](https://developer.epildevconnect.uk/) (Company No. [17247566](https://find-and-update.company-information.service.gov.uk/company/17247566)), registered in England and Wales.
 
 ## License
 
-MIT License — free to use, modify, and distribute. See [LICENSE](LICENSE) for details.
+MIT License with Additional Terms. Attribution to Epildevconnect Ltd is required. See [LICENSE](LICENSE) for full details.
