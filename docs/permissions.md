@@ -43,7 +43,7 @@ The plugin finds the **highest** matching `telehop.homes.<n>` value. Locked slot
 
 | Node | Description |
 |------|-------------|
-| `telehop.admin` | `/setwarp`, `/delwarp`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`, `/telehop reload`, `/telehop perms`, `/pwarp admin del` |
+| `telehop.admin` | `/setwarp`, `/delwarp`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`, `/forcesethome`, `/listhomes`, `/forcelastloc`, `/playerinfo`, `/telehop reload`, `/telehop perms`, `/pwarp admin del` |
 | `telehop.back` | Use `/back` (return to last teleport location) |
 | `telehop.back.death` | Use `/back death` (return to death location) |
 | `telehop.tp` | Admin teleport (`/tp`) — cross-server |
