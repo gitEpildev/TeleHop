@@ -59,7 +59,7 @@ public class PlayerWarpCommand extends BaseCommand {
             PlayerWarpRecord warp = new PlayerWarpRecord(
                     uuid, name,
                     plugin.settings().serverName(),
-                    loc.getWorld().getName(),
+                    plugin.versionAdapter().getWorldName(loc.getWorld()),
                     loc.getX(), loc.getY(), loc.getZ(),
                     loc.getYaw(), loc.getPitch(),
                     false
@@ -223,7 +223,7 @@ public class PlayerWarpCommand extends BaseCommand {
 
     private void doTeleport(Player player, PlayerWarpRecord warp) {
         if (warp.server().equalsIgnoreCase(plugin.settings().serverName())) {
-            World world = Bukkit.getWorld(warp.world());
+            World world = plugin.versionAdapter().resolveWorld(warp.world());
             if (world == null) {
                 player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", warp.name())));
                 return;

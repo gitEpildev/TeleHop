@@ -23,7 +23,7 @@ language: "en"
 
 Change it and run `/telehop reload` -- no restart needed.
 
-### Fallback Behavior
+### Fallback Behaviour
 
 If a message key is missing from the selected language file, TeleHop automatically falls back to the English (`en.yml`) value. This means partial translations work fine -- you only need to translate the keys you care about.
 

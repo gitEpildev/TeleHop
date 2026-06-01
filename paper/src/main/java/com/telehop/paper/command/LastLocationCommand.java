@@ -59,7 +59,7 @@ public class LastLocationCommand extends BaseCommand {
                     return;
                 }
 
-                World world = Bukkit.getWorld(record.world());
+                World world = plugin.versionAdapter().resolveWorld(record.world());
                 if (world == null) {
                     player.sendMessage(plugin.msg("lastloc-world-missing"));
                     return;

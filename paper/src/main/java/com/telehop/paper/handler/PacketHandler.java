@@ -53,7 +53,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handlePostJoinTeleport(NetworkPacket packet) {
         UUID playerId = UUID.fromString(packet.get("uuid"));
         String worldName = packet.get("world");
-        World world = Bukkit.getWorld(worldName);
+        World world = plugin.versionAdapter().resolveWorld(worldName);
         if (world == null) return;
 
         Location location = new Location(
@@ -153,7 +153,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handleAdminTpToCoords(NetworkPacket packet) {
         Player target = Bukkit.getPlayer(UUID.fromString(packet.get("targetUuid")));
         if (target == null) return;
-        World world = Bukkit.getWorld(packet.get("world"));
+        World world = plugin.versionAdapter().resolveWorld(packet.get("world"));
         if (world == null) world = target.getWorld();
         Location dest = new Location(world,
                 Double.parseDouble(packet.get("x")),
@@ -169,7 +169,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         String ownerUuid = packet.get("pwarpOwner");
         String pwarpName = packet.get("pwarpName");
         services.playerWarpService().find(ownerUuid, pwarpName).thenAccept(opt -> opt.ifPresent(warp -> {
-            World world = Bukkit.getWorld(warp.world());
+            World world = plugin.versionAdapter().resolveWorld(warp.world());
             if (world != null) {
                 Location loc = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
                 Bukkit.getScheduler().runTask(plugin, () -> player.teleportAsync(loc));
@@ -183,7 +183,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         String homeName = packet.get("homeName");
         String homeUuid = packet.get("homeUuid");
         services.homeService().find(homeUuid, homeName).thenAccept(opt -> opt.ifPresent(home -> {
-            World world = Bukkit.getWorld(home.world());
+            World world = plugin.versionAdapter().resolveWorld(home.world());
             if (world != null) {
                 Location loc = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
                 Bukkit.getScheduler().runTask(plugin, () ->
@@ -195,7 +195,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handleBackTeleport(NetworkPacket packet) {
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player == null) return;
-        World world = Bukkit.getWorld(packet.get("world"));
+        World world = plugin.versionAdapter().resolveWorld(packet.get("world"));
         if (world == null) return;
         Location loc = new Location(world,
                 Double.parseDouble(packet.get("x")), Double.parseDouble(packet.get("y")),

@@ -60,7 +60,7 @@ public final class RespawnListener implements Listener {
         PaperSettings settings = plugin.settings();
         if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
 
-        String deathWorld = player.getWorld().getName();
+        String deathWorld = plugin.versionAdapter().getWorldName(player.getWorld());
         if (settings.isRespawnExcludedWorld(deathWorld)) {
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
                     + " died in excluded world '" + deathWorld + "' - skipping.");
@@ -69,7 +69,7 @@ public final class RespawnListener implements Listener {
 
         plugin.getLogger().info("[RandomRespawn] " + player.getName() + " died - processing...");
 
-        World world = Bukkit.getWorld(settings.respawnWorld());
+        World world = plugin.versionAdapter().resolveWorld(settings.respawnWorld());
         if (world == null) {
             plugin.getLogger().warning("[RandomRespawn] World '" + settings.respawnWorld()
                     + "' not found - falling back to default respawn.");
@@ -136,9 +136,9 @@ public final class RespawnListener implements Listener {
         }
     }
 
-    private static String formatLoc(Location loc) {
+    private String formatLoc(Location loc) {
         return String.format("%.0f, %.0f, %.0f in %s",
-                loc.getX(), loc.getY(), loc.getZ(), loc.getWorld().getName());
+                loc.getX(), loc.getY(), loc.getZ(), plugin.versionAdapter().getWorldName(loc.getWorld()));
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

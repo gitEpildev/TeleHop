@@ -78,7 +78,7 @@ public class ForceLastLocCommand extends BaseCommand {
                     return;
                 }
 
-                org.bukkit.World world = Bukkit.getWorld(loc.world());
+                org.bukkit.World world = plugin.versionAdapter().resolveWorld(loc.world());
                 if (world == null) {
                     sender.sendMessage(plugin.msg("lastloc-world-missing"));
                     return;

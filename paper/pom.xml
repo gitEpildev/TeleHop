@@ -61,6 +61,18 @@
             <artifactId>mysql-connector-j</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.telehop</groupId>
+            <artifactId>telehop-paper-version-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.telehop</groupId>
+            <artifactId>telehop-paper-1_21</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.telehop</groupId>
+            <artifactId>telehop-paper-26_1</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
@@ -85,13 +97,39 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.0</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                        <version>9.9.1</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm-commons</artifactId>
+                        <version>9.9.1</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <phase>package</phase>
                         <goals><goal>shade</goal></goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
+                            <artifactSet>
+                                <includes>
+                                    <include>com.telehop:telehop-common</include>
+                                    <include>com.telehop:telehop-paper-version-api</include>
+                                    <include>com.telehop:telehop-paper-1_21</include>
+                                    <include>com.telehop:telehop-paper-26_1</include>
+                                    <include>co.aikar:*</include>
+                                    <include>dev.triumphteam:*</include>
+                                    <include>com.zaxxer:*</include>
+                                    <include>com.mysql:*</include>
+                                    <include>com.google.code.gson:*</include>
+                                    <include>com.google.protobuf:*</include>
+                                </includes>
+                            </artifactSet>
                             <relocations>
                                 <relocation>
                                     <pattern>co.aikar.commands</pattern>

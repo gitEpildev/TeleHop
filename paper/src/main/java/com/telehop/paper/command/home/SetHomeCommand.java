@@ -57,7 +57,7 @@ public class SetHomeCommand extends BaseCommand {
             if (existing.isPresent()) {
                 Location loc = player.getLocation();
                 HomeRecord home = new HomeRecord(uuid, existing.get().name(),
-                        plugin.settings().serverName(), loc.getWorld().getName(),
+                        plugin.settings().serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
                         loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
                 plugin.services().homeService().upsert(home).thenRun(() ->
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
@@ -73,7 +73,7 @@ public class SetHomeCommand extends BaseCommand {
                     }
                     Location loc = player.getLocation();
                     HomeRecord home = new HomeRecord(uuid, name,
-                            plugin.settings().serverName(), loc.getWorld().getName(),
+                            plugin.settings().serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
                             loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
                     plugin.services().homeService().upsert(home).thenRun(() ->
                             org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->

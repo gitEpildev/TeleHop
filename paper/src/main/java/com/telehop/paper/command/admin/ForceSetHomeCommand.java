@@ -31,7 +31,7 @@ public class ForceSetHomeCommand extends BaseCommand {
         if (loc.getWorld() == null) return;
 
         HomeRecord home = new HomeRecord(uuid, homeName,
-                plugin.settings().serverName(), loc.getWorld().getName(),
+                plugin.settings().serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
                 loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
 
         plugin.services().homeService().upsert(home).thenRun(() ->

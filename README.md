@@ -1,6 +1,6 @@
 # TeleHop
 
-Cross-server teleportation suite for **Paper 1.21+ and Velocity 3.3+** networks. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
+Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Velocity 3.3+** networks. A single JAR works on both Minecraft versions, detecting the server version at runtime and loading the correct API adapter. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
 
 ## Features
 
@@ -205,13 +205,22 @@ Admin-only subcommands are hidden from tab complete for players without `telehop
 | `telehop.tp` | `/tp` (cross-server admin teleport) |
 | `telehop.tphere` | `/tphere` (pull player to you) |
 
+## Supported Versions
+
+| Minecraft | Paper API | Java |
+|-----------|-----------|------|
+| 1.21.x | 1.21.11-R0.1 | 21+ |
+| 26.1.x | 26.1.2+ | 25+ |
+
+The plugin ships a single JAR containing version adapters for both. At startup, `Bootstrap` detects the Minecraft version and loads the correct adapter via reflection. World name resolution and lookup are abstracted through `VersionAdapter`, so all features (homes, warps, RTP, back, etc.) work identically across versions.
+
 ## Requirements
 
 | Software | Version |
 |----------|---------|
-| Paper | 1.21+ |
+| Paper | 1.21.x or 26.1.x |
 | Velocity | 3.3+ |
-| Java | 21+ |
+| Java | 21+ (1.21.x servers) or 25+ (26.1.x servers) |
 | MySQL | 8.0+ (MariaDB 10.5+ also works) |
 | LuckPerms | 5.4+ (optional, recommended) |
 
@@ -286,10 +295,10 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-2.0.0.jar`
+- `paper/target/telehop-paper-2.0.0.jar` (includes both version adapters)
 - `velocity/target/telehop-velocity-2.0.0.jar`
 
-Requires Java 21+ and Maven 3.8+.
+Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
 
 ## CI / CD
 

@@ -112,7 +112,7 @@ public class AdminTeleportCommand extends BaseCommand {
         NetworkPacket packet = NetworkPacket.request(PacketType.ADMIN_TP_TO_COORDS, plugin.settings().serverName(), "velocity")
                 .put("actorUuid", sender.getUniqueId().toString())
                 .put("targetName", playerName)
-                .put("world", sender.getWorld().getName())
+                .put("world", plugin.versionAdapter().getWorldName(sender.getWorld()))
                 .put("x", String.valueOf(x))
                 .put("y", String.valueOf(y))
                 .put("z", String.valueOf(z));

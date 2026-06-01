@@ -2,6 +2,7 @@ package com.telehop.paper.service;
 
 import com.telehop.common.model.WarpRecord;
 import com.telehop.paper.config.StorageManager;
+import com.telehop.paper.version.VersionAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -23,6 +24,7 @@ public final class TeleportService {
     private final JavaPlugin plugin;
     private final PendingTeleportManager pendingManager;
     private final StorageManager storageManager;
+    private final VersionAdapter versionAdapter;
     private MessageService messageService;
     private AuditLogger auditLogger;
     private RtpManager rtpManager;
@@ -30,10 +32,12 @@ public final class TeleportService {
     private BackLocationManager backManager;
     private String serverName;
 
-    public TeleportService(JavaPlugin plugin, PendingTeleportManager pendingManager, StorageManager storageManager) {
+    public TeleportService(JavaPlugin plugin, PendingTeleportManager pendingManager,
+                           StorageManager storageManager, VersionAdapter versionAdapter) {
         this.plugin = plugin;
         this.pendingManager = pendingManager;
         this.storageManager = storageManager;
+        this.versionAdapter = versionAdapter;
     }
 
     public void wire(MessageService messageService, AuditLogger auditLogger,
@@ -59,7 +63,7 @@ public final class TeleportService {
     }
 
     public void teleportToWarp(Player player, WarpRecord warp) {
-        World world = Bukkit.getWorld(warp.world());
+        World world = versionAdapter.resolveWorld(warp.world());
         if (world == null) return;
         Location target = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
         doTeleport(player, target, "warp");
@@ -98,7 +102,7 @@ public final class TeleportService {
 
         int maxRadius = rtpCfg.getInt("rtp.max-radius", 25000);
         int radius = Math.min(rtpCfg.getInt("rtp.regions." + region + ".radius", 25000), maxRadius);
-        World world = Bukkit.getWorld(worldName);
+        World world = versionAdapter.resolveWorld(worldName);
         if (world == null) {
             player.sendMessage(messageService.format("rtp-failed"));
             auditLogger.log("rtp-failed-world player=" + player.getName()
@@ -107,19 +111,19 @@ public final class TeleportService {
         }
         auditLogger.log("rtp-start player=" + player.getName()
                 + " region=" + region + " dimension=" + dimension
-                + " world=" + world.getName() + " radius=" + radius);
+                + " world=" + versionAdapter.getWorldName(world) + " radius=" + radius);
         player.sendMessage(messageService.format("rtp-searching"));
         rtpManager.findSafeLocation(world, radius).thenAccept(location -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (location == null) {
                     player.sendMessage(messageService.format("rtp-failed"));
                     auditLogger.log("rtp-failed-safe-spot player=" + player.getName()
-                            + " world=" + world.getName());
+                            + " world=" + versionAdapter.getWorldName(world));
                     return;
                 }
                 player.sendMessage(messageService.format("rtp-teleporting"));
                 auditLogger.log("rtp-teleport player=" + player.getName()
-                        + " world=" + world.getName()
+                        + " world=" + versionAdapter.getWorldName(world)
                         + " x=" + location.getBlockX()
                         + " y=" + location.getBlockY()
                         + " z=" + location.getBlockZ());
@@ -151,7 +155,7 @@ public final class TeleportService {
 
         String key = "rtp.dimensions." + dimension;
         String configured = rtpCfg.getString(key);
-        if (configured != null && Bukkit.getWorld(configured) != null) {
+        if (configured != null && versionAdapter.resolveWorld(configured) != null) {
             return configured;
         }
         return switch (dimension.toLowerCase()) {
@@ -164,7 +168,7 @@ public final class TeleportService {
     private Optional<String> firstWorldByEnvironment(World.Environment environment) {
         return Bukkit.getWorlds().stream()
                 .filter(w -> w.getEnvironment() == environment)
-                .map(World::getName)
+                .map(versionAdapter::getWorldName)
                 .findFirst();
     }
 }

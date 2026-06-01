@@ -87,7 +87,7 @@ public class HomeGui {
                             Location loc = player.getLocation();
                             if (loc.getWorld() == null) return;
                             HomeRecord newHome = new HomeRecord(uuid, autoName,
-                                    cfg.serverName(), loc.getWorld().getName(),
+                                    cfg.serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
                                     loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
                             player.closeInventory();
                             homeService.upsert(newHome).thenRun(() ->
@@ -168,7 +168,7 @@ public class HomeGui {
             player.sendMessage(plugin.msg("home-teleporting", Map.of("name", home.name())));
             return;
         }
-        org.bukkit.World world = Bukkit.getWorld(home.world());
+        org.bukkit.World world = plugin.versionAdapter().resolveWorld(home.world());
         if (world == null) {
             player.sendMessage(plugin.msg("home-not-found"));
             return;

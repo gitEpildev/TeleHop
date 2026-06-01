@@ -29,7 +29,7 @@ public class SetWarpCommand extends BaseCommand {
         WarpRecord warp = new WarpRecord(
                 name,
                 plugin.settings().serverName(),
-                loc.getWorld().getName(),
+                plugin.versionAdapter().getWorldName(loc.getWorld()),
                 loc.getX(), loc.getY(), loc.getZ(),
                 loc.getYaw(), loc.getPitch()
         );

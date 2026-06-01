@@ -1,5 +1,6 @@
 package com.telehop.paper.config;
 
+import com.telehop.paper.version.VersionAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -22,10 +23,12 @@ import java.util.logging.Level;
 public final class StorageManager {
     private final JavaPlugin plugin;
     private final File file;
+    private final VersionAdapter versionAdapter;
     private FileConfiguration data;
 
-    public StorageManager(JavaPlugin plugin) {
+    public StorageManager(JavaPlugin plugin, VersionAdapter versionAdapter) {
         this.plugin = plugin;
+        this.versionAdapter = versionAdapter;
         this.file = new File(plugin.getDataFolder(), "storage.yml");
     }
 
@@ -48,7 +51,7 @@ public final class StorageManager {
 
     public Location getSpawnLocation() {
         String worldName = data.getString("spawn.world", "world");
-        World world = Bukkit.getWorld(worldName);
+        World world = versionAdapter.resolveWorld(worldName);
         if (world == null) {
             world = Bukkit.getWorlds().isEmpty() ? null : Bukkit.getWorlds().get(0);
         }
@@ -64,7 +67,7 @@ public final class StorageManager {
     }
 
     public void setSpawnLocation(Location loc) {
-        data.set("spawn.world", loc.getWorld().getName());
+        data.set("spawn.world", versionAdapter.getWorldName(loc.getWorld()));
         data.set("spawn.x", loc.getX());
         data.set("spawn.y", loc.getY());
         data.set("spawn.z", loc.getZ());

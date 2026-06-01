@@ -13,6 +13,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Added
 
+**Version Adapters**
+- Multi-version support: a single JAR runs on Paper 1.21.x (Java 21) and Paper 26.1.x (Java 25)
+- `VersionAdapter` interface abstracts `World.getName()` and `Bukkit.getWorld()` across API versions
+- `Paper121Adapter` for 1.21.x (standard name-based world resolution)
+- `Paper261Adapter` for 26.1.x (key-based world resolution with name fallback)
+- Runtime version detection in `Bootstrap` using `getMinecraftVersion()` with Bukkit version string fallback
+- Adapters loaded via `Class.forName` reflection to avoid `NoClassDefFoundError` on unsupported versions
+- CI verification that both adapter modules compile against their respective Paper API versions
+
 **Homes**
 - Named homes system: `/sethome <name>`, `/home <name>`, `/delhome <name>`
 - Up to 10 homes per player, gated by `telehop.homes.1` through `telehop.homes.10` permissions

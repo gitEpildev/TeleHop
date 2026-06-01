@@ -43,7 +43,7 @@ public class PaperPlayerListener implements Listener {
                 LastLocationRecord record = new LastLocationRecord(
                         event.getPlayer().getUniqueId().toString(),
                         plugin.settings().serverName(),
-                        loc.getWorld().getName(),
+                        plugin.versionAdapter().getWorldName(loc.getWorld()),
                         loc.getX(), loc.getY(), loc.getZ(),
                         loc.getYaw(), loc.getPitch()
                 );

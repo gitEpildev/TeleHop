@@ -1,0 +1,31 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.telehop</groupId>
+        <artifactId>telehop-parent</artifactId>
+        <version>2.0.0</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>telehop-paper-1_21</artifactId>
+    <packaging>jar</packaging>
+    <name>TeleHop Paper 1.21.x Adapter</name>
+    <description>Version-specific adapter for Paper 1.21.x (World.getName, Bukkit.getWorld)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.telehop</groupId>
+            <artifactId>telehop-paper-version-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.papermc.paper</groupId>
+            <artifactId>paper-api</artifactId>
+            <version>${paper.api.121.version}</version>
+            <scope>provided</scope>
+        </dependency>
+    </dependencies>
+</project>

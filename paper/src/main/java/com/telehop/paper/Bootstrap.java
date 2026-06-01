@@ -68,6 +68,7 @@ import com.telehop.paper.service.ServiceRegistry;
 import com.telehop.paper.service.TeleportEffectPlayer;
 import com.telehop.paper.service.TeleportService;
 import com.telehop.paper.service.TpaRuntimeManager;
+import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -76,6 +77,8 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Performs the full plugin startup sequence and constructs the {@link ServiceRegistry}.
@@ -99,6 +102,15 @@ public final class Bootstrap {
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
+        VersionAdapter versionAdapter = resolveVersionAdapter(plugin);
+        if (versionAdapter == null) {
+            plugin.getLogger().severe("Unsupported Minecraft version! TeleHop supports Paper 1.21.x and 26.1.x.");
+            Bukkit.getPluginManager().disablePlugin(plugin);
+            return null;
+        }
+        plugin.setVersionAdapter(versionAdapter);
+        plugin.getLogger().info("Version adapter: " + versionAdapter.getClass().getSimpleName());
+
         if (ConfigMigrator.needsMigration(plugin)) {
             ConfigMigrator.migrate(plugin);
         }
@@ -119,10 +131,10 @@ public final class Bootstrap {
         reg.setRandomRespawnManager(new RandomRespawnManager());
         reg.setRandomRespawnService(new RandomRespawnService(plugin));
 
-        StorageManager storage = new StorageManager(plugin);
+        StorageManager storage = new StorageManager(plugin, versionAdapter);
         storage.load();
         reg.setStorageManager(storage);
-        reg.setTeleportService(new TeleportService(plugin, reg.pendingTeleportManager(), storage));
+        reg.setTeleportService(new TeleportService(plugin, reg.pendingTeleportManager(), storage, versionAdapter));
 
         DatabaseManager db;
         try {
@@ -299,5 +311,46 @@ public final class Bootstrap {
                     reg.settings().serverName(), "velocity");
             reg.messaging().send(packet);
         }, 40L, 20L * 5L);
+    }
+
+    private static String detectMinecraftVersion(NetworkPaperPlugin plugin) {
+        try {
+            return (String) plugin.getServer().getClass()
+                    .getMethod("getMinecraftVersion").invoke(plugin.getServer());
+        } catch (Exception e) {
+            String ver = Bukkit.getVersion();
+            Matcher m = Pattern.compile("\\(MC: ([\\d.]+)\\)").matcher(ver);
+            if (m.find()) {
+                return m.group(1);
+            }
+            return Bukkit.getBukkitVersion().split("-")[0];
+        }
+    }
+
+    private static VersionAdapter resolveVersionAdapter(NetworkPaperPlugin plugin) {
+        String mcVersion = detectMinecraftVersion(plugin);
+        plugin.getLogger().info("Minecraft version: " + mcVersion);
+
+        if (mcVersion.startsWith("26.")) {
+            try {
+                return (VersionAdapter) Class.forName("com.telehop.paper.v26_1.Paper261Adapter")
+                        .getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException e) {
+                plugin.getLogger().severe("Failed to load Paper 26.1.x adapter: " + e.getMessage());
+                return null;
+            }
+        }
+
+        if (mcVersion.startsWith("1.21")) {
+            try {
+                return (VersionAdapter) Class.forName("com.telehop.paper.v1_21.Paper121Adapter")
+                        .getDeclaredConstructor().newInstance();
+            } catch (ReflectiveOperationException e) {
+                plugin.getLogger().severe("Failed to load Paper 1.21.x adapter: " + e.getMessage());
+                return null;
+            }
+        }
+
+        return null;
     }
 }

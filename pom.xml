@@ -35,7 +35,10 @@
 
     <modules>
         <module>common</module>
+        <module>paper-versions/paper-version-api</module>
         <module>paper</module>
+        <module>paper-versions/paper.1.21.x</module>
+        <module>paper-versions/paper.26.1.x</module>
         <module>velocity</module>
     </modules>
 
@@ -43,6 +46,8 @@
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <paper.api.version>1.21.11-R0.1-SNAPSHOT</paper.api.version>
+        <paper.api.121.version>1.21.11-R0.1-SNAPSHOT</paper.api.121.version>
+        <paper.api.261.version>26.1.2.build.52-beta</paper.api.261.version>
         <velocity.api.version>3.3.0-SNAPSHOT</velocity.api.version>
         <!-- ACF only publishes SNAPSHOT builds; this is standard for the library -->
         <acf.version>0.5.1-SNAPSHOT</acf.version>
@@ -73,6 +78,21 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.telehop</groupId>
+                <artifactId>telehop-paper-version-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.telehop</groupId>
+                <artifactId>telehop-paper-1_21</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.telehop</groupId>
+                <artifactId>telehop-paper-26_1</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>net.kyori</groupId>
                 <artifactId>adventure-api</artifactId>

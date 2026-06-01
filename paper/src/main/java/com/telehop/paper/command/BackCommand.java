@@ -62,7 +62,7 @@ public class BackCommand extends BaseCommand {
             packet.put("targetServer", entry.server());
             packet.put("postAction", "BACK");
             Location loc = entry.location();
-            packet.put("world", loc.getWorld().getName());
+            packet.put("world", plugin.versionAdapter().getWorldName(loc.getWorld()));
             packet.put("x", String.valueOf(loc.getX()));
             packet.put("y", String.valueOf(loc.getY()));
             packet.put("z", String.valueOf(loc.getZ()));

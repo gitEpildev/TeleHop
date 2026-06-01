@@ -2,6 +2,7 @@ package com.telehop.paper;
 
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.service.ServiceRegistry;
+import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -13,6 +14,7 @@ import java.util.Map;
  */
 public class NetworkPaperPlugin extends JavaPlugin {
     private ServiceRegistry services;
+    private VersionAdapter versionAdapter;
 
     @Override
     public void onEnable() {
@@ -27,6 +29,8 @@ public class NetworkPaperPlugin extends JavaPlugin {
     // ── public API used by commands, listeners, and the packet handler ──
 
     public ServiceRegistry services() { return services; }
+    public VersionAdapter versionAdapter() { return versionAdapter; }
+    void setVersionAdapter(VersionAdapter adapter) { this.versionAdapter = adapter; }
 
     public PaperSettings settings()                                          { return services.settings(); }
     public com.telehop.paper.service.MessageService messageService()         { return services.messageService(); }
