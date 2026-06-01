@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — Feature Toggles
+#  TeleHop - Feature Toggles
 # ═══════════════════════════════════════════════════════════════════════
 #  Enable or disable entire modules on this server.
 #
@@ -13,38 +13,38 @@
 #  Reloadable with /telehop reload (no restart needed).
 
 features:
-  # /spawn — teleport to the network hub
+  # /spawn - teleport to the network hub
   spawn: true
 
-  # /rtp — random teleport with region/dimension picker
+  # /rtp - random teleport with region/dimension picker
   rtp: true
 
   # /tpa, /tpahere, /tpaaccept, /tpadeny, /tpacancel
   tpa: true
 
-  # /warp, /setwarp, /delwarp, /warps — admin warps
+  # /warp, /setwarp, /delwarp, /warps - admin warps
   warps: true
 
-  # /pwarp — player-created personal warps
+  # /pwarp - player-created personal warps
   player-warps: true
 
-  # /tp, /tphere — admin teleport commands
+  # /tp, /tphere - admin teleport commands
   admin-tp: true
 
-  # /home, /sethome — player homes with GUI
+  # /home, /sethome - player homes with GUI
   homes: true
 
-  # /back, /back death — return to previous location
+  # /back, /back death - return to previous location
   back: true
 
-  # /tpatoggle — let players block incoming TPA requests
+  # /tpatoggle - let players block incoming TPA requests
   tpa-toggle: true
 
-  # Random respawn on death — teleports players to a random safe
+  # Random respawn on death - teleports players to a random safe
   # location in the configured world instead of the world spawn point.
   # Applies to all players unconditionally (no bypass).
   random-respawn: true
 
-  # /lastlocation, /lastloc, /backlast — persistent logout location tracking.
+  # /lastlocation, /lastloc, /backlast - persistent logout location tracking.
   # Saves the player's position when they quit and lets them return to it.
   last-location: true

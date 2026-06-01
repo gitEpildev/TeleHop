@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — Teleport Display & Effects
+#  TeleHop - Teleport Display & Effects
 # ═══════════════════════════════════════════════════════════════════════
 
 # Show action bar countdown during warmup delays (5... 4... 3... 2... 1...)
@@ -9,11 +9,11 @@ show-countdown: true
 #  Each teleport type can have its own particle and sound effects.
 #  Set enabled: false to disable for a specific type.
 #
-#  particle.type  — Any Minecraft Particle enum name (PORTAL, HEART, etc.)
-#  particle.count — Number of particles to spawn
-#  sound.type     — Any Minecraft Sound enum name
-#  sound.volume   — 0.0 to 2.0
-#  sound.pitch    — 0.5 to 2.0
+#  particle.type  - Any Minecraft Particle enum name (PORTAL, HEART, etc.)
+#  particle.count - Number of particles to spawn
+#  sound.type     - Any Minecraft Sound enum name
+#  sound.volume   - 0.0 to 2.0
+#  sound.pitch    - 0.5 to 2.0
 
 effects:
   default:

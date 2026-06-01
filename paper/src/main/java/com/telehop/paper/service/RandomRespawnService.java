@@ -10,14 +10,14 @@ import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Finds safe random locations for death respawn — fully independent of {@link RtpManager}.
+ * Finds safe random locations for death respawn - fully independent of {@link RtpManager}.
  *
  * <p>Key differences from {@code RtpManager}:
  * <ul>
  *   <li>Uses Paper's async chunk loading ({@code World#getChunkAtAsync}) instead of
  *       bouncing each check through {@code callSyncMethod().get()}, which eliminates
  *       the main-thread bottleneck that caused the race condition with fast respawns.</li>
- *   <li>No cooldowns, regions, dimensions, or GUI — single-purpose for respawn.</li>
+ *   <li>No cooldowns, regions, dimensions, or GUI - single-purpose for respawn.</li>
  *   <li>Returns a {@link CompletableFuture} so the caller can handle both the "ready"
  *       and "still searching" states gracefully.</li>
  * </ul>
@@ -73,7 +73,7 @@ public final class RandomRespawnService {
 
     /**
      * Checks a single X/Z column for a safe standing position using the
-     * heightmap for reliable surface detection — avoids sky-light checks
+     * heightmap for reliable surface detection - avoids sky-light checks
      * that return 0 on freshly generated (never-explored) chunks.
      */
     private Location checkColumn(World world, int x, int z) {

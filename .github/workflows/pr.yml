@@ -70,7 +70,7 @@ jobs:
         run: mvn -B compile test-compile --no-transfer-progress
 
   # -------------------------------------------------------------------------
-  # Sanity check – no compiled build artifacts should ever be committed.
+  # Sanity check - no compiled build artifacts should ever be committed.
   # Maven's `target/` directories are in .gitignore, but this catches
   # accidental force-adds or bad .gitignore edits.
   # -------------------------------------------------------------------------
@@ -86,7 +86,7 @@ jobs:
         run: |
           BAD=$(git ls-files | grep -E '^[^/]+/target/' || true)
           if [ -n "$BAD" ]; then
-            echo "::error::Committed build artifacts detected — remove target/ files from version control:"
+            echo "::error::Committed build artifacts detected - remove target/ files from version control:"
             echo "$BAD"
             exit 1
           fi
@@ -130,7 +130,7 @@ jobs:
   label:
     name: Auto-label
     runs-on: ubuntu-latest
-    # Labeling requires write access — only run on PRs from the same repo, not
+    # Labeling requires write access - only run on PRs from the same repo, not
     # from forks (where GITHUB_TOKEN has read-only permissions).
     if: github.event.pull_request.head.repo.full_name == github.repository
 

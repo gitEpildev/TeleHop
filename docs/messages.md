@@ -67,130 +67,130 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 ## All Message Keys
 
 ### General
-- `prefix` — Prepended to every message. Set to `""` to disable.
-- `no-permission` — Shown when lacking a permission.
-- `player-not-found` — Target player not online.
-- `console-not-allowed` — Player-only command used from console.
-- `feature-disabled` — Shown when a feature toggle is set to `false` in config.
-- `invalid-coords` — Shown when `/tp` is called with non-numeric coordinate arguments.
+- `prefix` - Prepended to every message. Set to `""` to disable.
+- `no-permission` - Shown when lacking a permission.
+- `player-not-found` - Target player not online.
+- `console-not-allowed` - Player-only command used from console.
+- `feature-disabled` - Shown when a feature toggle is set to `false` in config.
+- `invalid-coords` - Shown when `/tp` is called with non-numeric coordinate arguments.
 
 ### Admin Warps
-- `warp-created` — After `/setwarp`. Placeholder: `<name>`
-- `warp-deleted` — After `/delwarp`. Placeholder: `<name>`
-- `warp-not-found` — Warp doesn't exist. Placeholder: `<name>`
-- `warp-list-header` — `/warps` output. Placeholder: `<warps>`
-- `warp-teleporting` — Before teleporting. Placeholder: `<name>`
+- `warp-created` - After `/setwarp`. Placeholder: `<name>`
+- `warp-deleted` - After `/delwarp`. Placeholder: `<name>`
+- `warp-not-found` - Warp doesn't exist. Placeholder: `<name>`
+- `warp-list-header` - `/warps` output. Placeholder: `<warps>`
+- `warp-teleporting` - Before teleporting. Placeholder: `<name>`
 
 ### Player Warps
-- `pwarp-created` — After creating. Placeholders: `<name>`, `<count>`, `<limit>`
-- `pwarp-deleted` — After deleting. Placeholder: `<name>`
-- `pwarp-not-found` — Warp doesn't exist. Placeholder: `<name>`
-- `pwarp-limit-reached` — At warp cap. Placeholder: `<limit>`
-- `pwarp-no-permission` — No `telehop.warps.*` permission.
-- `pwarp-list-header` — List output. Placeholders: `<warps>`, `<count>`, `<limit>`
-- `pwarp-list-empty` — No warps yet.
-- `pwarp-teleporting` — Before teleporting. Placeholder: `<name>`
-- `pwarp-made-public` — Toggled to public. Placeholder: `<name>`
-- `pwarp-made-private` — Toggled to private. Placeholder: `<name>`
-- `pwarp-not-yours` — Other player's warp is private. Placeholder: `<name>`
-- `pwarp-player-not-found` — Player lookup failed. Placeholder: `<player>`
+- `pwarp-created` - After creating. Placeholders: `<name>`, `<count>`, `<limit>`
+- `pwarp-deleted` - After deleting. Placeholder: `<name>`
+- `pwarp-not-found` - Warp doesn't exist. Placeholder: `<name>`
+- `pwarp-limit-reached` - At warp cap. Placeholder: `<limit>`
+- `pwarp-no-permission` - No `telehop.warps.*` permission.
+- `pwarp-list-header` - List output. Placeholders: `<warps>`, `<count>`, `<limit>`
+- `pwarp-list-empty` - No warps yet.
+- `pwarp-teleporting` - Before teleporting. Placeholder: `<name>`
+- `pwarp-made-public` - Toggled to public. Placeholder: `<name>`
+- `pwarp-made-private` - Toggled to private. Placeholder: `<name>`
+- `pwarp-not-yours` - Other player's warp is private. Placeholder: `<name>`
+- `pwarp-player-not-found` - Player lookup failed. Placeholder: `<player>`
 
 ### TPA
-- `request-sent` — After `/tpa`. Placeholder: `<target>`
-- `request-received` — Incoming `/tpa`. Placeholder: `<sender>`
-- `request-received-here` — Incoming `/tpahere`. Placeholder: `<sender>`
-- `request-actions` — Clickable accept/deny buttons.
+- `request-sent` - After `/tpa`. Placeholder: `<target>`
+- `request-received` - Incoming `/tpa`. Placeholder: `<sender>`
+- `request-received-here` - Incoming `/tpahere`. Placeholder: `<sender>`
+- `request-actions` - Clickable accept/deny buttons.
 - `request-accepted`, `request-denied`, `request-expired`, `request-cancelled`
 - `request-none-pending`, `request-none-outgoing`
-- `tpa-cooldown` — TPA on cooldown. Placeholder: `<seconds>` (remaining)
-- `tpa-warmup` — Countdown message after accepting TPA. Placeholder: `<seconds>`
-- `tpa-warmup-cancelled` — TPA cancelled because the player moved during warmup.
+- `tpa-cooldown` - TPA on cooldown. Placeholder: `<seconds>` (remaining)
+- `tpa-warmup` - Countdown message after accepting TPA. Placeholder: `<seconds>`
+- `tpa-warmup-cancelled` - TPA cancelled because the player moved during warmup.
 
 ### Countdown
-- `countdown-actionbar` — Action bar text during warmup countdown (shown once per second). Placeholder: `<seconds>`
-- `countdown-chat` — Chat message each second during countdown. Placeholder: `<seconds>`
+- `countdown-actionbar` - Action bar text during warmup countdown (shown once per second). Placeholder: `<seconds>`
+- `countdown-chat` - Chat message each second during countdown. Placeholder: `<seconds>`
 
 ### Spawn
-- `spawn-sent` — After `/spawn`.
+- `spawn-sent` - After `/spawn`.
 
 ### RTP
-- `rtp-opening` — GUI opened.
-- `rtp-searching` — Looking for safe spot.
-- `rtp-teleporting` — About to teleport.
-- `rtp-failed` — No safe spot found.
-- `rtp-cooldown` — RTP on cooldown. Placeholder: `<seconds>` (remaining)
-- `rtp-delay` — Countdown before teleporting. Placeholder: `<seconds>`
-- `rtp-cancelled` — Teleport cancelled (player moved during countdown).
+- `rtp-opening` - GUI opened.
+- `rtp-searching` - Looking for safe spot.
+- `rtp-teleporting` - About to teleport.
+- `rtp-failed` - No safe spot found.
+- `rtp-cooldown` - RTP on cooldown. Placeholder: `<seconds>` (remaining)
+- `rtp-delay` - Countdown before teleporting. Placeholder: `<seconds>`
+- `rtp-cancelled` - Teleport cancelled (player moved during countdown).
 
 ### Listwarps
-- `listwarps-none` — No player warps found (global view).
-- `listwarps-header` — Header for global warp listing. Placeholder: `<count>`
-- `listwarps-player-none` — Target player has no warps. Placeholder: `<player>`
-- `listwarps-player-header` — Header for a specific player's warps. Placeholders: `<player>`, `<count>`
+- `listwarps-none` - No player warps found (global view).
+- `listwarps-header` - Header for global warp listing. Placeholder: `<count>`
+- `listwarps-player-none` - Target player has no warps. Placeholder: `<player>`
+- `listwarps-player-header` - Header for a specific player's warps. Placeholders: `<player>`, `<count>`
 
 ### Admin
-- `reload-success` — After `/telehop reload`.
-- `forcedelwarp-admin-deleted` — After force-deleting an admin warp. Placeholder: `<name>`
-- `forcedelwarp-deleted` — After force-deleting a player's warp. Placeholders: `<name>`, `<player>`
+- `reload-success` - After `/telehop reload`.
+- `forcedelwarp-admin-deleted` - After force-deleting an admin warp. Placeholder: `<name>`
+- `forcedelwarp-deleted` - After force-deleting a player's warp. Placeholders: `<name>`, `<player>`
 
 ### Version
-- `version-info` — Shown by `/telehop version`. Placeholder: `<version>`
+- `version-info` - Shown by `/telehop version`. Placeholder: `<version>`
 
 ### Homes
-- `home-set` — After `/sethome`. Placeholder: `<name>`
-- `home-deleted` — After `/delhome`. Placeholder: `<name>`
-- `home-teleporting` — Before teleporting. Placeholder: `<name>`
-- `home-not-found` — Home doesn't exist.
-- `home-no-empty-slot` — All slots used.
-- `home-blocked-server` — `/sethome` blocked on this server.
-- `home-invalid-name` — Invalid characters in home name.
-- `home-name-too-long` — Name exceeds max length. Placeholder: `<max>`
+- `home-set` - After `/sethome`. Placeholder: `<name>`
+- `home-deleted` - After `/delhome`. Placeholder: `<name>`
+- `home-teleporting` - Before teleporting. Placeholder: `<name>`
+- `home-not-found` - Home doesn't exist.
+- `home-no-empty-slot` - All slots used.
+- `home-blocked-server` - `/sethome` blocked on this server.
+- `home-invalid-name` - Invalid characters in home name.
+- `home-name-too-long` - Name exceeds max length. Placeholder: `<max>`
 
 ### Back
-- `back-teleporting` — After `/back`.
-- `back-no-location` — No previous location stored.
-- `back-death-teleporting` — After `/back death`.
-- `back-death-no-location` — No death location stored.
+- `back-teleporting` - After `/back`.
+- `back-no-location` - No previous location stored.
+- `back-death-teleporting` - After `/back death`.
+- `back-death-no-location` - No death location stored.
 
 ### TPA Toggle
-- `tpa-toggle-on` — TPA requests enabled.
-- `tpa-toggle-off` — TPA requests disabled.
-- `player-tpa-disabled` — Target has TPA disabled. Placeholder: `<target>`
+- `tpa-toggle-on` - TPA requests enabled.
+- `tpa-toggle-off` - TPA requests disabled.
+- `player-tpa-disabled` - Target has TPA disabled. Placeholder: `<target>`
 
 ### Last Location
-- `lastloc-teleporting` — After `/lastlocation`.
-- `lastloc-no-location` — No saved logout location.
-- `lastloc-world-missing` — Saved world no longer exists.
+- `lastloc-teleporting` - After `/lastlocation`.
+- `lastloc-no-location` - No saved logout location.
+- `lastloc-world-missing` - Saved world no longer exists.
 
 ### RTP GUI
-- `rtp-back-button` — Back button label in RTP dimension picker.
-- `rtp-back-lore` — Back button tooltip.
+- `rtp-back-button` - Back button label in RTP dimension picker.
+- `rtp-back-lore` - Back button tooltip.
 
 ### ForceDelHome (admin)
-- `forcedelhome-header` — Header for force-delete home list. Placeholders: `<player>`, `<count>`
-- `forcedelhome-deleted` — After deleting. Placeholder: `<name>`
-- `forcedelhome-no-homes` — Player has no homes. Placeholder: `<player>`
+- `forcedelhome-header` - Header for force-delete home list. Placeholders: `<player>`, `<count>`
+- `forcedelhome-deleted` - After deleting. Placeholder: `<name>`
+- `forcedelhome-no-homes` - Player has no homes. Placeholder: `<player>`
 
 ### ForceLastLoc (admin)
-- `forcelastloc-info` — Last location info display. Placeholders: `<player>`, `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
-- `forcelastloc-tp` — Teleporting to player's last location. Placeholders: `<player>`, `<server>`
-- `forcelastloc-cleared` — Cleared a player's last location. Placeholder: `<player>`
-- `forcelastloc-no-data` — Player has no saved location. Placeholder: `<player>`
+- `forcelastloc-info` - Last location info display. Placeholders: `<player>`, `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
+- `forcelastloc-tp` - Teleporting to player's last location. Placeholders: `<player>`, `<server>`
+- `forcelastloc-cleared` - Cleared a player's last location. Placeholder: `<player>`
+- `forcelastloc-no-data` - Player has no saved location. Placeholder: `<player>`
 
 ### ForceSetHome (admin)
-- `forcesethome-set` — Set a home for another player. Placeholders: `<player>`, `<name>`
+- `forcesethome-set` - Set a home for another player. Placeholders: `<player>`, `<name>`
 
 ### ListHomes (admin)
-- `listhomes-header` — Header for home list. Placeholders: `<player>`, `<count>`
-- `listhomes-empty` — Player has no homes. Placeholder: `<player>`
+- `listhomes-header` - Header for home list. Placeholders: `<player>`, `<count>`
+- `listhomes-empty` - Player has no homes. Placeholder: `<player>`
 
 ### PlayerInfo (admin)
-- `playerinfo-header` — Header for player info. Placeholder: `<player>`
-- `playerinfo-server` — Current server. Placeholder: `<server>`
-- `playerinfo-homes` — Home count. Placeholder: `<count>`
-- `playerinfo-warps` — Warp count. Placeholder: `<count>`
-- `playerinfo-lastloc` — Last logout location. Placeholders: `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
-- `playerinfo-lastloc-none` — No last location saved.
+- `playerinfo-header` - Header for player info. Placeholder: `<player>`
+- `playerinfo-server` - Current server. Placeholder: `<server>`
+- `playerinfo-homes` - Home count. Placeholder: `<count>`
+- `playerinfo-warps` - Warp count. Placeholder: `<count>`
+- `playerinfo-lastloc` - Last logout location. Placeholders: `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
+- `playerinfo-lastloc-none` - No last location saved.
 
 ### Help (`/telehop help`)
 

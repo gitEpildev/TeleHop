@@ -1,6 +1,6 @@
 # Agent Development Guidelines: TeleHop
 
-This document defines the architectural constraints and development standards for TeleHop — a cross-server teleportation plugin for **Paper 1.21+ / Velocity 3.3+** networks.
+This document defines the architectural constraints and development standards for TeleHop - a cross-server teleportation plugin for **Paper 1.21+ / Velocity 3.3+** networks.
 
 ---
 
@@ -10,7 +10,7 @@ TeleHop is a multi-module Maven project. Module boundaries are strict.
 
 | Module | Role | Constraint |
 | :--- | :--- | :--- |
-| `common` | Shared code — DB, models, services, messaging | No Paper or Velocity API imports. Platform-agnostic only. |
+| `common` | Shared code - DB, models, services, messaging | No Paper or Velocity API imports. Platform-agnostic only. |
 | `paper` | Paper backend plugin | May import `common` and Paper API. Never import Velocity. |
 | `velocity` | Velocity proxy plugin | May import `common` and Velocity API. Never import Paper. |
 
@@ -24,10 +24,10 @@ If code is needed by both `paper` and `velocity`, it goes in `common`.
 | :--- | :--- | :--- |
 | `config` | Settings, migration | Immutable records (`PaperSettings`). No runtime mutation. |
 | `service` | Runtime state, business logic | Thread-safe collections. No direct Bukkit API in async paths. |
-| `command` | ACF command handlers | Thin — delegate to services. Permission checks use `PermissionNodes` constants. |
+| `command` | ACF command handlers | Thin - delegate to services. Permission checks use `PermissionNodes` constants. |
 | `handler` | Inbound packet dispatch | Switch on `PacketType`, delegate to services. No outbound logic. |
 | `gui` | Inventory GUIs | Use Triumph GUI. Always `disableAllInteractions()`. |
-| `listener` | Bukkit event listeners | Thin — delegate to services. |
+| `listener` | Bukkit event listeners | Thin - delegate to services. |
 | `messaging` | Plugin channel transport | Handles encode/decode and channel registration. |
 
 ---
@@ -55,10 +55,10 @@ All inter-server communication uses the `telehop:network` plugin messaging chann
 - **Repository pattern:** `*Repository.java` classes in `common/db/` handle raw JDBC. `*Service.java` classes wrap them with async futures.
 
 ```java
-// Correct — circuit breaker protected
+// Correct - circuit breaker protected
 databaseManager.supplyAsync(() -> repository.find(uuid, slot));
 
-// Wrong — bypasses circuit breaker
+// Wrong - bypasses circuit breaker
 CompletableFuture.supplyAsync(() -> repository.find(uuid, slot));
 ```
 
@@ -125,13 +125,13 @@ Single `config.properties` file. Loaded by `VelocitySettings`.
 - All player-facing text uses **MiniMessage** format via `MessageService`.
 - Language files: `paper/src/main/resources/languages/{en,nl,de,es,zh,pl}.yml`.
 - When adding a new message key, add it to **all 6 files**. English is the fallback.
-- Use placeholders: `<player>`, `<target>`, `<slot>`, etc. — replaced via `Map.of(...)`.
+- Use placeholders: `<player>`, `<target>`, `<slot>`, etc. - replaced via `Map.of(...)`.
 
 ---
 
 ## 9. Code Style
 
-- **Java 21** — use records, sealed classes, pattern matching, text blocks where appropriate.
+- **Java 21** - use records, sealed classes, pattern matching, text blocks where appropriate.
 - **Javadoc** on all public classes and non-obvious public methods.
 - **No redundant comments.** Comments explain *why*, not *what*.
 - **Checkstyle** runs on every build (`mvn verify`). Violations fail the build. Rules are in `checkstyle.xml`.
@@ -142,7 +142,7 @@ Single `config.properties` file. Loaded by `VelocitySettings`.
 ## 10. Testing
 
 - Tests live in `common/src/test/java/`. Use **JUnit 5** + **Mockito**.
-- Mock `DatabaseManager` for service tests — never hit a real database in unit tests.
+- Mock `DatabaseManager` for service tests - never hit a real database in unit tests.
 - Every test must assert concrete behaviour, not just execution.
 - CI runs `mvn clean verify` (compile + tests + Checkstyle) on every push and PR.
 
@@ -150,7 +150,7 @@ Single `config.properties` file. Loaded by `VelocitySettings`.
 - Use Arrange / Act / Assert structure.
 - Descriptive test names (e.g., `failuresAtThresholdOpenCircuit`).
 - One logical behaviour per test.
-- No timing-dependent tests with tight windows — use generous margins for async/sleep tests.
+- No timing-dependent tests with tight windows - use generous margins for async/sleep tests.
 - Mock external I/O in unit tests.
 
 ---
@@ -166,5 +166,5 @@ When adding a new feature:
 - [ ] Add permission constants to `PermissionNodes.java`.
 - [ ] Add message keys to all 6 language files.
 - [ ] Update `plugin.yml`, docs (`commands.md`, `permissions.md`), and `docs/protocol.md` if adding packets.
-- [ ] Run `mvn clean verify` — tests pass, Checkstyle clean.
+- [ ] Run `mvn clean verify` - tests pass, Checkstyle clean.
 - [ ] Update `README.md` if the feature is user-facing.

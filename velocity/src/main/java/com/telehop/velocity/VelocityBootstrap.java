@@ -23,7 +23,7 @@ import java.util.Properties;
 /**
  * Performs the full proxy-plugin startup sequence and constructs the
  * {@link VelocityServiceRegistry}. Keeps {@link NetworkVelocityPlugin}
- * thin — lifecycle only.
+ * thin, lifecycle only.
  */
 public final class VelocityBootstrap {
 

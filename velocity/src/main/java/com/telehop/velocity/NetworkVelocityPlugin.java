@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 import java.nio.file.Path;
 
 /**
- * Velocity proxy plugin entry point. Lifecycle only — all wiring lives in
+ * Velocity proxy plugin entry point. Lifecycle only. All wiring lives in
  * {@link VelocityBootstrap}, all services in {@link VelocityServiceRegistry},
  * and packet handling in {@link com.telehop.velocity.handler.VelocityPacketHandler}.
  */

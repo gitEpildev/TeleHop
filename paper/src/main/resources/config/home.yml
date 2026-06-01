@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — Homes Configuration
+#  TeleHop - Homes Configuration
 # ═══════════════════════════════════════════════════════════════════════
-#  Controls /home and /sethome — player-owned teleport locations that
+#  Controls /home and /sethome - player-owned teleport locations that
 #  persist across restarts and work cross-server.
 #
 #  Reloadable with /telehop reload (no restart needed).
@@ -9,11 +9,11 @@
 homes:
   # Maximum number of named homes available (1-10).
   # Players unlock slots via permissions:
-  #   telehop.homes.1  — 1 home  (default: everyone)
-  #   telehop.homes.2  — 2 homes
-  #   telehop.homes.3  — 3 homes
+  #   telehop.homes.1  - 1 home  (default: everyone)
+  #   telehop.homes.2  - 2 homes
+  #   telehop.homes.3  - 3 homes
   #   ...
-  #   telehop.homes.10 — 10 homes
+  #   telehop.homes.10 - 10 homes
   #
   # The highest matching permission determines how many homes a player
   # can create. Use LuckPerms to assign higher counts to ranks:
@@ -40,9 +40,9 @@ homes:
   #    LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,
   #    PURPLE_BED, BLUE_BED, BROWN_BED, GREEN_BED, RED_BED, BLACK_BED
   #
-  #  bed-set    — Home is set (player has a home in this slot).
-  #  bed-empty  — Slot is available (player has permission but no home yet).
-  #  bed-locked — Slot is locked (player doesn't have the permission).
+  #  bed-set    - Home is set (player has a home in this slot).
+  #  bed-empty  - Slot is available (player has permission but no home yet).
+  #  bed-locked - Slot is locked (player doesn't have the permission).
   bed-set: "LIME_BED"
   bed-empty: "RED_BED"
   bed-locked: "LIGHT_BLUE_BED"

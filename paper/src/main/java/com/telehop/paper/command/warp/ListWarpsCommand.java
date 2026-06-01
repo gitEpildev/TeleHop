@@ -74,7 +74,7 @@ public class ListWarpsCommand extends BaseCommand {
             for (PlayerWarpRecord w : warps) {
                 String pub = w.isPublic() ? "<green>[public]" : "<red>[private]";
                 player.sendMessage(plugin.messageService().deserialize("<gray>  <aqua>" + w.name() + " " + pub +
-                        " <dark_gray>— " + w.server() + " " + w.world() +
+                        " <dark_gray>- " + w.server() + " " + w.world() +
                         " (" + (int) w.x() + ", " + (int) w.y() + ", " + (int) w.z() + ")"));
             }
         });

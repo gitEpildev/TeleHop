@@ -23,10 +23,10 @@ public class AdminTeleportCommand extends BaseCommand {
 
     /**
      * Unified handler for all /tp variants:
-     *   /tp <player>                  — sender → player
-     *   /tp <player1> <player2>       — player1 → player2
-     *   /tp <x> <y> <z>              — sender → coordinates
-     *   /tp <player> <x> <y> <z>    — player → coordinates
+     *   /tp <player>                  - sender → player
+     *   /tp <player1> <player2>       - player1 → player2
+     *   /tp <x> <y> <z>              - sender → coordinates
+     *   /tp <player> <x> <y> <z>    - player → coordinates
      */
     @Default
     @co.aikar.commands.annotation.CommandCompletion("@networkplayers @networkplayers")
@@ -63,7 +63,7 @@ public class AdminTeleportCommand extends BaseCommand {
                 plugin.auditLogger().log(sender.getName() + " tp -> " + x + " " + y + " " + z);
                 return;
             }
-            // Not valid coords — fall through to show usage
+            // Not valid coords - fall through to show usage
             sender.sendMessage(plugin.msg("invalid-coords"));
             return;
         }

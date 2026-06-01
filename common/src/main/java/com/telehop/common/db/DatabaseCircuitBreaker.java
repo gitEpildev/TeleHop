@@ -15,10 +15,10 @@ import java.util.logging.Logger;
  * <p>State machine: {@code CLOSED → OPEN → HALF_OPEN → CLOSED}.</p>
  *
  * <ul>
- *   <li><b>CLOSED</b> — normal operation; every failure increments the counter.</li>
- *   <li><b>OPEN</b> — all calls fail immediately with {@link CircuitOpenException}.
+ *   <li><b>CLOSED</b> - normal operation; every failure increments the counter.</li>
+ *   <li><b>OPEN</b> - all calls fail immediately with {@link CircuitOpenException}.
  *       After {@code recoveryMs} elapses the breaker moves to HALF_OPEN.</li>
- *   <li><b>HALF_OPEN</b> — a single probe call is allowed through. Success resets
+ *   <li><b>HALF_OPEN</b> - a single probe call is allowed through. Success resets
  *       to CLOSED; failure re-opens the circuit.</li>
  * </ul>
  */
@@ -52,7 +52,7 @@ public final class DatabaseCircuitBreaker {
     public State state() {
         if (state == State.OPEN && System.currentTimeMillis() - openedAt.get() >= recoveryMs) {
             state = State.HALF_OPEN;
-            log("Circuit breaker HALF_OPEN — allowing probe request");
+            log("Circuit breaker HALF_OPEN - allowing probe request");
         }
         return state;
     }
@@ -65,7 +65,7 @@ public final class DatabaseCircuitBreaker {
         State current = state();
         if (current == State.OPEN) {
             return CompletableFuture.failedFuture(
-                    new CircuitOpenException("Database circuit breaker is OPEN — failing fast"));
+                    new CircuitOpenException("Database circuit breaker is OPEN - failing fast"));
         }
 
         return operation.get().whenComplete((result, ex) -> {
@@ -86,7 +86,7 @@ public final class DatabaseCircuitBreaker {
 
     private void onSuccess() {
         if (state != State.CLOSED) {
-            log("Circuit breaker CLOSED — database recovered");
+            log("Circuit breaker CLOSED - database recovered");
         }
         consecutiveFailures.set(0);
         state = State.CLOSED;
@@ -97,7 +97,7 @@ public final class DatabaseCircuitBreaker {
         if (failures >= failureThreshold && state != State.OPEN) {
             state = State.OPEN;
             openedAt.set(System.currentTimeMillis());
-            log("Circuit breaker OPEN — " + failures + " consecutive failures (threshold: " + failureThreshold + ")");
+            log("Circuit breaker OPEN - " + failures + " consecutive failures (threshold: " + failureThreshold + ")");
         }
     }
 

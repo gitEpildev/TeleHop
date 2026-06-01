@@ -1,10 +1,10 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — Random Respawn Configuration
+#  TeleHop - Random Respawn Configuration
 # ═══════════════════════════════════════════════════════════════════════
 #  Controls where players respawn after death.
 #
 #  When enabled, a safe location is pre-computed asynchronously at the
-#  moment of death and applied at respawn — no blocking the main thread.
+#  moment of death and applied at respawn - no blocking the main thread.
 #
 #  Reloadable with /telehop reload (no restart needed).
 #  Feature toggle lives in features.yml under "random-respawn".

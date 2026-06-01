@@ -36,7 +36,7 @@ If the plugin detects a `config.yml` but no `config/general.yml`, it performs a 
 | `audit.enabled` | boolean | `false` | Log teleports and admin actions |
 | `multi-proxy.enabled` | boolean | `false` | Enable region-aware spawn routing for multi-proxy setups |
 | `regions.<name>.servers` | list | `[]` | Servers belonging to this region |
-| `regions.<name>.hub` | string | — | Hub/lobby server for this region |
+| `regions.<name>.hub` | string | - | Hub/lobby server for this region |
 
 ## `config/database.yml`
 
@@ -100,7 +100,7 @@ Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `ba
 | `rtp.max-radius` | int | `25000` | Max distance from 0,0 |
 | `rtp.regions` | map | *(see below)* | RTP region definitions |
 | `rtp.dimensions.*` | map | *(overworld, nether, end)* | World name mapping |
-| `rtp.gui.*` | map | — | Region and dimension picker GUI settings |
+| `rtp.gui.*` | map | - | Region and dimension picker GUI settings |
 
 ### RTP Region Example
 
@@ -134,7 +134,7 @@ rtp:
 | `homes.world-colors.overworld` | string | `"<green>Overworld</green>"` | Display name for overworld dimensions (MiniMessage) |
 | `homes.world-colors.nether` | string | `"<gradient:red:gold>Nether</gradient>"` | Display name for nether dimensions (MiniMessage) |
 | `homes.world-colors.the-end` | string | `"<gradient:dark_purple:blue>The End</gradient>"` | Display name for end dimensions (MiniMessage) |
-| `homes.server-colors.<name>` | string | — | Per-server colour/label in the home GUI. Key is server name (case-insensitive). |
+| `homes.server-colors.<name>` | string | - | Per-server colour/label in the home GUI. Key is server name (case-insensitive). |
 
 ### Bed Colours
 
@@ -174,7 +174,7 @@ Any server not listed displays in plain white.
 | `multi-proxy.cross-proxy-timeout-ms` | long | `15000` | Timeout for cross-proxy requests |
 | `redis.host` | string | `127.0.0.1` | Redis host (multi-proxy only) |
 | `redis.port` | int | `6379` | Redis port |
-| `redis.password` | string | — | Redis auth password |
+| `redis.password` | string | - | Redis auth password |
 | `redis.channel-prefix` | string | `telehop` | Redis channel prefix |
 
 ---

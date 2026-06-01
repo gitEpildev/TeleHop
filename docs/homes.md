@@ -18,9 +18,9 @@ All bed colours are configurable in `home.yml` using any Minecraft bed material 
 
 The home tooltip shows the server and world dimension with configurable colours:
 
-- **Overworld** — green by default
-- **Nether** — red-to-gold gradient by default
-- **The End** — purple-to-blue gradient by default
+- **Overworld** - green by default
+- **Nether** - red-to-gold gradient by default
+- **The End** - purple-to-blue gradient by default
 
 Server names also display with per-server colours (e.g. Lobby in gray, USA in red, EU in blue). Customise all of these in `home.yml` under `world-colors` and `server-colors`.
 
@@ -30,8 +30,8 @@ Coordinates can be hidden by setting `show-location: false`.
 
 Clicking an occupied home opens a sub-menu with:
 
-- **Teleport** (green wool) — teleports to the home, cross-server if needed
-- **Delete** (red wool) — opens a confirmation prompt
+- **Teleport** (green wool) - teleports to the home, cross-server if needed
+- **Delete** (red wool) - opens a confirmation prompt
 
 ### Confirmation
 
@@ -74,15 +74,15 @@ Empty bed slots on blocked servers show "Cannot set homes on this server" in red
 | `telehop.sethome` | `true` | Use `/sethome` |
 | `telehop.delhome` | `true` | Use `/delhome` |
 | `telehop.homes.1` | `true` | Access 1 home |
-| `telehop.homes.2` | — | Access 2 homes |
-| `telehop.homes.3` | — | Access 3 homes |
-| `telehop.homes.4` | — | Access 4 homes |
-| `telehop.homes.5` | — | Access 5 homes |
-| `telehop.homes.6` | — | Access 6 homes |
-| `telehop.homes.7` | — | Access 7 homes |
-| `telehop.homes.8` | — | Access 8 homes |
-| `telehop.homes.9` | — | Access 9 homes |
-| `telehop.homes.10` | — | Access 10 homes |
+| `telehop.homes.2` | - | Access 2 homes |
+| `telehop.homes.3` | - | Access 3 homes |
+| `telehop.homes.4` | - | Access 4 homes |
+| `telehop.homes.5` | - | Access 5 homes |
+| `telehop.homes.6` | - | Access 6 homes |
+| `telehop.homes.7` | - | Access 7 homes |
+| `telehop.homes.8` | - | Access 8 homes |
+| `telehop.homes.9` | - | Access 9 homes |
+| `telehop.homes.10` | - | Access 10 homes |
 | `telehop.admin` | `op` | Use `/forcedelhome` |
 
 The highest matching `telehop.homes.<N>` permission determines how many homes a player can create. Use LuckPerms to assign higher counts to ranks.

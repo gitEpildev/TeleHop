@@ -21,7 +21,7 @@ commands:
   warps:
     description: List all global warps.
   pwarp:
-    description: Player warps — create, delete, list, and teleport.
+    description: Player warps - create, delete, list, and teleport.
     aliases: [playerwarp, pwarps]
   tpa:
     description: Request to teleport to a player.
@@ -42,7 +42,7 @@ commands:
     description: Admin pull-to-you command.
     permission: telehop.tphere
   telehop:
-    description: TeleHop admin — reload, version, help, perms.
+    description: TeleHop admin - reload, version, help, perms.
   listwarps:
     description: List all player warps (admin).
     permission: telehop.admin
@@ -159,7 +159,7 @@ permissions:
     description: Admin pull command
     default: op
   telehop.admin:
-    description: Admin commands — setwarp, delwarp, listwarps, forcedelwarp, forcedelhome, telehop reload/perms
+    description: Admin commands - setwarp, delwarp, listwarps, forcedelwarp, forcedelhome, telehop reload/perms
     default: op
   telehop.back:
     description: Use /back (last teleport location)

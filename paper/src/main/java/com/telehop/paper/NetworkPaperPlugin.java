@@ -8,7 +8,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.util.Map;
 
 /**
- * Plugin entry point. Lifecycle only — all wiring lives in {@link Bootstrap},
+ * Plugin entry point. Lifecycle only. All wiring lives in {@link Bootstrap},
  * all services in {@link ServiceRegistry}.
  */
 public class NetworkPaperPlugin extends JavaPlugin {

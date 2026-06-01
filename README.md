@@ -98,7 +98,7 @@ Both commands work cross-server. Locations are session-only (not persisted acros
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/rtp` | Random teleport — opens region/dimension GUI | `telehop.rtp` |
+| `/rtp` | Random teleport, opens region/dimension GUI | `telehop.rtp` |
 
 ### Admin Warps
 
@@ -221,7 +221,7 @@ Admin-only subcommands are hidden from tab complete for players without `telehop
 2. Place `telehop-velocity-2.0.0.jar` on your Velocity proxy
 3. Place `telehop-paper-2.0.0.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
-5. Edit `plugins/TeleHop/config/general.yml` — set `server-name` on each server and `hub-server` to your lobby
+5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
 6. Restart Velocity first, then all Paper servers
 
 See [docs/setup.md](docs/setup.md) for the full walkthrough.
@@ -302,7 +302,7 @@ Requires Java 21+ and Maven 3.8+.
 
 ## Author
 
-**Epildev** — [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · Discord: `Epildev`
+**Epildev** - [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · Discord: `Epildev`
 
 Developed by [Epildevconnect Ltd](https://developer.epildevconnect.uk/) (Company No. [17247566](https://find-and-update.company-information.service.gov.uk/company/17247566)), registered in England and Wales.
 

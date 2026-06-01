@@ -74,7 +74,7 @@ Both commands work cross-server. Locations are session-only (not persisted acros
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/rtp` | Random teleport — opens region/dimension GUI | `telehop.rtp` |
+| `/rtp` | Random teleport, opens region/dimension GUI | `telehop.rtp` |
 
 ## Admin Teleport
 

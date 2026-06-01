@@ -6,7 +6,7 @@ package com.telehop.common.db;
  *
  * @param enabled       whether Redis-based multi-proxy communication is active
  * @param host          Redis hostname or IP
- * @param port          Redis port (1–65535)
+ * @param port          Redis port (1-65535)
  * @param password      Redis password (empty string for no auth)
  * @param channelPrefix prefix for all Redis pub/sub channels (e.g. "telehop")
  * @param proxyId       unique identifier for this proxy instance (e.g. "proxy-usa-1")

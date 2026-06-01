@@ -1,11 +1,11 @@
-# TeleHop — Configuration Wiki
+# TeleHop - Configuration Wiki
 
 > **Plugin version:** 1.0.2  
 > **Config folder:** `plugins/TeleHop/config/`  
 > **Language folder:** `plugins/TeleHop/languages/`
 
 All config files and this wiki are extracted automatically on first run.  
-Settings marked **Reloadable** take effect with `/telehop reload` — no restart needed.  
+Settings marked **Reloadable** take effect with `/telehop reload` - no restart needed.  
 Settings marked **⚠ Restart required** are only read once at startup.
 
 ---
@@ -31,11 +31,11 @@ Settings marked **⚠ Restart required** are only read once at startup.
 
 ## Quick-start checklist
 
-1. Set `server-name` in `general.yml` — must match this server's name in `velocity.toml`.
-2. Set `hub-server` in `general.yml` — the server players reach with `/spawn`.
-3. Fill in MySQL credentials in `database.yml` — every server shares the same database.
+1. Set `server-name` in `general.yml` - must match this server's name in `velocity.toml`.
+2. Set `hub-server` in `general.yml` - the server players reach with `/spawn`.
+3. Fill in MySQL credentials in `database.yml` - every server shares the same database.
 4. Toggle features on/off in `features.yml` to match what this server should offer.
-5. Start the server — TeleHop creates all required database tables automatically.
+5. Start the server - TeleHop creates all required database tables automatically.
 6. Assign permissions with LuckPerms (see [Permissions](#permissions)).
 
 ---
@@ -60,7 +60,7 @@ Identity, language, and cross-server messaging.
 ## database.yml
 
 Shared MySQL / MariaDB connection used by all servers and the Velocity proxy.  
-**⚠ Restart required** — the connection pool is built once at startup.
+**⚠ Restart required** - the connection pool is built once at startup.
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -85,15 +85,15 @@ When a feature is `false`, its commands still respond gracefully ("this feature 
 
 | Key | Default | What it controls |
 |-----|---------|-----------------|
-| `spawn` | `true` | `/spawn` — send player to the hub server |
-| `rtp` | `true` | `/rtp` — random teleport with region/dimension GUI |
+| `spawn` | `true` | `/spawn` - send player to the hub server |
+| `rtp` | `true` | `/rtp` - random teleport with region/dimension GUI |
 | `tpa` | `true` | `/tpa`, `/tpahere`, `/tpaaccept`, `/tpadeny`, `/tpacancel` |
-| `warps` | `true` | `/warp`, `/setwarp`, `/delwarp`, `/warps` — admin-managed warps |
-| `player-warps` | `true` | `/pwarp` — player-created personal warps |
-| `admin-tp` | `true` | `/tp`, `/tphere` — admin cross-server teleport |
-| `homes` | `true` | `/home`, `/sethome` — player homes with GUI |
-| `back` | `true` | `/back`, `/back death` — return to previous location |
-| `tpa-toggle` | `true` | `/tpatoggle` — let players block incoming TPA requests |
+| `warps` | `true` | `/warp`, `/setwarp`, `/delwarp`, `/warps` - admin-managed warps |
+| `player-warps` | `true` | `/pwarp` - player-created personal warps |
+| `admin-tp` | `true` | `/tp`, `/tphere` - admin cross-server teleport |
+| `homes` | `true` | `/home`, `/sethome` - player homes with GUI |
+| `back` | `true` | `/back`, `/back death` - return to previous location |
+| `tpa-toggle` | `true` | `/tpatoggle` - let players block incoming TPA requests |
 | `random-respawn` | `true` | Randomize death respawn location (configured in `respawn.yml`) |
 
 **Recommended settings per server type:**
@@ -122,7 +122,7 @@ Controls TPA request timing.
 
 ## rtp.yml
 
-Controls `/rtp` — the random teleport command with region and dimension picker GUIs.  
+Controls `/rtp` - the random teleport command with region and dimension picker GUIs.  
 **Reloadable.**
 
 ### Timing
@@ -167,7 +167,7 @@ dimensions:
 gui:
   region-menu:
     title: "<dark_purple>Select Region</dark_purple>"
-    rows: 3    # 1–6
+    rows: 3    # 1-6
   dimension-menu:
     title: "<gold>Select Dimension</gold>"
     rows: 3
@@ -185,7 +185,7 @@ Controls `/home` and `/sethome`.
 | `homes.max-slots` | `5` | Maximum home slots available. Players unlock slots via permissions (see below). |
 | `homes.confirm-set` | `true` | Opens a confirmation GUI before setting a home. `false` = set immediately on slot click. |
 | `homes.gui-title` | *(gradient)* | Title of the `/home` chest GUI. Supports MiniMessage. |
-| `homes.gui-rows` | `3` | Rows in the GUI (`1`–`6`). |
+| `homes.gui-rows` | `3` | Rows in the GUI (`1`-`6`). |
 | `homes.bed-set` | `LIME_BED` | Bed material for a slot that has a home saved. |
 | `homes.bed-empty` | `RED_BED` | Bed material for an available but empty slot. |
 | `homes.bed-locked` | `LIGHT_BLUE_BED` | Bed material for a slot the player has no permission for. |
@@ -196,15 +196,15 @@ Controls `/home` and `/sethome`.
 
 ### Home slot permissions
 
-Assign only the **highest** slot count a rank should have — TeleHop picks the highest matching permission automatically.
+Assign only the **highest** slot count a rank should have - TeleHop picks the highest matching permission automatically.
 
 | Permission | Slots | Default |
 |------------|-------|---------|
 | `telehop.homes.1` | 1 | Everyone |
-| `telehop.homes.2` | 2 | — |
-| `telehop.homes.3` | 3 | — |
-| `telehop.homes.4` | 4 | — |
-| `telehop.homes.5` | 5 | — |
+| `telehop.homes.2` | 2 | - |
+| `telehop.homes.3` | 3 | - |
+| `telehop.homes.4` | 4 | - |
+| `telehop.homes.5` | 5 | - |
 
 Example LuckPerms setup:
 ```
@@ -230,7 +230,7 @@ Enable or disable the entire feature in `features.yml` under `random-respawn`.
 
 ### How it works
 
-The safe-location search runs **asynchronously** the moment a player dies — while they're looking at the death screen. By the time they click "Respawn" the location is already found and waiting. The main server thread is never blocked.
+The safe-location search runs **asynchronously** the moment a player dies - while they're looking at the death screen. By the time they click "Respawn" the location is already found and waiting. The main server thread is never blocked.
 
 Surface detection uses Paper's `HeightMap.MOTION_BLOCKING` API for reliable results even on chunks that have never been explored. Safety checks:
 - Solid non-lethal floor (no lava, magma, cactus, fire, etc.)
@@ -242,9 +242,9 @@ Surface detection uses Paper's `HeightMap.MOTION_BLOCKING` API for reliable resu
 
 **Fallback:** If no safe spot is found within 200 attempts, the player respawns at the world spawn point and a warning is logged to console.
 
-**Hub server exempt:** If `server-name` matches `hub-server` in `general.yml`, random respawn is completely skipped on that server — players are sent to the set spawn point as normal. This is hardcoded and cannot be overridden by config; it ensures the lobby always behaves predictably regardless of what `features.yml` says.
+**Hub server exempt:** If `server-name` matches `hub-server` in `general.yml`, random respawn is completely skipped on that server - players are sent to the set spawn point as normal. This is hardcoded and cannot be overridden by config; it ensures the lobby always behaves predictably regardless of what `features.yml` says.
 
-**No bypass:** Random respawn applies unconditionally to all players on survival servers. There is no bypass permission — OP, admin, and regular players all respawn randomly on death.
+**No bypass:** Random respawn applies unconditionally to all players on survival servers. There is no bypass permission - OP, admin, and regular players all respawn randomly on death.
 
 ---
 
@@ -261,8 +261,8 @@ Controls visual effects and action bar countdown for all teleport types.
 | `effects.<type>.particle.count` | varies | Number of particles to spawn. |
 | `effects.<type>.sound.enabled` | `true` | Toggle the sound effect. |
 | `effects.<type>.sound.type` | varies | Minecraft `Sound` enum name (e.g. `ENTITY_ENDERMAN_TELEPORT`). |
-| `effects.<type>.sound.volume` | `1.0` | Volume (`0.0`–`2.0`). |
-| `effects.<type>.sound.pitch` | `1.0` | Pitch (`0.5`–`2.0`). |
+| `effects.<type>.sound.volume` | `1.0` | Volume (`0.0`-`2.0`). |
+| `effects.<type>.sound.pitch` | `1.0` | Pitch (`0.5`-`2.0`). |
 
 **Available effect types:** `default` `spawn` `tpa` `rtp` `warp` `home` `back`
 
@@ -289,17 +289,17 @@ Assign via LuckPerms: `lp user/group <name> permission set <node> [true/false]`
 | `telehop.tpa.cancel` | `/tpacancel` |
 | `telehop.tpa.toggle` | `/tpatoggle` |
 | `telehop.homes` | `/home`, `/sethome` |
-| `telehop.homes.1` – `telehop.homes.5` | Home slot count (assign only the highest needed) |
+| `telehop.homes.1` - `telehop.homes.5` | Home slot count (assign only the highest needed) |
 
 ### Admin permissions (default: OP)
 
 | Node | Description |
 |------|-------------|
 | `telehop.admin` | `/setwarp`, `/delwarp`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`, `/telehop reload\|perms\|version\|help` |
-| `telehop.tp` | `/tp` — admin cross-server teleport |
-| `telehop.tphere` | `/tphere` — pull a player to you |
-| `telehop.back` | `/back` — return to last teleport location |
-| `telehop.back.death` | `/back death` — return to death location |
+| `telehop.tp` | `/tp` - admin cross-server teleport |
+| `telehop.tphere` | `/tphere` - pull a player to you |
+| `telehop.back` | `/back` - return to last teleport location |
+| `telehop.back.death` | `/back death` - return to death location |
 
 ### Bypass permissions (default: OP)
 
@@ -344,11 +344,11 @@ Located in `plugins/TeleHop/languages/`. All message values use [MiniMessage](ht
 
 **Adding a custom language:**
 1. Copy `en.yml` to `<code>.yml` (e.g. `fr.yml`)
-2. Translate the values — leave keys you haven't translated and they fall back to English automatically
+2. Translate the values - leave keys you haven't translated and they fall back to English automatically
 3. Set `language: "fr"` in `general.yml`
 4. Run `/telehop reload`
 
-**Available MiniMessage tags:** `<red>`, `<bold>`, `<gradient:red:gold>`, `<click:run_command:'/cmd'>`, `<hover:show_text:'...'>`, and more — see the MiniMessage docs linked above.
+**Available MiniMessage tags:** `<red>`, `<bold>`, `<gradient:red:gold>`, `<click:run_command:'/cmd'>`, `<hover:show_text:'...'>`, and more - see the MiniMessage docs linked above.
 
 ---
 

@@ -28,8 +28,8 @@ Every message is a **JSON-encoded `NetworkPacket`**, serialised to UTF-8 bytes v
 | `targetServer` | `String` | Intended destination server (or `"velocity"` for proxy-handled packets) |
 | `timestamp` | `long` | Epoch milliseconds when the packet was created |
 | `response` | `boolean` | `true` if this packet is a response to a previous request |
-| `success` | `boolean` | For responses — whether the operation succeeded |
-| `errorMessage` | `String` | For failed responses — human-readable error description |
+| `success` | `boolean` | For responses - whether the operation succeeded |
+| `errorMessage` | `String` | For failed responses - human-readable error description |
 | `payload` | `Map<String, String>` | Arbitrary key-value data specific to each packet type |
 
 ## Request / Response Flow
@@ -55,16 +55,16 @@ Paper Server A                    Velocity Proxy                    Paper Server
 
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
-| `PING` | Any | — | Health check (reserved) |
-| `RESPONSE` | Return | — | Generic response to a prior request |
-| `ERROR` | Return | — | Error response |
+| `PING` | Any | - | Health check (reserved) |
+| `RESPONSE` | Return | - | Generic response to a prior request |
+| `ERROR` | Return | - | Error response |
 
 ### Player Tracking
 
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
 | `PLAYER_SERVER_UPDATE` | Paper → Velocity | `uuid`, `server` | Notifies the proxy that a player is on a specific server |
-| `PLAYER_LIST_REQUEST` | Paper → Velocity | — | Requests a list of all online players |
+| `PLAYER_LIST_REQUEST` | Paper → Velocity | - | Requests a list of all online players |
 | `PLAYER_LIST_RESPONSE` | Velocity → Paper | `names` (CSV) | Comma-separated list of all online player names |
 
 ### Server Transfer
@@ -79,7 +79,7 @@ When `TRANSFER_PLAYER` includes a `postAction`, Velocity queues a `PendingAction
 
 | postAction | Additional Payload | Effect on Arrival |
 |------------|-------------------|-------------------|
-| `SPAWN` | — | Teleports to server spawn |
+| `SPAWN` | - | Teleports to server spawn |
 | `WARP` | `warp` | Teleports to the named warp |
 | `RTP` | `region`, `dimension` | Executes random teleport |
 | `TELEPORT_TO_PLAYER` | `actorUuid`, `targetUuid` | Teleports actor to target player |
@@ -106,7 +106,7 @@ When `TRANSFER_PLAYER` includes a `postAction`, Velocity queues a `PendingAction
 | `WARP_TELEPORT` | Velocity → Paper | `uuid`, `warp` | Teleports a player to a warp on the local server |
 | `WARP_CREATE` | Paper → Velocity | `name`, `server`, `world`, `x`, `y`, `z`, `yaw`, `pitch` | Creates/updates a warp |
 | `WARP_DELETE` | Paper → Velocity | `name` | Deletes a warp |
-| `WARP_LIST` | Paper → Velocity | — | Requests the full warp list |
+| `WARP_LIST` | Paper → Velocity | - | Requests the full warp list |
 
 ### Player Warps
 
@@ -163,6 +163,6 @@ Defined in `com.telehop.common.NetworkConstants`:
 
 ## Backward Compatibility
 
-The protocol is currently unversioned (v1 implicit). All packet types and payloads are additive — new types can be introduced without breaking older endpoints, as unknown types are silently ignored by both Paper and Velocity handlers.
+The protocol is currently unversioned (v1 implicit). All packet types and payloads are additive - new types can be introduced without breaking older endpoints, as unknown types are silently ignored by both Paper and Velocity handlers.
 
 Future versions should add a `protocolVersion` field to `NetworkPacket` if breaking changes are required.

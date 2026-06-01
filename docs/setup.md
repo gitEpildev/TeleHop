@@ -14,7 +14,7 @@ All Paper backends and the Velocity proxy **must connect to the same MySQL datab
 
 ---
 
-## Step 1 — Create the MySQL Database
+## Step 1 - Create the MySQL Database
 
 ```sql
 CREATE DATABASE telehop;
@@ -27,7 +27,7 @@ Use `'telehop'@'localhost'` instead of `'%'` if all servers are on the same mach
 
 ---
 
-## Step 2 — Install on the Velocity Proxy
+## Step 2 - Install on the Velocity Proxy
 
 1. Place `telehop-velocity-1.0.1.jar` in `plugins/`.
 2. Start the proxy. A config is created at `plugins/telehop-velocity/config.properties`.
@@ -51,13 +51,13 @@ Server names must exactly match your `velocity.toml` `[servers]` entries.
 
 ---
 
-## Step 3 — Install on Each Paper Server
+## Step 3 - Install on Each Paper Server
 
 1. Place `telehop-paper-1.0.1.jar` in `plugins/`.
 2. Start the server. Two config files are created:
-   - `plugins/TeleHop/config.yml` — static settings (edit this)
-   - `plugins/TeleHop/storage.yml` — runtime data like spawn location (managed by the plugin)
-3. Edit `config.yml` — **`server-name` must be different on each server**:
+   - `plugins/TeleHop/config.yml` - static settings (edit this)
+   - `plugins/TeleHop/storage.yml` - runtime data like spawn location (managed by the plugin)
+3. Edit `config.yml` - **`server-name` must be different on each server**:
 
 ```yaml
 server-name: "usa"        # Must match velocity.toml
@@ -81,7 +81,7 @@ mysql:
 
 ---
 
-## Step 4 — Restart Order
+## Step 4 - Restart Order
 
 1. Velocity proxy (first)
 2. All Paper backends (after Velocity is fully started)

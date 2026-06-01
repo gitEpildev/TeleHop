@@ -41,7 +41,7 @@ jobs:
           languages: java
           queries: security-and-quality
 
-      # Build without tests — CodeQL only needs the compiled bytecode.
+      # Build without tests - CodeQL only needs the compiled bytecode.
       - name: Build for CodeQL
         run: mvn -B compile -DskipTests --no-transfer-progress
 

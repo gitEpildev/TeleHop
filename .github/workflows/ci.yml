@@ -34,7 +34,7 @@ env:
 jobs:
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Gate 1 — Checkstyle
+  # Gate 1 - Checkstyle
   # Fast style check. Runs in parallel with compile and validate.
   # ───────────────────────────────────────────────────────────────────────────
   checkstyle:
@@ -55,11 +55,11 @@ jobs:
         run: mvn -B checkstyle:check --no-transfer-progress
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Gate 2 — Full compilation
+  # Gate 2 - Full compilation
   # Compiles ALL modules (common, paper, velocity). This catches broken imports,
   # missing classes, and API mismatches in paper/velocity before tests run.
   # Without this gate, a paper-module compile error would only be caught in the
-  # final build job — after the test gate had already passed.
+  # final build job - after the test gate had already passed.
   # ───────────────────────────────────────────────────────────────────────────
   compile:
     name: Compile All Modules
@@ -84,7 +84,7 @@ jobs:
         run: mvn -B test-compile --no-transfer-progress
 
   # ───────────────────────────────────────────────────────────────────────────
-  # Gate 3 — Structural validation
+  # Gate 3 - Structural validation
   # Checks that don't require Maven compilation but must pass before tests.
   # ───────────────────────────────────────────────────────────────────────────
   validate:
@@ -198,7 +198,7 @@ jobs:
           FOUND=$(grep -rn --include="*.java" "TODO\|FIXME" \
             common/src/main/java paper/src/main/java velocity/src/main/java 2>/dev/null || true)
           if [ -n "$FOUND" ]; then
-            echo "::error::TODO/FIXME comments found — resolve them or open a GitHub Issue:"
+            echo "::error::TODO/FIXME comments found - resolve them or open a GitHub Issue:"
             echo "$FOUND"
             exit 1
           fi

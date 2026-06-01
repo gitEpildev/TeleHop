@@ -35,7 +35,7 @@
 
 ## RTP keeps failing
 
-- Check `rtp.max-radius` — increase it if the world is small.
+- Check `rtp.max-radius`. Increase it if the world is small.
 - Verify the world name in `rtp.regions.*.world` matches an actual world.
 - Make sure the world has generated terrain in the radius area.
 
@@ -61,13 +61,13 @@
 
 - This usually means the plugin failed to load. Check the server startup log for TeleHop errors.
 - Verify the jar file is present in `plugins/` and not corrupted (re-download if needed).
-- If the plugin loaded but commands still fail, try reconnecting — the client needs to refresh its command list after a server restart.
+- If the plugin loaded but commands still fail, try reconnecting. The client needs to refresh its command list after a server restart.
 - Check that no other plugin is conflicting with the same command names.
 
 ## Features say "This feature is disabled on this server"
 
 - A feature toggle in `config.yml` is set to `false`. Check the `features:` section.
-- Use `/telehop reload` after changing toggles — no restart needed.
+- Use `/telehop reload` after changing toggles. No restart needed.
 
 ## `/telehop reload` didn't apply my MySQL changes
 

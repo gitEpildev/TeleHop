@@ -9,7 +9,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [2.0.0] — 2026-06-01
+## [2.0.0] - 2026-06-01
 
 ### Added
 
@@ -93,16 +93,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [1.0.0] — 2026-04-08
+## [1.0.0] - 2026-04-08
 
 ### Added
-- **Network Spawn** — `/spawn` sends players to the hub server, cross-server
-- **Admin Warps** — `/warp`, `/setwarp`, `/delwarp`, `/warps` shared via MySQL
-- **Player Warps** — `/pwarp` with per-rank limits, public/private toggle, cross-server
-- **TPA** — `/tpa`, `/tpahere`, `/tpaaccept`, `/tpadeny`, `/tpacancel` across servers
-- **Random Teleport** — `/rtp` with region/dimension picker GUI
-- **Admin Teleport** — `/tp`, `/tphere` cross-server
-- **Feature Toggles** — enable/disable any module per server
-- **Multi-Language** — 6 built-in languages (en, nl, de, es, zh, pl) with fallback
-- **Cross-server messaging** — plugin messaging channel with deduplication and timeout
+- **Network Spawn** - `/spawn` sends players to the hub server, cross-server
+- **Admin Warps** - `/warp`, `/setwarp`, `/delwarp`, `/warps` shared via MySQL
+- **Player Warps** - `/pwarp` with per-rank limits, public/private toggle, cross-server
+- **TPA** - `/tpa`, `/tpahere`, `/tpaaccept`, `/tpadeny`, `/tpacancel` across servers
+- **Random Teleport** - `/rtp` with region/dimension picker GUI
+- **Admin Teleport** - `/tp`, `/tphere` cross-server
+- **Feature Toggles** - enable/disable any module per server
+- **Multi-Language** - 6 built-in languages (en, nl, de, es, zh, pl) with fallback
+- **Cross-server messaging** - plugin messaging channel with deduplication and timeout
 - MySQL shared database for warps, player warps, TPA requests, and player tracking

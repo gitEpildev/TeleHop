@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — RTP (Random Teleport) Configuration
+#  TeleHop - RTP (Random Teleport) Configuration
 # ═══════════════════════════════════════════════════════════════════════
-#  Controls /rtp — the random teleport command with region and dimension
+#  Controls /rtp - the random teleport command with region and dimension
 #  picker GUIs.
 #  Reloadable with /telehop reload (no restart needed).
 
@@ -31,10 +31,10 @@ rtp:
   #                the dimension selector.
   #  TWO+ regions → a region picker GUI opens first.
   #
-  #  gui.material — Any Bukkit Material name (e.g. GRASS_BLOCK, RED_CONCRETE)
-  #  gui.name     — Display name in the GUI. Supports MiniMessage colors:
+  #  gui.material - Any Bukkit Material name (e.g. GRASS_BLOCK, RED_CONCRETE)
+  #  gui.name     - Display name in the GUI. Supports MiniMessage colors:
   #                 <red>, <bold>, <gradient:red:gold>, etc.
-  #  gui.lore     — List of lore lines under the item name.
+  #  gui.lore     - List of lore lines under the item name.
   regions:
     usa:
       world: "world"

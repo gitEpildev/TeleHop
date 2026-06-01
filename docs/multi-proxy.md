@@ -92,7 +92,7 @@ This matches `lobby-usa`, `lobby-eu`, `lobby-asia`, etc.
 ### 4. Apply Changes
 
 - **Paper servers**: Run `/telehop reload` on each server (no restart needed)
-- **Velocity proxies**: Restart required (do rolling restarts — one at a time)
+- **Velocity proxies**: Restart required (do rolling restarts , one at a time)
 
 ## How It Works
 

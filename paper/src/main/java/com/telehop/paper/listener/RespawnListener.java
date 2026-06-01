@@ -28,9 +28,9 @@ import java.util.concurrent.CompletableFuture;
  *       in {@link RandomRespawnManager}.</li>
  *   <li>{@link #onRespawn} fires at {@link EventPriority#HIGH HIGH}. Two cases:
  *       <ul>
- *         <li><b>Future done</b> — location is applied immediately via
+ *         <li><b>Future done</b> - location is applied immediately via
  *             {@code event.setRespawnLocation()}.</li>
- *         <li><b>Future pending</b> — the player respawns at the default location first,
+ *         <li><b>Future pending</b> - the player respawns at the default location first,
  *             then is teleported on the next tick once the search completes. A brief
  *             flicker is preferable to blocking the main thread.</li>
  *       </ul>
@@ -95,19 +95,19 @@ public final class RespawnListener implements Listener {
 
         if (settings.respawnRespectBed() && event.isBedSpawn()) {
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
-                    + " has bed spawn — respecting bed.");
+                    + " has bed spawn - respecting bed.");
             return;
         }
         if (settings.respawnRespectAnchor() && event.isAnchorSpawn()) {
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
-                    + " has anchor spawn — respecting anchor.");
+                    + " has anchor spawn - respecting anchor.");
             return;
         }
 
         CompletableFuture<Location> future = respawnManager.consume(player.getUniqueId());
         if (future == null) {
             plugin.getLogger().warning("[RandomRespawn] No staged future for "
-                    + player.getName() + " — falling back to default.");
+                    + player.getName() + " - falling back to default.");
             return;
         }
 
@@ -119,11 +119,11 @@ public final class RespawnListener implements Listener {
                 event.setRespawnLocation(location);
             } else {
                 plugin.getLogger().warning("[RandomRespawn] Search returned null for "
-                        + player.getName() + " — no safe location found.");
+                        + player.getName() + " - no safe location found.");
             }
         } else {
             plugin.getLogger().info("[RandomRespawn] Future still pending for "
-                    + player.getName() + " — will teleport after respawn.");
+                    + player.getName() + " - will teleport after respawn.");
             future.thenAccept(location -> {
                 if (location != null && player.isOnline()) {
                     Bukkit.getScheduler().runTask(plugin, () -> {

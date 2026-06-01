@@ -79,7 +79,7 @@ import java.util.List;
 
 /**
  * Performs the full plugin startup sequence and constructs the {@link ServiceRegistry}.
- * Keeps {@link NetworkPaperPlugin} thin — lifecycle only.
+ * Keeps {@link NetworkPaperPlugin} thin, lifecycle only.
  */
 public final class Bootstrap {
     private static final List<String> LANGUAGE_CODES = List.of("en", "nl", "de", "es", "zh", "pl");

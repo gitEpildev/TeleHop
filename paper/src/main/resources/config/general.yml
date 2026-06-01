@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — General Configuration
+#  TeleHop - General Configuration
 # ═══════════════════════════════════════════════════════════════════════
 #  Changes here take effect after /telehop reload (no restart needed).
 
@@ -11,9 +11,9 @@
 language: "en"
 
 # ── Server Identity ───────────────────────────────────────────────────
-#  server-name — MUST match the name registered in velocity.toml [servers].
+#  server-name - MUST match the name registered in velocity.toml [servers].
 #                Each Paper server needs a unique name.
-#  hub-server  — The default server players teleport to when they run /spawn.
+#  hub-server  - The default server players teleport to when they run /spawn.
 #                Must also match a velocity.toml server name.
 #                When regions are configured (see below), this is used as
 #                the fallback hub if the server isn't in any region.
@@ -65,8 +65,8 @@ regions: {}
 #  Advanced timing settings for plugin-message packets.
 #  You almost certainly don't need to change these.
 #
-#  dedupe-window-ms   — Ignores duplicate packets within this window.
-#  request-timeout-ms — How long to wait for a cross-server response.
+#  dedupe-window-ms   - Ignores duplicate packets within this window.
+#  request-timeout-ms - How long to wait for a cross-server response.
 messaging:
   dedupe-window-ms: 30000
   request-timeout-ms: 10000

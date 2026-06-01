@@ -1,5 +1,5 @@
 # ═══════════════════════════════════════════════════════════════════════
-#  TeleHop — Database Configuration
+#  TeleHop - Database Configuration
 # ═══════════════════════════════════════════════════════════════════════
 #  All Paper servers AND the Velocity proxy must connect to the SAME
 #  MySQL / MariaDB database. This is how cross-server teleportation,
@@ -16,11 +16,11 @@ mysql:
   # MySQL port (default 3306).
   port: 3306
 
-  # Database name — must be the same on every server.
+  # Database name - must be the same on every server.
   # Create it beforehand: CREATE DATABASE telehop;
   database: "telehop"
 
-  # Credentials — the user needs SELECT, INSERT, UPDATE, DELETE, CREATE TABLE.
+  # Credentials - the user needs SELECT, INSERT, UPDATE, DELETE, CREATE TABLE.
   username: "telehop"
   password: "change-me"
 

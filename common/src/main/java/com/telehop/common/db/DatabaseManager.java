@@ -78,7 +78,7 @@ public class DatabaseManager {
                 try (Statement st = connection.createStatement()) {
                     st.execute(migration);
                 } catch (SQLException ignored) {
-                    // migration already applied or column doesn't exist — safe to skip
+                    // migration already applied or column doesn't exist - safe to skip
                 }
             }
         }

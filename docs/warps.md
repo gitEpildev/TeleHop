@@ -98,9 +98,9 @@ This only works if Steve has a warp named "home" that is set to public.
 
 Your warp limit is controlled by LuckPerms permissions:
 
-- `telehop.warps.3` — you can have up to 3 warps
-- `telehop.warps.10` — up to 10 warps
-- `telehop.warps.unlimited` — no limit
+- `telehop.warps.3` - you can have up to 3 warps
+- `telehop.warps.10` - up to 10 warps
+- `telehop.warps.unlimited` - no limit
 
 If you have no `telehop.warps.*` permission, you cannot create warps. Ask your server admin to set up rank-based limits.
 
