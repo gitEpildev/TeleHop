@@ -71,7 +71,7 @@ public final class VelocityBootstrap {
             reg.redisBridge().setPacketHandler(packetHandler::handle);
         }
 
-        logger.info("TeleHop-Velocity v1.2.0 enabled.");
+        logger.info("TeleHop-Velocity v2.0.0 enabled.");
         return reg;
     }
 
