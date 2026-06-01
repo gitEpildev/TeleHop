@@ -136,17 +136,73 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 ### Version
 - `version-info` — Shown by `/telehop version`. Placeholder: `<version>`
 
+### Homes
+- `home-set` — After `/sethome`. Placeholder: `<name>`
+- `home-deleted` — After `/delhome`. Placeholder: `<name>`
+- `home-teleporting` — Before teleporting. Placeholder: `<name>`
+- `home-not-found` — Home doesn't exist.
+- `home-no-empty-slot` — All slots used.
+- `home-blocked-server` — `/sethome` blocked on this server.
+- `home-invalid-name` — Invalid characters in home name.
+- `home-name-too-long` — Name exceeds max length. Placeholder: `<max>`
+
+### Back
+- `back-teleporting` — After `/back`.
+- `back-no-location` — No previous location stored.
+- `back-death-teleporting` — After `/back death`.
+- `back-death-no-location` — No death location stored.
+
+### TPA Toggle
+- `tpa-toggle-on` — TPA requests enabled.
+- `tpa-toggle-off` — TPA requests disabled.
+- `player-tpa-disabled` — Target has TPA disabled. Placeholder: `<target>`
+
+### Last Location
+- `lastloc-teleporting` — After `/lastlocation`.
+- `lastloc-no-location` — No saved logout location.
+- `lastloc-world-missing` — Saved world no longer exists.
+
+### RTP GUI
+- `rtp-back-button` — Back button label in RTP dimension picker.
+- `rtp-back-lore` — Back button tooltip.
+
+### ForceDelHome (admin)
+- `forcedelhome-header` — Header for force-delete home list. Placeholders: `<player>`, `<count>`
+- `forcedelhome-deleted` — After deleting. Placeholder: `<name>`
+- `forcedelhome-no-homes` — Player has no homes. Placeholder: `<player>`
+
+### ForceLastLoc (admin)
+- `forcelastloc-info` — Last location info display. Placeholders: `<player>`, `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
+- `forcelastloc-tp` — Teleporting to player's last location. Placeholders: `<player>`, `<server>`
+- `forcelastloc-cleared` — Cleared a player's last location. Placeholder: `<player>`
+- `forcelastloc-no-data` — Player has no saved location. Placeholder: `<player>`
+
+### ForceSetHome (admin)
+- `forcesethome-set` — Set a home for another player. Placeholders: `<player>`, `<name>`
+
+### ListHomes (admin)
+- `listhomes-header` — Header for home list. Placeholders: `<player>`, `<count>`
+- `listhomes-empty` — Player has no homes. Placeholder: `<player>`
+
+### PlayerInfo (admin)
+- `playerinfo-header` — Header for player info. Placeholder: `<player>`
+- `playerinfo-server` — Current server. Placeholder: `<server>`
+- `playerinfo-homes` — Home count. Placeholder: `<count>`
+- `playerinfo-warps` — Warp count. Placeholder: `<count>`
+- `playerinfo-lastloc` — Last logout location. Placeholders: `<server>`, `<world>`, `<x>`, `<y>`, `<z>`
+- `playerinfo-lastloc-none` — No last location saved.
+
 ### Help (`/telehop help`)
 
 All `help-*` keys control the output of `/telehop help`. They use MiniMessage format and are displayed without the global prefix. Keys:
 
-`help-header`, `help-general`, `help-spawn`, `help-rtp`, `help-tpa-header`, `help-tpa`, `help-tpahere`, `help-tpaaccept`, `help-tpadeny`, `help-tpacancel`, `help-warps-header`, `help-warp`, `help-setwarp`, `help-delwarp`, `help-warps-list`, `help-pwarps-header`, `help-pwarp-set`, `help-pwarp-del`, `help-pwarp-list`, `help-pwarp-tp`, `help-pwarp-tp-other`, `help-pwarp-public`, `help-admin-header`, `help-tp`, `help-tphere`, `help-listwarps`, `help-forcedelwarp`, `help-forcedelwarp-player`, `help-telehop-reload`, `help-telehop-version`, `help-telehop-perms`
+`help-header`, `help-general`, `help-spawn`, `help-rtp`, `help-tpa-header`, `help-tpa`, `help-tpahere`, `help-tpaaccept`, `help-tpadeny`, `help-tpacancel`, `help-tpatoggle`, `help-homes-header`, `help-home`, `help-sethome`, `help-delhome`, `help-lastloc`, `help-back-header`, `help-back`, `help-backdeath`, `help-warps-header`, `help-warp`, `help-setwarp`, `help-delwarp`, `help-warps-list`, `help-pwarps-header`, `help-pwarp-set`, `help-pwarp-del`, `help-pwarp-list`, `help-pwarp-tp`, `help-pwarp-tp-other`, `help-pwarp-public`, `help-admin-header`, `help-tp`, `help-tphere`, `help-listwarps`, `help-forcedelwarp`, `help-forcedelwarp-player`, `help-forcedelhome`, `help-listhomes`, `help-forcesethome`, `help-forcelastloc`, `help-playerinfo`, `help-telehop-reload`, `help-telehop-version`, `help-telehop-perms`
 
 ### Permissions (`/telehop perms`)
 
 All `perms-*` keys control the output of `/telehop perms`. Same display rules as help. Keys:
 
-`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
+`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-tpa-toggle`, `perms-homes-header`, `perms-homes`, `perms-sethome`, `perms-delhome`, `perms-homes-limit`, `perms-lastloc`, `perms-back`, `perms-back-death`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
 
 ## Example: Custom Purple Theme
 

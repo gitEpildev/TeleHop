@@ -1,10 +1,10 @@
 name: TeleHop
-version: 1.1.0
+version: 2.0.0
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]
 description: Cross-server teleportation for Velocity networks.
-website: https://developer.epildevconnect.uk/myhub/home
+website: https://developer.epildevconnect.uk/
 softdepend: [LuckPerms]
 
 commands:
@@ -50,15 +50,34 @@ commands:
     description: Force-delete any warp (admin or player).
     permission: telehop.admin
   home:
-    description: Open the homes GUI or teleport to a home slot.
+    description: Open the homes GUI or teleport to a named home.
   sethome:
-    description: Set a home at your current location.
+    description: Set a named home at your current location.
+  delhome:
+    description: Delete a named home.
   forcedelhome:
     description: Force-delete a player's home (admin).
     permission: telehop.admin
   back:
     description: Return to your last location before teleporting.
     permission: telehop.back
+  lastlocation:
+    description: Teleport to your last logout location.
+    aliases: [lastloc, backlast, ll]
+  forcelastloc:
+    description: View, teleport to, or clear a player's last logout location (admin).
+    aliases: [forcell]
+    permission: telehop.admin
+  forcesethome:
+    description: Set a home for another player at your current location (admin).
+    permission: telehop.admin
+  listhomes:
+    description: List a player's homes with teleport and delete buttons (admin).
+    permission: telehop.admin
+  playerinfo:
+    description: View a player's TeleHop data summary (admin).
+    aliases: [pinfo]
+    permission: telehop.admin
 
 permissions:
   telehop.spawn:
@@ -92,10 +111,46 @@ permissions:
     description: Use /tpatoggle
     default: true
   telehop.homes:
-    description: Use /home and /sethome
+    description: Use /home (open GUI, teleport to homes)
+    default: true
+  telehop.sethome:
+    description: Use /sethome (set a named home)
+    default: true
+  telehop.delhome:
+    description: Use /delhome (delete a named home)
     default: true
   telehop.homes.1:
     description: Access 1 home slot
+    default: true
+  telehop.homes.2:
+    description: Access 2 home slots
+    default: false
+  telehop.homes.3:
+    description: Access 3 home slots
+    default: false
+  telehop.homes.4:
+    description: Access 4 home slots
+    default: false
+  telehop.homes.5:
+    description: Access 5 home slots
+    default: false
+  telehop.homes.6:
+    description: Access 6 home slots
+    default: false
+  telehop.homes.7:
+    description: Access 7 home slots
+    default: false
+  telehop.homes.8:
+    description: Access 8 home slots
+    default: false
+  telehop.homes.9:
+    description: Access 9 home slots
+    default: false
+  telehop.homes.10:
+    description: Access 10 home slots
+    default: false
+  telehop.lastlocation:
+    description: Use /lastlocation (teleport to last logout location)
     default: true
   telehop.tp:
     description: Admin teleport

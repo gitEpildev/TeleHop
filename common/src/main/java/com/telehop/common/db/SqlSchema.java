@@ -58,29 +58,54 @@ public final class SqlSchema {
                 """,
                 """
                 CREATE TABLE IF NOT EXISTS homes (
-                  uuid    VARCHAR(36) NOT NULL,
-                  slot    INT         NOT NULL,
-                  server  VARCHAR(64) NOT NULL,
-                  world   VARCHAR(64) NOT NULL,
-                  x       DOUBLE      NOT NULL,
-                  y       DOUBLE      NOT NULL,
-                  z       DOUBLE      NOT NULL,
-                  yaw     FLOAT       NOT NULL,
-                  pitch   FLOAT       NOT NULL,
-                  PRIMARY KEY (uuid, slot)
+                  uuid    VARCHAR(36)  NOT NULL,
+                  name    VARCHAR(32)  NOT NULL,
+                  server  VARCHAR(64)  NOT NULL,
+                  world   VARCHAR(64)  NOT NULL,
+                  x       DOUBLE       NOT NULL,
+                  y       DOUBLE       NOT NULL,
+                  z       DOUBLE       NOT NULL,
+                  yaw     FLOAT        NOT NULL,
+                  pitch   FLOAT        NOT NULL,
+                  PRIMARY KEY (uuid, name)
+                )
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS last_locations (
+                  uuid   VARCHAR(36) PRIMARY KEY,
+                  server VARCHAR(64) NOT NULL,
+                  world  VARCHAR(64) NOT NULL,
+                  x      DOUBLE      NOT NULL,
+                  y      DOUBLE      NOT NULL,
+                  z      DOUBLE      NOT NULL,
+                  yaw    FLOAT       NOT NULL,
+                  pitch  FLOAT       NOT NULL
                 )
                 """
         );
     }
 
     /**
-     * Migration statements for existing databases upgrading from
-     * the old {@code expiry} column to {@code sent_at}.
+     * Migration statements for existing databases.
+     * Each statement is attempted independently; failures are logged and skipped
+     * (e.g. the column already exists on a fresh install).
      */
     public static List<String> migrations() {
         return List.of(
                 """
                 ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL
+                """,
+                """
+                ALTER TABLE homes ADD COLUMN name VARCHAR(32) NOT NULL DEFAULT ''
+                """,
+                """
+                UPDATE homes SET name = CONCAT('Home ', slot) WHERE name = ''
+                """,
+                """
+                ALTER TABLE homes DROP PRIMARY KEY, ADD PRIMARY KEY (uuid, name)
+                """,
+                """
+                ALTER TABLE homes DROP COLUMN slot
                 """
         );
     }

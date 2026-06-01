@@ -44,7 +44,7 @@ class HomeServiceTest {
 
     @Test
     void listByPlayerDelegatesToRepository() throws Exception {
-        HomeRecord home = new HomeRecord("uuid-1", 1, "eu", "world", 10, 64, 20, 0f, 0f);
+        HomeRecord home = new HomeRecord("uuid-1", "base", "eu", "world", 10, 64, 20, 0f, 0f);
         when(repository.listByPlayer("uuid-1")).thenReturn(List.of(home));
 
         List<HomeRecord> result = service.listByPlayer("uuid-1").get();
@@ -56,10 +56,10 @@ class HomeServiceTest {
 
     @Test
     void findDelegatesToRepository() throws Exception {
-        HomeRecord home = new HomeRecord("uuid-2", 3, "usa", "world_nether", 0, 100, 0, 90f, 0f);
-        when(repository.find("uuid-2", 3)).thenReturn(Optional.of(home));
+        HomeRecord home = new HomeRecord("uuid-2", "nether_hub", "usa", "world_nether", 0, 100, 0, 90f, 0f);
+        when(repository.find("uuid-2", "nether_hub")).thenReturn(Optional.of(home));
 
-        Optional<HomeRecord> result = service.find("uuid-2", 3).get();
+        Optional<HomeRecord> result = service.find("uuid-2", "nether_hub").get();
 
         assertTrue(result.isPresent());
         assertEquals("world_nether", result.get().world());
@@ -67,28 +67,38 @@ class HomeServiceTest {
 
     @Test
     void findReturnsEmptyWhenNotExists() throws Exception {
-        when(repository.find("uuid-3", 5)).thenReturn(Optional.empty());
+        when(repository.find("uuid-3", "missing")).thenReturn(Optional.empty());
 
-        Optional<HomeRecord> result = service.find("uuid-3", 5).get();
+        Optional<HomeRecord> result = service.find("uuid-3", "missing").get();
 
         assertTrue(result.isEmpty());
     }
 
     @Test
     void upsertDelegatesToRepository() throws Exception {
-        HomeRecord home = new HomeRecord("uuid-4", 2, "lobby", "world", 1, 2, 3, 0f, 0f);
+        HomeRecord home = new HomeRecord("uuid-4", "spawn_base", "lobby", "world", 1, 2, 3, 0f, 0f);
 
         service.upsert(home).get();
 
         ArgumentCaptor<HomeRecord> captor = ArgumentCaptor.forClass(HomeRecord.class);
         verify(repository).upsert(captor.capture());
-        assertEquals(2, captor.getValue().slot());
+        assertEquals("spawn_base", captor.getValue().name());
     }
 
     @Test
     void deleteDelegatesToRepository() throws Exception {
-        service.delete("uuid-5", 4).get();
+        service.delete("uuid-5", "old_home").get();
 
-        verify(repository).delete("uuid-5", 4);
+        verify(repository).delete("uuid-5", "old_home");
+    }
+
+    @Test
+    void countByPlayerDelegatesToRepository() throws Exception {
+        when(repository.countByPlayer("uuid-6")).thenReturn(3);
+
+        int count = service.countByPlayer("uuid-6").get();
+
+        assertEquals(3, count);
+        verify(repository).countByPlayer("uuid-6");
     }
 }

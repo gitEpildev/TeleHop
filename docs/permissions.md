@@ -16,18 +16,26 @@ All permissions can be viewed in-game with `/telehop perms`.
 | `telehop.tpa.deny` | Use `/tpadeny` |
 | `telehop.tpa.cancel` | Use `/tpacancel` |
 | `telehop.tpa.toggle` | Use `/tpatoggle` (toggle incoming TPA requests on/off) |
-| `telehop.homes` | Use `/home` and `/sethome` |
-| `telehop.homes.1` | Access 1 home slot |
+| `telehop.homes` | Use `/home` (open GUI, teleport to homes) |
+| `telehop.sethome` | Use `/sethome <name>` |
+| `telehop.delhome` | Use `/delhome <name>` |
+| `telehop.homes.1` | Access 1 home |
+| `telehop.lastlocation` | Use `/lastlocation` (teleport to last logout location) |
 
-## Homes Slot Permissions
+## Homes Permissions
 
 | Node | Effect |
 |------|--------|
-| `telehop.homes.1` | 1 home slot (default) |
-| `telehop.homes.2` | 2 home slots |
-| `telehop.homes.3` | 3 home slots |
-| `telehop.homes.4` | 4 home slots |
-| `telehop.homes.5` | 5 home slots |
+| `telehop.homes.1` | 1 home (default) |
+| `telehop.homes.2` | 2 homes |
+| `telehop.homes.3` | 3 homes |
+| `telehop.homes.4` | 4 homes |
+| `telehop.homes.5` | 5 homes |
+| `telehop.homes.6` | 6 homes |
+| `telehop.homes.7` | 7 homes |
+| `telehop.homes.8` | 8 homes |
+| `telehop.homes.9` | 9 homes |
+| `telehop.homes.10` | 10 homes |
 
 The plugin finds the **highest** matching `telehop.homes.<n>` value. Locked slots display as blue beds in the GUI with an "Upgrade to unlock" message.
 
@@ -69,16 +77,18 @@ The plugin finds the **highest** matching `telehop.warps.<n>` value. If a player
 ### LuckPerms Quick Setup
 
 ```bash
-# Default rank: 3 player warps, 1 home slot (already default)
+# Default rank: 3 player warps, 2 homes, last location
 lp group default permission set telehop.warps.3
+lp group default permission set telehop.homes.2
+lp group default permission set telehop.lastlocation
 
-# VIP rank: 10 player warps, 3 home slots
+# VIP rank: 10 player warps, 5 homes
 lp group vip permission set telehop.warps.10
-lp group vip permission set telehop.homes.3
+lp group vip permission set telehop.homes.5
 
-# MVP rank: unlimited warps, 5 home slots
+# MVP rank: unlimited warps, 10 homes
 lp group mvp permission set telehop.warps.unlimited
-lp group mvp permission set telehop.homes.5
+lp group mvp permission set telehop.homes.10
 
 # Staff: all admin commands + back
 lp group staff permission set telehop.admin
@@ -87,5 +97,5 @@ lp group staff permission set telehop.tphere
 lp group staff permission set telehop.back
 lp group staff permission set telehop.back.death
 lp group staff permission set telehop.warps.unlimited
-lp group staff permission set telehop.homes.5
+lp group staff permission set telehop.homes.10
 ```

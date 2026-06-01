@@ -116,8 +116,18 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             case "HOME" -> sendWithRetry(currentServer,
                     NetworkPacket.request(PacketType.HOME_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
-                            .put("homeSlot", action.payload().get("homeSlot"))
+                            .put("homeName", action.payload().get("homeName"))
                             .put("homeUuid", action.payload().get("homeUuid")),
+                    player.getUniqueId());
+            case "LASTLOC" -> sendWithRetry(currentServer,
+                    NetworkPacket.request(PacketType.EXECUTE_POST_JOIN_TELEPORT, "velocity", currentServer)
+                            .put("uuid", player.getUniqueId().toString())
+                            .put("world", action.payload().get("world"))
+                            .put("x", action.payload().get("x"))
+                            .put("y", action.payload().get("y"))
+                            .put("z", action.payload().get("z"))
+                            .put("yaw", action.payload().get("yaw"))
+                            .put("pitch", action.payload().get("pitch")),
                     player.getUniqueId());
             case "BACK" -> sendWithRetry(currentServer,
                     NetworkPacket.request(PacketType.BACK_TELEPORT, "velocity", currentServer)

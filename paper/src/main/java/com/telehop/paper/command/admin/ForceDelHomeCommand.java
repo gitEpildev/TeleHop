@@ -39,10 +39,10 @@ public class ForceDelHomeCommand extends BaseCommand {
                 sender.sendMessage(plugin.msg("forcedelhome-header", Map.of("player", playerName, "count", String.valueOf(homes.size()))));
                 for (var home : homes) {
                     Component line = plugin.messageService().deserialize(
-                            "<gray>  Home " + home.slot() + " <dark_gray>(" + home.server() + " " +
+                            "<gray>  " + home.name() + " <dark_gray>(" + home.server() + " " +
                                     (int) home.x() + "," + (int) home.y() + "," + (int) home.z() + ") ")
                             .append(plugin.messageService().deserialize("<red><bold>[DELETE]</bold></red>")
-                                    .clickEvent(ClickEvent.runCommand("/forcedelhome-confirm " + uuid + " " + home.slot())));
+                                    .clickEvent(ClickEvent.runCommand("/forcedelhome-confirm " + uuid + " " + home.name())));
                     sender.sendMessage(line);
                 }
             });
@@ -51,9 +51,9 @@ public class ForceDelHomeCommand extends BaseCommand {
 
     @co.aikar.commands.annotation.Subcommand("confirm")
     @CommandAlias("forcedelhome-confirm")
-    public void confirm(Player sender, String uuid, int slot) {
-        plugin.services().homeService().delete(uuid, slot).thenRun(() ->
+    public void confirm(Player sender, String uuid, String name) {
+        plugin.services().homeService().delete(uuid, name).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(plugin.msg("forcedelhome-deleted", Map.of("slot", String.valueOf(slot))))));
+                        sender.sendMessage(plugin.msg("forcedelhome-deleted", Map.of("name", name)))));
     }
 }

@@ -41,6 +41,37 @@ CREATE TABLE IF NOT EXISTS tpa_requests (
   PRIMARY KEY (sender_uuid, target_uuid)
 );
 
+CREATE TABLE IF NOT EXISTS homes (
+  uuid   VARCHAR(36)  NOT NULL,
+  name   VARCHAR(32)  NOT NULL,
+  server VARCHAR(64)  NOT NULL,
+  world  VARCHAR(64)  NOT NULL,
+  x      DOUBLE       NOT NULL,
+  y      DOUBLE       NOT NULL,
+  z      DOUBLE       NOT NULL,
+  yaw    FLOAT        NOT NULL,
+  pitch  FLOAT        NOT NULL,
+  PRIMARY KEY (uuid, name)
+);
+
+CREATE TABLE IF NOT EXISTS last_locations (
+  uuid   VARCHAR(36) PRIMARY KEY,
+  server VARCHAR(64) NOT NULL,
+  world  VARCHAR(64) NOT NULL,
+  x      DOUBLE      NOT NULL,
+  y      DOUBLE      NOT NULL,
+  z      DOUBLE      NOT NULL,
+  yaw    FLOAT       NOT NULL,
+  pitch  FLOAT       NOT NULL
+);
+
 -- Migration for existing databases upgrading from the old 'expiry' column:
 -- ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL;
 -- (This migration runs automatically on startup)
+
+-- Migration for existing databases upgrading homes from slot-based to name-based:
+-- ALTER TABLE homes ADD COLUMN name VARCHAR(32) NOT NULL DEFAULT '';
+-- UPDATE homes SET name = CONCAT('Home ', slot) WHERE name = '';
+-- ALTER TABLE homes DROP PRIMARY KEY, ADD PRIMARY KEY (uuid, name);
+-- ALTER TABLE homes DROP COLUMN slot;
+-- (These migrations run automatically on startup)

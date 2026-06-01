@@ -84,8 +84,9 @@ When `TRANSFER_PLAYER` includes a `postAction`, Velocity queues a `PendingAction
 | `RTP` | `region`, `dimension` | Executes random teleport |
 | `TELEPORT_TO_PLAYER` | `actorUuid`, `targetUuid` | Teleports actor to target player |
 | `PWARP` | `pwarpOwner`, `pwarpName` | Teleports to a player warp |
-| `HOME` | `homeSlot`, `homeUuid` | Teleports to a home slot |
+| `HOME` | `homeName`, `homeUuid` | Teleports to a named home |
 | `BACK` | `world`, `x`, `y`, `z`, `yaw`, `pitch` | Teleports to stored back location |
+| `LASTLOC` | `world`, `x`, `y`, `z`, `yaw`, `pitch` | Teleports to last logout location |
 
 ### TPA (Teleport Ask)
 
@@ -127,7 +128,7 @@ When `TRANSFER_PLAYER` includes a `postAction`, Velocity queues a `PendingAction
 
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
-| `HOME_TELEPORT` | Velocity → Paper | `uuid`, `homeSlot`, `homeUuid` | Teleports player to their home after cross-server transfer |
+| `HOME_TELEPORT` | Velocity → Paper | `uuid`, `homeName`, `homeUuid` | Teleports player to their named home after cross-server transfer |
 
 ### Back
 

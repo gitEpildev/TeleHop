@@ -38,6 +38,10 @@ public class TeleHopCommand extends BaseCommand {
             "perms-header",
             "perms-player-header", "perms-spawn", "perms-rtp", "perms-warp", "perms-pwarp",
             "perms-tpa", "perms-tpahere", "perms-tpa-accept", "perms-tpa-deny", "perms-tpa-cancel",
+            "perms-tpa-toggle",
+            "perms-homes-header", "perms-homes", "perms-sethome", "perms-delhome", "perms-homes-limit",
+            "perms-lastloc",
+            "perms-back", "perms-back-death",
             "perms-per-warp-header", "perms-warp-access",
             "perms-warp-limits-header", "perms-warps-number", "perms-warps-unlimited",
             "perms-admin-header", "perms-admin", "perms-tp", "perms-tphere",
@@ -56,11 +60,16 @@ public class TeleHopCommand extends BaseCommand {
             "help-header",
             "help-general", "help-spawn", "help-rtp",
             "help-tpa-header", "help-tpa", "help-tpahere", "help-tpaaccept", "help-tpadeny", "help-tpacancel",
+            "help-tpatoggle",
+            "help-homes-header", "help-home", "help-sethome", "help-delhome", "help-lastloc",
+            "help-back-header", "help-back", "help-backdeath",
             "help-warps-header", "help-warp", "help-setwarp", "help-delwarp", "help-warps-list",
             "help-pwarps-header", "help-pwarp-set", "help-pwarp-del", "help-pwarp-list",
             "help-pwarp-tp", "help-pwarp-tp-other", "help-pwarp-public",
             "help-admin-header", "help-tp", "help-tphere", "help-listwarps",
             "help-forcedelwarp", "help-forcedelwarp-player",
+            "help-forcedelhome", "help-listhomes", "help-forcesethome",
+            "help-forcelastloc", "help-playerinfo",
             "help-telehop-reload", "help-telehop-version", "help-telehop-perms"
         };
         for (String key : keys) {

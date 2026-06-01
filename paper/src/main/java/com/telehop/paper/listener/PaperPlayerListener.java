@@ -1,10 +1,12 @@
 package com.telehop.paper.listener;
 
+import com.telehop.common.model.LastLocationRecord;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.service.BackLocationManager;
 import com.telehop.paper.service.TeleportService;
+import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -34,6 +36,20 @@ public class PaperPlayerListener implements Listener {
         plugin.playerService().remove(event.getPlayer().getUniqueId());
         plugin.services().backLocationManager().remove(event.getPlayer().getUniqueId());
         plugin.tpaRuntimeManager().clearToggle(event.getPlayer().getUniqueId());
+
+        if (plugin.isFeatureEnabled("last-location") && plugin.services().lastLocationService() != null) {
+            Location loc = event.getPlayer().getLocation();
+            if (loc.getWorld() != null) {
+                LastLocationRecord record = new LastLocationRecord(
+                        event.getPlayer().getUniqueId().toString(),
+                        plugin.settings().serverName(),
+                        loc.getWorld().getName(),
+                        loc.getX(), loc.getY(), loc.getZ(),
+                        loc.getYaw(), loc.getPitch()
+                );
+                plugin.services().lastLocationService().upsert(record);
+            }
+        }
     }
 
     @EventHandler

@@ -73,7 +73,22 @@ public class RtpGui {
         gui.setItem(15, ItemBuilder.from(buildItem(Material.END_STONE, "<light_purple><bold>End</bold>",
                         List.of("<gray>Random teleport in The End")))
                 .asGuiItem(click -> selectionConsumer.accept(region, "end")));
+
+        boolean hasMultipleRegions = hasMultipleRegions(cfg);
+        if (hasMultipleRegions) {
+            String backName = plugin.messageService().rawString("rtp-back-button");
+            String backLore = plugin.messageService().rawString("rtp-back-lore");
+            int backSlot = (rows - 1) * 9;
+            gui.setItem(backSlot, ItemBuilder.from(buildItem(Material.SPECTRAL_ARROW, backName, List.of(backLore)))
+                    .asGuiItem(click -> openRegion(player)));
+        }
+
         gui.open(player);
+    }
+
+    private boolean hasMultipleRegions(FileConfiguration cfg) {
+        ConfigurationSection regions = cfg.getConfigurationSection("rtp.regions");
+        return regions != null && regions.getKeys(false).size() > 1;
     }
 
     private FileConfiguration loadRtpConfig() {
@@ -107,7 +122,6 @@ public class RtpGui {
     }
 
     private int centerStartSlot(int rows, int itemCount) {
-        int totalSlots = rows * 9;
         int middleRow = rows / 2;
         int widthNeeded = itemCount * 2 - 1;
         int startCol = Math.max(0, (9 - widthNeeded) / 2);

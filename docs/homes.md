@@ -1,15 +1,15 @@
 # Homes
 
-TeleHop's homes system lets players save up to 5 personal teleport locations. Homes persist in MySQL and work cross-server.
+TeleHop's homes system lets players save up to 10 named personal teleport locations. Homes persist in MySQL and work cross-server.
 
 ## GUI
 
-Running `/home` opens a single-chest GUI (3 rows by default, configurable via `gui-rows`). Home beds are centered in the middle row.
+Running `/home` opens a large chest GUI (5 rows by default, configurable via `gui-rows`). Home beds are spread across two rows for up to 10 homes.
 
 | Slot State | Default Material | Description |
 |------------|------------------|-------------|
-| **Occupied (set)** | Lime Bed | Shows server, world, and coordinates. Click to open the manage sub-menu. |
-| **Available (empty)** | Red Bed | Player has the permission for this slot. Click to set a home. |
+| **Occupied (set)** | Lime Bed | Shows the home name, server, world, and coordinates. Click to open the manage sub-menu. |
+| **Available (empty)** | Red Bed | Player has permission for this slot. Use `/sethome <name>` to set a home. |
 | **Locked** | Light Blue Bed | Player lacks the permission. Shows "Upgrade to unlock" lore. |
 
 All bed colours are configurable in `home.yml` using any Minecraft bed material name (`LIME_BED`, `RED_BED`, `LIGHT_BLUE_BED`, etc.).
@@ -35,7 +35,16 @@ Clicking an occupied home opens a sub-menu with:
 
 ### Confirmation
 
-When `confirm-set: true` in `config/home.yml`, setting a home shows a small yes/no GUI first.
+When `confirm-set: true` in `config/home.yml`, setting a home via the GUI shows a small yes/no GUI first.
+
+## Named Homes
+
+Homes are identified by a custom name chosen by the player (e.g. `MYCOOLBASE`, `nether_hub`, `farm`).
+
+- Names are case-insensitive: `Base` and `base` are treated as the same home
+- Names must be alphanumeric with underscores only (no spaces or special characters)
+- Maximum name length: 32 characters
+- Overwriting: if you `/sethome` with an existing name, the location is updated
 
 ## Blocked Servers
 
@@ -52,23 +61,31 @@ Empty bed slots on blocked servers show "Cannot set homes on this server" in red
 | Command | Description |
 |---------|-------------|
 | `/home` | Opens the homes GUI |
-| `/home <1-5>` | Quick-teleport to a specific home slot |
-| `/sethome` | Sets a home in the first empty slot (blocked on blocked-servers) |
+| `/home <name>` | Quick-teleport to a named home |
+| `/sethome <name>` | Sets a named home at your current location |
+| `/delhome <name>` | Deletes a named home |
 | `/forcedelhome <player>` | Admin: lists a player's homes with clickable delete buttons |
 
 ## Permissions
 
 | Node | Default | Description |
 |------|---------|-------------|
-| `telehop.homes` | `true` | Use `/home` and `/sethome` |
-| `telehop.homes.1` | `true` | Access 1 home slot |
-| `telehop.homes.2` | — | Access 2 home slots |
-| `telehop.homes.3` | — | Access 3 home slots |
-| `telehop.homes.4` | — | Access 4 home slots |
-| `telehop.homes.5` | — | Access 5 home slots |
+| `telehop.homes` | `true` | Use `/home` (open GUI, teleport) |
+| `telehop.sethome` | `true` | Use `/sethome` |
+| `telehop.delhome` | `true` | Use `/delhome` |
+| `telehop.homes.1` | `true` | Access 1 home |
+| `telehop.homes.2` | — | Access 2 homes |
+| `telehop.homes.3` | — | Access 3 homes |
+| `telehop.homes.4` | — | Access 4 homes |
+| `telehop.homes.5` | — | Access 5 homes |
+| `telehop.homes.6` | — | Access 6 homes |
+| `telehop.homes.7` | — | Access 7 homes |
+| `telehop.homes.8` | — | Access 8 homes |
+| `telehop.homes.9` | — | Access 9 homes |
+| `telehop.homes.10` | — | Access 10 homes |
 | `telehop.admin` | `op` | Use `/forcedelhome` |
 
-The highest matching `telehop.homes.<N>` permission determines how many slots a player can use. Use LuckPerms to assign higher slot counts to ranks.
+The highest matching `telehop.homes.<N>` permission determines how many homes a player can create. Use LuckPerms to assign higher counts to ranks.
 
 ## Configuration
 
@@ -76,10 +93,10 @@ Full reference in `config/home.yml`:
 
 ```yaml
 homes:
-  max-slots: 5
+  max-slots: 10
   confirm-set: true
   gui-title: "<gradient:red:gold>Your Homes</gradient>"
-  gui-rows: 3
+  gui-rows: 5
 
   # Bed materials per slot state
   bed-set: "LIME_BED"
@@ -116,15 +133,26 @@ Homes are stored in the `homes` table:
 
 ```sql
 CREATE TABLE IF NOT EXISTS homes (
-  uuid    VARCHAR(36) NOT NULL,
-  slot    INT         NOT NULL,
-  server  VARCHAR(64) NOT NULL,
-  world   VARCHAR(64) NOT NULL,
-  x       DOUBLE      NOT NULL,
-  y       DOUBLE      NOT NULL,
-  z       DOUBLE      NOT NULL,
-  yaw     FLOAT       NOT NULL,
-  pitch   FLOAT       NOT NULL,
-  PRIMARY KEY (uuid, slot)
+  uuid    VARCHAR(36)  NOT NULL,
+  name    VARCHAR(32)  NOT NULL,
+  server  VARCHAR(64)  NOT NULL,
+  world   VARCHAR(64)  NOT NULL,
+  x       DOUBLE       NOT NULL,
+  y       DOUBLE       NOT NULL,
+  z       DOUBLE       NOT NULL,
+  yaw     FLOAT        NOT NULL,
+  pitch   FLOAT        NOT NULL,
+  PRIMARY KEY (uuid, name)
 );
 ```
+
+### Migration from 1.1.0
+
+The `homes` table is migrated automatically on first startup:
+
+1. A `name` column is added
+2. Existing slot-based homes are renamed to "Home 1", "Home 2", etc.
+3. The primary key is changed from `(uuid, slot)` to `(uuid, name)`
+4. The `slot` column is dropped
+
+No manual intervention is needed.

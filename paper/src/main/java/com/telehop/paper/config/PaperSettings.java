@@ -111,6 +111,7 @@ public record PaperSettings(
         features.put("back", featuresFile.getBoolean("features.back", true));
         features.put("tpa-toggle", featuresFile.getBoolean("features.tpa-toggle", true));
         features.put("random-respawn", featuresFile.getBoolean("features.random-respawn", true));
+        features.put("last-location", featuresFile.getBoolean("features.last-location", true));
 
         Map<String, TeleportEffect> effects = loadEffects(teleportFile);
 
@@ -138,13 +139,13 @@ public record PaperSettings(
                 general.getBoolean("audit.enabled", false),
                 Collections.unmodifiableMap(features),
                 general.getString("language", "en"),
-                homeFile.getInt("homes.max-slots", 5),
+                homeFile.getInt("homes.max-slots", 10),
                 homeFile.getBoolean("homes.confirm-set", true),
                 homeFile.getString("homes.gui-title", "<gradient:red:gold>Your Homes</gradient>"),
                 parseMaterial(homeFile.getString("homes.bed-set", "LIME_BED"), Material.LIME_BED),
                 parseMaterial(homeFile.getString("homes.bed-empty", "RED_BED"), Material.RED_BED),
                 parseMaterial(homeFile.getString("homes.bed-locked", "LIGHT_BLUE_BED"), Material.LIGHT_BLUE_BED),
-                homeFile.getInt("homes.gui-rows", 3),
+                homeFile.getInt("homes.gui-rows", 5),
                 homeFile.getBoolean("homes.show-location", true),
                 homeFile.getString("homes.world-colors.overworld", "<green>Overworld</green>"),
                 homeFile.getString("homes.world-colors.nether", "<gradient:red:gold>Nether</gradient>"),

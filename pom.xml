@@ -5,7 +5,7 @@
 
     <groupId>com.telehop</groupId>
     <artifactId>telehop-parent</artifactId>
-    <version>1.1.0</version>
+    <version>2.0.0</version>
     <packaging>pom</packaging>
 
     <name>TeleHop</name>
@@ -42,7 +42,7 @@
     <properties>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <paper.api.version>1.21.1-R0.1-SNAPSHOT</paper.api.version>
+        <paper.api.version>1.21.11-R0.1-SNAPSHOT</paper.api.version>
         <velocity.api.version>3.3.0-SNAPSHOT</velocity.api.version>
         <!-- ACF only publishes SNAPSHOT builds; this is standard for the library -->
         <acf.version>0.5.1-SNAPSHOT</acf.version>

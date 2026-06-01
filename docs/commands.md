@@ -54,8 +54,10 @@ When a player has TPA toggled off:
 | Command | Description | Permission |
 |---------|-------------|------------|
 | `/home` | Open the homes GUI | `telehop.homes` |
-| `/home <1-5>` | Quick-teleport to a specific home slot | `telehop.homes` |
-| `/sethome` | Set a home in the first empty slot | `telehop.homes` |
+| `/home <name>` | Quick-teleport to a named home | `telehop.homes` |
+| `/sethome <name>` | Set a named home at your current location | `telehop.sethome` |
+| `/delhome <name>` | Delete a named home | `telehop.delhome` |
+| `/lastlocation` | Teleport to your last logout location | `telehop.lastlocation` |
 
 Homes are blocked on servers listed in `home.yml > blocked-servers` (e.g. lobby). Players can still open the GUI and teleport to existing homes from any server.
 
@@ -95,6 +97,14 @@ These commands are **hidden from tab complete** for players who do not have the 
 | `/forcedelwarp <name>` | Force-delete an admin warp | `telehop.admin` |
 | `/forcedelwarp <player> <name>` | Force-delete a specific player's warp | `telehop.admin` |
 | `/forcedelhome <player>` | List a player's homes with clickable delete buttons | `telehop.admin` |
+| `/forcesethome <player> <name>` | Set a home for another player at your current location | `telehop.admin` |
+| `/listhomes <player>` | List a player's homes with clickable [TP] and [DELETE] buttons | `telehop.admin` |
+| `/forcelastloc <player>` | View a player's last logout location (server, world, coords) | `telehop.admin` |
+| `/forcelastloc <player> tp` | Teleport to a player's last logout location | `telehop.admin` |
+| `/forcelastloc <player> clear` | Clear a player's saved logout location | `telehop.admin` |
+| `/playerinfo <player>` | Show a summary of a player's TeleHop data (homes, warps, last loc, server) | `telehop.admin` |
+
+Aliases: `/forcell` for `/forcelastloc`, `/pinfo` for `/playerinfo`
 
 ## TeleHop Admin
 

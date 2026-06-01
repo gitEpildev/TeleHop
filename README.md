@@ -10,14 +10,16 @@ Cross-server teleportation plugin for **Paper + Velocity** networks.
 - **TPA** `/tpa`, `/tpahere`, `/tpaaccept`, `/tpadeny`, `/tpacancel` — works across servers
 - **TPA Toggle** `/tpatoggle` — block incoming TPA requests, cross-server aware
 - **Random Teleport** `/rtp` — GUI region + dimension picker, safe landing, configurable radius
-- **Homes** `/home`, `/sethome` — GUI with configurable bed colours, permission-based slots (1–5), blocked servers, cross-server
+- **Homes** `/home`, `/sethome <name>`, `/delhome <name>` — named homes (up to 10) with 5-row GUI, configurable bed colours, permission-based limits, blocked servers, cross-server
 - **Back** `/back`, `/back death` — return to last teleport or death location, cross-server
 - **Random Respawn** — async safe-location search on death, applied at respawn; respects beds and anchors; automatically skipped on the hub server; applies to all players unconditionally
-- **Admin Teleport** `/tp`, `/tphere` — cross-server admin TP
+- **Last Location** `/lastlocation`, `/lastloc`, `/backlast` — persistent logout location tracking, teleport back to where you last logged out, cross-server
+- **Admin Teleport** `/tp <player>`, `/tp <x> <y> <z>`, `/tphere` — cross-server admin TP with coordinate support
 - **Teleport Effects** — configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back)
+- **Multi-Proxy** — opt-in Redis-based cross-proxy communication for multi-Velocity setups with region-aware spawn routing
 - **Feature Toggles** — enable/disable any module per server without removing commands
 - **Multi-Language** — 6 built-in languages (en, nl, de, es, zh, pl) with automatic English fallback
-- **Admin Tools** — `/telehop reload/version/perms/help`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`
+- **Admin Tools** — `/telehop reload/version/perms/help`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`, `/forcesethome`, `/listhomes`, `/forcelastloc`, `/playerinfo`
 - **Tab Completion** — player and warp names autocomplete across the entire network
 - **Modular Configuration** — split config files under `config/` with auto-migration from legacy `config.yml`
 
@@ -34,8 +36,8 @@ Cross-server teleportation plugin for **Paper + Velocity** networks.
 ## Quick Start
 
 1. Create a MySQL database and user
-2. Place `telehop-velocity-1.0.2.jar` on your Velocity proxy
-3. Place `telehop-paper-1.0.2.jar` on each Paper backend
+2. Place `telehop-velocity-2.0.0.jar` on your Velocity proxy
+3. Place `telehop-paper-2.0.0.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
 5. Edit `plugins/TeleHop/config/general.yml` — set `server-name` on each server and `hub-server` to your lobby
 6. Restart Velocity first, then all Paper servers
@@ -68,7 +70,8 @@ Tables are created automatically on first startup. For manual setup or reference
 | `warps` | Admin warps (name, location, server) |
 | `player_warps` | Player warps (owner, name, location, public/private) |
 | `tpa_requests` | Active TPA requests with sent_at timestamp |
-| `homes` | Player homes (uuid, slot, server, world, coordinates) |
+| `homes` | Player homes (uuid, name, server, world, coordinates) |
+| `last_locations` | Persistent logout locations (uuid, server, world, coordinates) |
 
 ## Paper Configuration Layout
 
@@ -88,9 +91,7 @@ plugins/TeleHop/
   languages/          # en.yml, nl.yml, de.yml, es.yml, zh.yml, pl.yml
 ```
 
-> **Upgrading from 1.0.0 / 1.0.1:** Drop in the new JAR — TeleHop extracts only new files (`respawn.yml`, `WIKI.md`) without touching your existing config. Add `random-respawn: true` to `features.yml` to explicitly enable random respawn (defaults to `true` even without the key).
-
-> **Upgrading from a pre-split config.yml:** If `config.yml` exists but `config/general.yml` does not, the plugin automatically migrates the single file into the split layout and renames it to `config.yml.old`.
+> **Upgrading from 1.0.0:** Drop in the new 2.0.0 JARs. The homes table is migrated automatically on first startup (slot-based to name-based). Existing homes are renamed "Home 1", "Home 2", etc. New config entries `last-location: true` in `features.yml` and updated `max-slots: 10`, `gui-rows: 5` in `home.yml` are added. Grant `telehop.homes.2`-`10` permissions to ranks via LuckPerms for additional home slots. If you had a pre-split `config.yml`, the plugin auto-migrates it into the `config/` directory layout.
 
 ## Project Structure
 
@@ -113,11 +114,12 @@ telehop-plugin/
 │       ├── command/
 │       │   ├── tpa/                    TPA commands + TpaToggleCommand
 │       │   ├── warp/                   Warp + player-warp commands
-│       │   ├── home/                   HomeCommand, SetHomeCommand
+│       │   ├── home/                   HomeCommand, SetHomeCommand, DelHomeCommand
 │       │   ├── admin/                  Admin commands (/telehop, /tp, /tphere, /forcedelhome)
 │       │   ├── SpawnCommand.java
 │       │   ├── RtpCommand.java
-│       │   └── BackCommand.java
+│       │   ├── BackCommand.java
+│       │   └── LastLocationCommand.java
 │       ├── service/
 │       │   ├── ServiceRegistry.java        Central service holder
 │       │   ├── TeleportService.java        Spawn, warp, RTP, home, back + effects
@@ -159,8 +161,8 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-1.0.2.jar`
-- `velocity/target/telehop-velocity-1.0.2.jar`
+- `paper/target/telehop-paper-2.0.0.jar`
+- `velocity/target/telehop-velocity-2.0.0.jar`
 
 Requires Java 21+ and Maven 3.8+.
 

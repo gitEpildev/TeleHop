@@ -22,14 +22,14 @@ public class HomeRepository {
 
     public void upsert(HomeRecord home) {
         String sql = """
-                INSERT INTO homes (uuid, slot, server, world, x, y, z, yaw, pitch)
+                INSERT INTO homes (uuid, name, server, world, x, y, z, yaw, pitch)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE server=?, world=?, x=?, y=?, z=?, yaw=?, pitch=?
                 """;
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, home.uuid());
-            ps.setInt(2, home.slot());
+            ps.setString(2, home.name());
             ps.setString(3, home.server());
             ps.setString(4, home.world());
             ps.setDouble(5, home.x());
@@ -51,7 +51,7 @@ public class HomeRepository {
     }
 
     public List<HomeRecord> listByPlayer(String uuid) {
-        String sql = "SELECT uuid, slot, server, world, x, y, z, yaw, pitch FROM homes WHERE uuid = ? ORDER BY slot";
+        String sql = "SELECT uuid, name, server, world, x, y, z, yaw, pitch FROM homes WHERE uuid = ? ORDER BY LENGTH(name), name";
         List<HomeRecord> result = new ArrayList<>();
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -67,12 +67,12 @@ public class HomeRepository {
         return result;
     }
 
-    public Optional<HomeRecord> find(String uuid, int slot) {
-        String sql = "SELECT uuid, slot, server, world, x, y, z, yaw, pitch FROM homes WHERE uuid = ? AND slot = ?";
+    public Optional<HomeRecord> find(String uuid, String name) {
+        String sql = "SELECT uuid, name, server, world, x, y, z, yaw, pitch FROM homes WHERE uuid = ? AND LOWER(name) = LOWER(?)";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, uuid);
-            ps.setInt(2, slot);
+            ps.setString(2, name);
             try (ResultSet rs = ps.executeQuery()) {
                 if (rs.next()) return Optional.of(fromResultSet(rs));
             }
@@ -82,21 +82,34 @@ public class HomeRepository {
         return Optional.empty();
     }
 
-    public void delete(String uuid, int slot) {
+    public void delete(String uuid, String name) {
         try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement("DELETE FROM homes WHERE uuid = ? AND slot = ?")) {
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM homes WHERE uuid = ? AND LOWER(name) = LOWER(?)")) {
             ps.setString(1, uuid);
-            ps.setInt(2, slot);
+            ps.setString(2, name);
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to delete home", e);
         }
     }
 
+    public int countByPlayer(String uuid) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement ps = conn.prepareStatement("SELECT COUNT(*) FROM homes WHERE uuid = ?")) {
+            ps.setString(1, uuid);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to count homes", e);
+        }
+        return 0;
+    }
+
     private HomeRecord fromResultSet(ResultSet rs) throws SQLException {
         return new HomeRecord(
                 rs.getString("uuid"),
-                rs.getInt("slot"),
+                rs.getString("name"),
                 rs.getString("server"),
                 rs.getString("world"),
                 rs.getDouble("x"),

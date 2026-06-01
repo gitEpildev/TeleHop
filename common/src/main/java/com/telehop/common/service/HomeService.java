@@ -26,15 +26,19 @@ public class HomeService {
         return databaseManager.supplyAsync(() -> repository.listByPlayer(uuid));
     }
 
-    public CompletableFuture<Optional<HomeRecord>> find(String uuid, int slot) {
-        return databaseManager.supplyAsync(() -> repository.find(uuid, slot));
+    public CompletableFuture<Optional<HomeRecord>> find(String uuid, String name) {
+        return databaseManager.supplyAsync(() -> repository.find(uuid, name));
     }
 
     public CompletableFuture<Void> upsert(HomeRecord home) {
         return databaseManager.runAsync(() -> repository.upsert(home));
     }
 
-    public CompletableFuture<Void> delete(String uuid, int slot) {
-        return databaseManager.runAsync(() -> repository.delete(uuid, slot));
+    public CompletableFuture<Void> delete(String uuid, String name) {
+        return databaseManager.runAsync(() -> repository.delete(uuid, name));
+    }
+
+    public CompletableFuture<Integer> countByPlayer(String uuid) {
+        return databaseManager.supplyAsync(() -> repository.countByPlayer(uuid));
     }
 }

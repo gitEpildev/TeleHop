@@ -62,6 +62,7 @@ If the plugin detects a `config.yml` but no `config/general.yml`, it performs a 
 | `features.homes` | boolean | `true` | Enable/disable `/home`, `/sethome` |
 | `features.back` | boolean | `true` | Enable/disable `/back` |
 | `features.tpa-toggle` | boolean | `true` | Enable/disable `/tpatoggle` |
+| `features.last-location` | boolean | `true` | Enable/disable `/lastlocation` |
 
 When a feature is `false`, its commands still exist but display "This feature is disabled on this server."
 
@@ -120,10 +121,10 @@ rtp:
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `homes.max-slots` | int | `5` | Maximum home slots (1-5) |
+| `homes.max-slots` | int | `10` | Maximum home slots (1-10) |
 | `homes.confirm-set` | boolean | `true` | Show confirmation GUI before setting a home |
 | `homes.gui-title` | string | `"<gradient:red:gold>Your Homes</gradient>"` | Homes GUI title (MiniMessage) |
-| `homes.gui-rows` | int | `3` | Number of rows (3 = single chest). Beds are centered in the middle row. |
+| `homes.gui-rows` | int | `5` | Number of rows. Beds are displayed across two rows with a blank row between them. |
 | `homes.bed-set` | string | `"LIME_BED"` | Bed material for occupied home slots |
 | `homes.bed-empty` | string | `"RED_BED"` | Bed material for available (empty) slots |
 | `homes.bed-locked` | string | `"LIGHT_BLUE_BED"` | Bed material for locked (no permission) slots |

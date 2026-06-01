@@ -7,19 +7,19 @@
 #  Reloadable with /telehop reload (no restart needed).
 
 homes:
-  # Maximum number of home slots available (1-5).
-  # Players unlock individual slots via permissions:
-  #   telehop.homes.1 — 1 slot  (default: everyone)
-  #   telehop.homes.2 — 2 slots
-  #   telehop.homes.3 — 3 slots
-  #   telehop.homes.4 — 4 slots
-  #   telehop.homes.5 — 5 slots
+  # Maximum number of named homes available (1-10).
+  # Players unlock slots via permissions:
+  #   telehop.homes.1  — 1 home  (default: everyone)
+  #   telehop.homes.2  — 2 homes
+  #   telehop.homes.3  — 3 homes
+  #   ...
+  #   telehop.homes.10 — 10 homes
   #
-  # The highest matching permission determines how many slots a player
-  # can use. Use LuckPerms to assign higher slots to ranks:
-  #   lp group vip permission set telehop.homes.3
-  #   lp group mvp permission set telehop.homes.5
-  max-slots: 5
+  # The highest matching permission determines how many homes a player
+  # can create. Use LuckPerms to assign higher counts to ranks:
+  #   lp group vip permission set telehop.homes.5
+  #   lp group mvp permission set telehop.homes.10
+  max-slots: 10
 
   # If true, setting a home opens a small confirmation GUI first.
   # If false, clicking an empty slot immediately sets the home.
@@ -29,9 +29,9 @@ homes:
   # Supports MiniMessage formatting: <red>, <bold>, <gradient:...>, etc.
   gui-title: "<gradient:red:gold>Your Homes</gradient>"
 
-  # Number of rows in the homes GUI (1-6). 3 rows = single chest.
-  # Beds are centered in the middle row.
-  gui-rows: 3
+  # Number of rows in the homes GUI (1-6). 5 rows = large chest.
+  # Beds are spread across two rows for up to 10 homes.
+  gui-rows: 5
 
   # ── Bed Colours ─────────────────────────────────────────────────────
   #  Customize the bed item shown for each slot state.

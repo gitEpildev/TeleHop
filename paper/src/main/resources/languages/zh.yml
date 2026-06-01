@@ -98,6 +98,15 @@ help-tpahere: "<gray>  <aqua>/tpahere <player></aqua> <dark_gray>— 请求一�
 help-tpaaccept: "<gray>  <aqua>/tpaaccept</aqua> <dark_gray>— 接受传送请求"
 help-tpadeny: "<gray>  <aqua>/tpadeny</aqua> <dark_gray>— 拒绝传送请求"
 help-tpacancel: "<gray>  <aqua>/tpacancel</aqua> <dark_gray>— 取消发出的传送请求"
+help-tpatoggle: "<gray>  <aqua>/tpatoggle</aqua> <dark_gray>— Toggle incoming TPA requests on/off"
+help-homes-header: "<yellow><bold>Homes</bold></yellow>"
+help-home: "<gray>  <aqua>/home [name]</aqua> <dark_gray>— Open homes GUI or teleport to a home"
+help-sethome: "<gray>  <aqua>/sethome <name></aqua> <dark_gray>— Set a named home"
+help-delhome: "<gray>  <aqua>/delhome <name></aqua> <dark_gray>— Delete a named home"
+help-lastloc: "<gray>  <aqua>/lastlocation</aqua> <dark_gray>— Teleport to your last logout location"
+help-back-header: "<yellow><bold>Back</bold></yellow>"
+help-back: "<gray>  <aqua>/back</aqua> <dark_gray>— Return to last teleport location"
+help-backdeath: "<gray>  <aqua>/back death</aqua> <dark_gray>— Return to last death location"
 help-warps-header: "<yellow><bold>管理员传送点</bold></yellow>"
 help-warp: "<gray>  <aqua>/warp <name></aqua> <dark_gray>— 传送到全局传送点"
 help-setwarp: "<gray>  <aqua>/setwarp <name></aqua> <dark_gray>— 创建/更新全局传送点"
@@ -116,6 +125,11 @@ help-tphere: "<gray>  <aqua>/tphere <player></aqua> <dark_gray>— 将玩家拉�
 help-listwarps: "<gray>  <aqua>/listwarps [player]</aqua> <dark_gray>— 列出所有玩家传送点"
 help-forcedelwarp: "<gray>  <aqua>/forcedelwarp <name></aqua> <dark_gray>— 强制删除管理员传送点"
 help-forcedelwarp-player: "<gray>  <aqua>/forcedelwarp <player> <name></aqua> <dark_gray>— 强制删除玩家传送点"
+help-forcedelhome: "<gray>  <aqua>/forcedelhome <player> [name]</aqua> <dark_gray>— Force-delete a player's home"
+help-listhomes: "<gray>  <aqua>/listhomes <player></aqua> <dark_gray>— List a player's homes"
+help-forcesethome: "<gray>  <aqua>/forcesethome <player> <name></aqua> <dark_gray>— Set a home for another player"
+help-forcelastloc: "<gray>  <aqua>/forcelastloc <player></aqua> <dark_gray>— View/tp/clear a player's last logout location"
+help-playerinfo: "<gray>  <aqua>/playerinfo <player></aqua> <dark_gray>— View a player's TeleHop data summary"
 help-telehop-reload: "<gray>  <aqua>/telehop reload</aqua> <dark_gray>— 重新加载配置和消息"
 help-telehop-version: "<gray>  <aqua>/telehop version</aqua> <dark_gray>— 显示插件版本"
 help-telehop-perms: "<gray>  <aqua>/telehop perms</aqua> <dark_gray>— 列出所有权限节点"
@@ -132,6 +146,15 @@ perms-tpahere: "<gray>    <aqua>telehop.tpahere</aqua> <dark_gray>— 使用 /tp
 perms-tpa-accept: "<gray>    <aqua>telehop.tpa.accept</aqua> <dark_gray>— 使用 /tpaaccept"
 perms-tpa-deny: "<gray>    <aqua>telehop.tpa.deny</aqua> <dark_gray>— 使用 /tpadeny"
 perms-tpa-cancel: "<gray>    <aqua>telehop.tpa.cancel</aqua> <dark_gray>— 使用 /tpacancel"
+perms-tpa-toggle: "<gray>    <aqua>telehop.tpa.toggle</aqua> <dark_gray>— Use /tpatoggle"
+perms-homes-header: "<yellow>  Homes"
+perms-homes: "<gray>    <aqua>telehop.homes</aqua> <dark_gray>— Open /home GUI"
+perms-sethome: "<gray>    <aqua>telehop.sethome</aqua> <dark_gray>— Use /sethome"
+perms-delhome: "<gray>    <aqua>telehop.delhome</aqua> <dark_gray>— Use /delhome"
+perms-homes-limit: "<gray>    <aqua>telehop.homes.<1-10></aqua> <dark_gray>— Number of home slots"
+perms-lastloc: "<gray>    <aqua>telehop.lastlocation</aqua> <dark_gray>— Use /lastlocation"
+perms-back: "<gray>    <aqua>telehop.back</aqua> <dark_gray>— Use /back"
+perms-back-death: "<gray>    <aqua>telehop.back.death</aqua> <dark_gray>— Use /back death"
 perms-per-warp-header: "<yellow>  单个传送点权限"
 perms-warp-access: "<gray>    <aqua>telehop.warp.<name></aqua> <dark_gray>— 访问特定管理员传送点"
 perms-warp-limits-header: "<yellow>  玩家传送点限制（每个等级分配一个）"
@@ -147,12 +170,14 @@ perms-rtp-bypass-delay: "<gray>    <aqua>telehop.rtp.bypassdelay</aqua> <dark_gr
 perms-tpa-bypass: "<gray>    <aqua>telehop.tpa.bypasscooldown</aqua> <dark_gray>— 跳过TPA冷却"
 
 # ── Homes ────────────────────────────────────────────────────────────────
-home-set: "<green>Home <gold><slot></gold> set at your current location."
-home-deleted: "<gold>Home <gold><slot></gold> deleted."
-home-teleporting: "<aqua>Teleporting to Home <gold><slot></gold>..."
+home-set: "<green>Home <gold><name></gold> set at your current location."
+home-deleted: "<gold>Home <gold><name></gold> deleted."
+home-teleporting: "<aqua>Teleporting to <gold><name></gold>..."
 home-not-found: "<red>That home does not exist."
 home-no-empty-slot: "<red>All your home slots are full. Delete one first."
 home-blocked-server: "<red>You cannot set homes on this server."
+home-invalid-name: "<red>Invalid home name. Use only letters, numbers, and underscores."
+home-name-too-long: "<red>Home name is too long (max <max> characters)."
 
 # ── Back ─────────────────────────────────────────────────────────────────
 back-teleporting: "<aqua>Teleporting to your last location..."
@@ -166,6 +191,34 @@ tpa-toggle-off: "<red>TPA requests <bold>disabled</bold>. You will not receive r
 player-tpa-disabled: "<red><target> has TPA requests disabled."
 
 # ── ForceDelHome (admin) ─────────────────────────────────────────────────
+lastloc-teleporting: "<aqua>Teleporting to your last logout location..."
+lastloc-no-location: "<red>No saved logout location found."
+lastloc-world-missing: "<red>The world from your last logout location no longer exists."
+
+rtp-back-button: "<gray>Back"
+rtp-back-lore: "<dark_gray>Return to region selection"
+
 forcedelhome-header: "<gold><bold>--- <player>'s Homes (<count>) ---</bold></gold>"
-forcedelhome-deleted: "<gold>Force-deleted Home <gold><slot></gold>."
+forcedelhome-deleted: "<gold>Force-deleted home <gold><name></gold>."
 forcedelhome-no-homes: "<gray><player> has no homes."
+
+# ── ForceLastLoc (admin) ────────────────────────────────────────────────
+forcelastloc-info: "<gold><bold><player></bold></gold><gray>'s last logout: <aqua><server></aqua> <white><world></white> <gold><x></gold>, <gold><y></gold>, <gold><z></gold>"
+forcelastloc-tp: "<aqua>Teleporting to <gold><player></gold>'s last logout on <aqua><server></aqua>..."
+forcelastloc-cleared: "<green>Cleared <gold><player></gold>'s last logout location."
+forcelastloc-no-data: "<gray><player> has no saved logout location."
+
+# ── ForceSetHome (admin) ────────────────────────────────────────────────
+forcesethome-set: "<green>Set home <gold><name></gold> for <gold><player></gold> at your location."
+
+# ── ListHomes (admin) ──────────────────────────────────────────────────
+listhomes-header: "<gold><bold>--- <player>'s Homes (<count>) ---</bold></gold>"
+listhomes-empty: "<gray><player> has no homes."
+
+# ── PlayerInfo (admin) ──────────────────────────────────────────────────
+playerinfo-header: "<gold><bold>--- TeleHop Data: <player> ---</bold></gold>"
+playerinfo-server: "<gray>  Server: <aqua><server></aqua>"
+playerinfo-homes: "<gray>  Homes: <aqua><count></aqua>"
+playerinfo-warps: "<gray>  Warps: <aqua><count></aqua>"
+playerinfo-lastloc: "<gray>  Last logout: <aqua><server></aqua> <white><world></white> <gold><x></gold>, <gold><y></gold>, <gold><z></gold>"
+playerinfo-lastloc-none: "<gray>  Last logout: <dark_gray>none"

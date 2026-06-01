@@ -3,6 +3,7 @@ package com.telehop.paper;
 import co.aikar.commands.PaperCommandManager;
 import com.telehop.common.db.DatabaseManager;
 import com.telehop.common.db.HomeRepository;
+import com.telehop.common.db.LastLocationRepository;
 import com.telehop.common.db.PlayerRepository;
 import com.telehop.common.db.PlayerWarpRepository;
 import com.telehop.common.db.TpaRepository;
@@ -11,6 +12,7 @@ import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.PlayerWarpRecord;
 import com.telehop.common.service.HomeService;
+import com.telehop.common.service.LastLocationService;
 import com.telehop.common.service.PlayerServerCache;
 import com.telehop.common.service.PlayerService;
 import com.telehop.common.service.PlayerWarpService;
@@ -23,10 +25,16 @@ import com.telehop.paper.command.RtpCommand;
 import com.telehop.paper.command.SpawnCommand;
 import com.telehop.paper.command.admin.AdminTeleportCommand;
 import com.telehop.paper.command.admin.ForceDelHomeCommand;
+import com.telehop.paper.command.admin.ForceLastLocCommand;
+import com.telehop.paper.command.admin.ForceSetHomeCommand;
+import com.telehop.paper.command.admin.ListHomesCommand;
+import com.telehop.paper.command.admin.PlayerInfoCommand;
 import com.telehop.paper.command.admin.TeleHopCommand;
 import com.telehop.paper.command.admin.TpHereAdminCommand;
+import com.telehop.paper.command.home.DelHomeCommand;
 import com.telehop.paper.command.home.HomeCommand;
 import com.telehop.paper.command.home.SetHomeCommand;
+import com.telehop.paper.command.LastLocationCommand;
 import com.telehop.paper.command.tpa.TpaAcceptCommand;
 import com.telehop.paper.command.tpa.TpaCancelCommand;
 import com.telehop.paper.command.tpa.TpaCommand;
@@ -132,6 +140,7 @@ public final class Bootstrap {
         reg.setPlayerWarpService(new PlayerWarpService(db, new PlayerWarpRepository(db.dataSource())));
         reg.setTpaService(new TpaService(db, new TpaRepository(db.dataSource()), new TpaRequestCache()));
         reg.setHomeService(new HomeService(db, new HomeRepository(db.dataSource())));
+        reg.setLastLocationService(new LastLocationService(db, new LastLocationRepository(db.dataSource())));
         reg.warpService().refreshCache();
 
         BackLocationManager backManager = new BackLocationManager();
@@ -255,9 +264,15 @@ public final class Bootstrap {
         manager.registerCommand(new ForceDelWarpCommand(plugin));
         manager.registerCommand(new HomeCommand(plugin));
         manager.registerCommand(new SetHomeCommand(plugin));
+        manager.registerCommand(new DelHomeCommand(plugin));
         manager.registerCommand(new BackCommand(plugin));
         manager.registerCommand(new TpaToggleCommand(plugin));
         manager.registerCommand(new ForceDelHomeCommand(plugin));
+        manager.registerCommand(new LastLocationCommand(plugin));
+        manager.registerCommand(new ForceLastLocCommand(plugin));
+        manager.registerCommand(new ForceSetHomeCommand(plugin));
+        manager.registerCommand(new ListHomesCommand(plugin));
+        manager.registerCommand(new PlayerInfoCommand(plugin));
     }
 
     private static void startScheduledTasks(NetworkPaperPlugin plugin, ServiceRegistry reg) {

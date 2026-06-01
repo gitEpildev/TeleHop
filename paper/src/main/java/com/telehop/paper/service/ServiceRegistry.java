@@ -99,4 +99,8 @@ public final class ServiceRegistry {
     private RandomRespawnService randomRespawnService;
     public RandomRespawnService randomRespawnService() { return randomRespawnService; }
     public void setRandomRespawnService(RandomRespawnService randomRespawnService) { this.randomRespawnService = randomRespawnService; }
+
+    private com.telehop.common.service.LastLocationService lastLocationService;
+    public com.telehop.common.service.LastLocationService lastLocationService() { return lastLocationService; }
+    public void setLastLocationService(com.telehop.common.service.LastLocationService lastLocationService) { this.lastLocationService = lastLocationService; }
 }

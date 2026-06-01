@@ -44,3 +44,7 @@ features:
   # location in the configured world instead of the world spawn point.
   # Applies to all players unconditionally (no bypass).
   random-respawn: true
+
+  # /lastlocation, /lastloc, /backlast — persistent logout location tracking.
+  # Saves the player's position when they quit and lets them return to it.
+  last-location: true

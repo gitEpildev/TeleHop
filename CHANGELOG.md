@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to TeleHop are documented here.  
+All notable changes to TeleHop are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
@@ -9,88 +9,87 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [1.1.0] — 2026-05-03
+## [2.0.0] — 2026-06-01
 
 ### Added
-- **Multi-proxy support** — opt-in Redis-based cross-proxy communication so two or more Velocity proxies can share the same backend servers
-  - New `RedisCrossProxyBridge` for Velocity-to-Velocity pub/sub via Redis
-  - TPA requests, admin teleports, transfers, and player list queries all work across proxy boundaries
-  - Player location broadcasts keep all proxies aware of every player's current server
-  - Configurable via `multi-proxy.enabled`, `proxy.id`, Redis connection, and `global-player-list` in `config.properties`
-  - Zero overhead when disabled — no Redis connection, no extra threads
-- **Region-aware /spawn routing** — new `regions` config in `general.yml` maps servers to regional hubs
-  - Players on `eu` server get sent to `lobby-eu`, players on `usa` get sent to `lobby-usa`
-  - Falls back to `hub-server` if the current server isn't in any region
-- **Blocked server prefixes** — `blocked-server-prefixes` in `home.yml` blocks home-setting on servers by name prefix
-  - Example: `lobby` matches `lobby-usa`, `lobby-eu`, `lobby-asia`
-  - Works alongside existing exact-match `blocked-servers`
-- **Cross-proxy player list** — when `global-player-list` is true, `/tpa` tab-complete shows players from all proxies
-- **Coordinate teleportation** — `/tp` now accepts `x y z` and `player x y z` forms
-  - `/tp <x> <y> <z>` — teleports the sender to coordinates in their current world
-  - `/tp <player> <x> <y> <z>` — teleports a named player to coordinates; works cross-server via a new `ADMIN_TP_TO_COORDS` packet
-  - Invalid coordinates produce a localised `invalid-coords` message in all 6 languages
-- **Permission-gated tab complete** — `/tp` and `/tphere` are now hidden from the brigadier command tree for players without `telehop.tp` / `telehop.tphere` respectively; `telehop reload` and `telehop perms` are similarly hidden from non-admins
 
-### Changed
-- `VelocitySettings` now includes `multiProxyEnabled`, `globalPlayerList`, `crossProxyTimeoutMs`, and `RedisConfig`
-- `PaperSettings` now includes `multiProxyEnabled`, `regions`, and `homeBlockedServerPrefixes`
-- `SpawnCommand` uses region-aware hub resolution instead of a single `hub-server`
-- `VelocityPlayerTracker` supports cross-proxy player lookups via Redis global map
-- `VelocityPacketHandler` falls back to Redis forwarding when target player is not on the local proxy
-- `PacketType` enum gains `ADMIN_TP_TO_COORDS`, `CROSS_PROXY_FORWARD`, `CROSS_PROXY_PLAYER_LIST`, `CROSS_PROXY_PLAYER_UPDATE`
-- `AdminTeleportCommand` extended from 2 optional strings to 4 optional strings to support coordinate forms without breaking existing player-name modes
-- Jedis 5.1.0 added as a dependency (shaded in Velocity JAR)
+**Homes**
+- Named homes system: `/sethome <name>`, `/home <name>`, `/delhome <name>`
+- Up to 10 homes per player, gated by `telehop.homes.1` through `telehop.homes.10` permissions
+- 5-row GUI with configurable bed colours, world/server labels, and clickable set/delete
+- Home names are case-insensitive, alphanumeric with spaces allowed, max 32 characters
+- Blocked servers and blocked server prefixes to restrict where homes can be set
+- Cross-server home teleportation via Velocity routing
 
----
+**Back and Last Location**
+- `/back` and `/back death` to return to last teleport or death location (session-only, cross-server)
+- `/lastlocation` (aliases: `/lastloc`, `/backlast`, `/ll`) for persistent logout location tracking
+  - Saved on quit, persisted in MySQL `last_locations` table
+  - Cross-server support with automatic server transfer
 
-## [1.0.2] — 2026-04-12
+**TPA Toggle**
+- `/tpatoggle` to block incoming TPA requests (session-only, cross-server aware)
 
-### Added
-- **Random Respawn** — players respawn at a random safe location on death instead of world spawn
-  - Fully async safe-location search using Paper's HeightMap API — no main thread blocking
-  - Configurable via `config/respawn.yml` (world, radius, bed/anchor respect)
-  - Feature toggle in `features.yml` under `random-respawn`
-  - Automatically skipped on the hub server
-  - Applies unconditionally to all players — no bypass permission, no exceptions
-- **Configuration Wiki** — `WIKI.md` extracted into `plugins/TeleHop/config/` on first run
-  - Full reference for every config file, permission node, and admin command
-  - Upgrade guide for migrating from previous versions
-  - Multi-server setup example
-- **Stricter CI pipeline**
-  - Compile gate: all modules (common, paper, velocity) compiled before tests run
-  - Version consistency check: pom.xml, plugin.yml, and Velocity @Plugin must match
-  - YAML syntax validation: every config template and language file
-  - Language key parity: all locale files must contain every key from en.yml
-  - TODO/FIXME blocker: prevents unresolved notes from reaching main
-  - Coverage thresholds raised to 75% overall / 80% changed files
-  - PR compile check for immediate contributor feedback
+**Random Respawn**
+- Players respawn at a random safe location on death instead of world spawn
+- Fully async safe-location search using Paper's HeightMap API
+- Configurable via `config/respawn.yml` (world, radius, bed/anchor respect)
+- Automatically skipped on the hub server
 
-### Fixed
-- Random respawn failing on unexplored chunks — the sky-light check (`getLightFromSky`) returned 0 on freshly generated chunks (neighbours not loaded), rejecting all 200 attempts; replaced with Paper's `HeightMap.MOTION_BLOCKING` for reliable surface detection
-- Random respawn race condition — previously reused RtpManager's sync-bounce pattern which was too slow; now uses dedicated `RandomRespawnService` with Paper async chunk loading
-- If the location search finishes after the player clicks "Respawn", the player is teleported on the next tick instead of being silently dropped at world spawn
+**Multi-Proxy Support**
+- Opt-in Redis-based cross-proxy communication for multiple Velocity proxies
+- TPA requests, admin teleports, transfers, and player lists all work across proxy boundaries
+- Region-aware `/spawn` routing maps servers to regional hubs (e.g. EU players go to `lobby-eu`)
+- Configurable via `multi-proxy.enabled`, `proxy.id`, Redis connection in `config.properties`
 
-### Removed
-- `telehop.respawn.bypass` permission — random respawn is now unconditional for all players on survival servers
-- Legacy monolithic `config.yml` resource — split config files under `config/` are the sole source of truth; auto-migration from old `config.yml` still works for existing installs
+**Coordinate Teleportation**
+- `/tp <x> <y> <z>` and `/tp <player> <x> <y> <z>` with cross-server support
 
----
+**Admin Commands**
+- `/forcedelhome <player>` to list and delete a player's homes
+- `/forcesethome <player> <name>` to set a home for another player
+- `/listhomes <player>` with clickable [TP] and [DELETE] buttons
+- `/forcelastloc <player>` (alias `/forcell`) to view, teleport to, or clear a player's last logout location
+- `/playerinfo <player>` (alias `/pinfo`) to view a player's TeleHop data summary
+- `/forcedelwarp <name>` and `/forcedelwarp <player> <name>` for admin warp management
+- `/listwarps [player]` to list all player warps across servers
 
-## [1.0.1] — 2026-04-10
+**RTP GUI**
+- Back button (spectral arrow) in the dimension picker to return to region selection
 
-### Added
-- **Homes** — `/home`, `/sethome` with GUI, configurable bed colours, permission-based slots (1–5), blocked servers, cross-server
-- **Back** — `/back`, `/back death` to return to last teleport or death location
-- **TPA Toggle** — `/tpatoggle` to block incoming TPA requests
-- **Admin tools** — `/forcedelhome`, `/forcedelwarp`
-- **Teleport effects** — configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back)
-- **Modular config** — split from single `config.yml` into `config/` directory (general, database, features, teleport, tpa, rtp, home)
-- Auto-migration from legacy `config.yml` to split config
-- 5 additional unit test classes (WarpService, TpaService, WarpCache, TpaRequestCache, PlayerWarpService)
-- GitHub Actions: CI, PR checks, release, CodeQL security scanning
+**Teleport Effects**
+- Configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back)
 
-### Changed
-- Tab completion now works across the entire network (player names + warp names)
+**Configuration**
+- Modular config split: `config/general.yml`, `database.yml`, `features.yml`, `teleport.yml`, `tpa.yml`, `rtp.yml`, `home.yml`, `respawn.yml`
+- Auto-migration from legacy monolithic `config.yml`
+- Configuration wiki (`WIKI.md`) bundled in `plugins/TeleHop/config/` on first run
+
+**In-Game Help**
+- `/telehop help` with categorised command listing (general, TPA, homes, back, warps, admin)
+- `/telehop perms` with all permission nodes and descriptions
+
+**CI/CD**
+- GitHub Actions: CI (checkstyle, tests, build), PR checks, release workflow, CodeQL security scanning
+- Version consistency checks across pom.xml, plugin.yml, and Velocity @Plugin
+- YAML syntax validation and language key parity checks
+- Tab completion works across the entire network (player names + warp names)
+- Permission-gated tab complete: `/tp`, `/tphere`, admin subcommands hidden from non-admins
+
+### Changed (from 1.0.0)
+- Homes migrated from slot-based `(uuid, slot INT)` to name-based `(uuid, name VARCHAR)` schema
+- Cross-server home packets use `homeName` instead of `homeSlot`
+- `home.yml` defaults: `max-slots: 10`, `gui-rows: 5`
+- `SpawnCommand` uses region-aware hub resolution
+- `AdminTeleportCommand` supports coordinate forms alongside player-name modes
+- Jedis 5.1.0 added as a dependency (shaded in Velocity JAR) for multi-proxy support
+
+### Migration from 1.0.0
+- Drop in the new 2.0.0 JARs (Paper + Velocity)
+- Homes table is migrated automatically on first startup (slot numbers converted to names)
+- No manual database intervention needed
+- Grant `telehop.homes.N` (2-10) to ranks via LuckPerms for additional home slots
+- If upgrading from a pre-split `config.yml`, the plugin auto-migrates to the `config/` directory layout
 
 ---
 

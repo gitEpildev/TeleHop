@@ -180,9 +180,9 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handleHomeTeleport(NetworkPacket packet) {
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player == null) return;
-        int slot = Integer.parseInt(packet.get("homeSlot"));
+        String homeName = packet.get("homeName");
         String homeUuid = packet.get("homeUuid");
-        services.homeService().find(homeUuid, slot).thenAccept(opt -> opt.ifPresent(home -> {
+        services.homeService().find(homeUuid, homeName).thenAccept(opt -> opt.ifPresent(home -> {
             World world = Bukkit.getWorld(home.world());
             if (world != null) {
                 Location loc = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
