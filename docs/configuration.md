@@ -101,6 +101,8 @@ Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `ba
 | `rtp.regions` | map | *(see below)* | RTP region definitions |
 | `rtp.dimensions.*` | map | *(overworld, nether, end)* | World name mapping |
 | `rtp.gui.*` | map | - | Region and dimension picker GUI settings |
+| `rtp.gui.ping.enabled` | boolean | `true` | Show estimated destination ping on region items, refreshed twice per second while the menu is open |
+| `rtp.gui.ping.proxy-ping` | boolean | `true` | Include the proxy-to-destination leg in the estimate (measured by Velocity every 10s). `false` shows only the player's current ping |
 
 ### RTP Region Example
 
@@ -176,6 +178,9 @@ Any server not listed displays in plain white.
 | `redis.port` | int | `6379` | Redis port |
 | `redis.password` | string | - | Redis auth password |
 | `redis.channel-prefix` | string | `telehop` | Redis channel prefix |
+| `redis.ssl` | boolean | `false` | Connect to Redis over TLS (rediss) |
+| `redis.ssl-verify` | boolean | `true` | Verify the server certificate and hostname |
+| `redis.ssl-ca-cert` | string | - | Path to a PEM CA certificate for self-signed setups |
 
 ---
 

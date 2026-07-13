@@ -72,3 +72,18 @@ rtp:
     dimension-menu:
       title: "<gold>Select Dimension</gold>"
       rows: 3
+
+    # ── Destination Ping ──────────────────────────────────────────────
+    #  Shows players the ping they will get on the destination server
+    #  when hovering a region in the picker, e.g. "Ping: ~42ms".
+    #  The number is colour-coded: green under 80ms, yellow under 150ms,
+    #  red above. Refreshes every second while the menu is open.
+    ping:
+      # Master toggle for the ping line in the region GUI.
+      enabled: true
+
+      # true  = the estimate includes the proxy -> destination server leg
+      #         (measured by the Velocity plugin every 10 seconds), so the
+      #         number reflects what the player WILL get after transfer.
+      # false = show only the player's current connection ping.
+      proxy-ping: true

@@ -46,8 +46,30 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
             case BACK_TELEPORT              -> handleBackTeleport(packet);
             case TPA_TOGGLE_DENY            -> handleTpaToggleDeny(packet);
             case PLAYER_LIST_RESPONSE       -> handlePlayerListResponse(packet);
+            case SERVER_PING_UPDATE         -> handleServerPingUpdate(packet);
             default -> {}
         }
+    }
+
+    private void handleServerPingUpdate(NetworkPacket packet) {
+        String encoded = packet.getOrDefault("rtts", "");
+        if (encoded.isBlank()) return;
+        Map<String, Long> rtts = new java.util.HashMap<>();
+        for (String pair : encoded.split(",")) {
+            int idx = pair.indexOf('=');
+            if (idx <= 0) continue;
+            try {
+                rtts.put(pair.substring(0, idx), Long.parseLong(pair.substring(idx + 1)));
+            } catch (NumberFormatException ignored) {
+            }
+        }
+        long measuredAt;
+        try {
+            measuredAt = Long.parseLong(packet.getOrDefault("measuredAt", "0"));
+        } catch (NumberFormatException e) {
+            measuredAt = System.currentTimeMillis();
+        }
+        services.pingService().update(rtts, measuredAt);
     }
 
     private void handlePostJoinTeleport(NetworkPacket packet) {

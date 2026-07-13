@@ -66,6 +66,7 @@ Paper Server A                    Velocity Proxy                    Paper Server
 | `PLAYER_SERVER_UPDATE` | Paper → Velocity | `uuid`, `server` | Notifies the proxy that a player is on a specific server |
 | `PLAYER_LIST_REQUEST` | Paper → Velocity | - | Requests a list of all online players |
 | `PLAYER_LIST_RESPONSE` | Velocity → Paper | `names` (CSV) | Comma-separated list of all online player names |
+| `SERVER_PING_UPDATE` | Velocity → Paper | `rtts` (CSV of `server=rttMs`), `measuredAt` (epoch ms) | Broadcast of proxy-to-backend round-trip times, measured every 10 seconds. Used by the RTP region GUI to estimate destination ping |
 
 ### Server Transfer
 

@@ -8,6 +8,8 @@ import com.telehop.common.db.RedisConfig;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import org.slf4j.Logger;
+import redis.clients.jedis.DefaultJedisClientConfig;
+import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
@@ -57,11 +59,24 @@ public final class RedisCrossProxyBridge {
         poolConfig.setMaxTotal(4);
         poolConfig.setMaxIdle(2);
 
+        DefaultJedisClientConfig.Builder clientConfig = DefaultJedisClientConfig.builder()
+                .timeoutMillis(5000);
         if (config.password() != null && !config.password().isBlank()) {
-            this.pool = new JedisPool(poolConfig, config.host(), config.port(), 5000, config.password());
-        } else {
-            this.pool = new JedisPool(poolConfig, config.host(), config.port(), 5000);
+            clientConfig.password(config.password());
         }
+        if (config.ssl()) {
+            RedisSslContext sslContext = RedisSslContext.create(config);
+            clientConfig.ssl(true)
+                    .sslSocketFactory(sslContext.socketFactory());
+            if (sslContext.hostnameVerifier() != null) {
+                clientConfig.hostnameVerifier(sslContext.hostnameVerifier());
+            }
+            logger.info("Redis TLS enabled (verify={}, ca-cert={})",
+                    config.sslVerify(),
+                    config.sslCaCert().isBlank() ? "system trust store" : config.sslCaCert());
+        }
+
+        this.pool = new JedisPool(poolConfig, new HostAndPort(config.host(), config.port()), clientConfig.build());
     }
 
     public void setPacketHandler(Consumer<NetworkPacket> handler) {

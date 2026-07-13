@@ -61,6 +61,7 @@ import com.telehop.paper.service.MessageService;
 import com.telehop.paper.service.NetworkPlayerNameCache;
 import com.telehop.paper.service.PendingTeleportManager;
 import com.telehop.paper.service.PermissionService;
+import com.telehop.paper.service.PingService;
 import com.telehop.paper.service.RandomRespawnManager;
 import com.telehop.paper.service.RandomRespawnService;
 import com.telehop.paper.service.RtpManager;
@@ -131,6 +132,7 @@ public final class Bootstrap {
         reg.setNetworkPlayerNameCache(new NetworkPlayerNameCache());
         reg.setRandomRespawnManager(new RandomRespawnManager());
         reg.setRandomRespawnService(new RandomRespawnService(plugin));
+        reg.setPingService(new PingService());
 
         StorageManager storage = new StorageManager(plugin, versionAdapter);
         storage.load();
@@ -323,7 +325,7 @@ public final class Bootstrap {
         }, 40L, 20L * 5L);
     }
 
-    private static final String PLUGIN_VERSION = "2.0.0";
+    private static final String PLUGIN_VERSION = "2.1.0";
 
     private static void printBanner(NetworkPaperPlugin plugin) {
         net.kyori.adventure.text.logger.slf4j.ComponentLogger log = plugin.getComponentLogger();

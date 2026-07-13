@@ -103,4 +103,8 @@ public final class ServiceRegistry {
     private com.telehop.common.service.LastLocationService lastLocationService;
     public com.telehop.common.service.LastLocationService lastLocationService() { return lastLocationService; }
     public void setLastLocationService(com.telehop.common.service.LastLocationService lastLocationService) { this.lastLocationService = lastLocationService; }
+
+    private PingService pingService;
+    public PingService pingService() { return pingService; }
+    public void setPingService(PingService pingService) { this.pingService = pingService; }
 }

@@ -70,6 +70,7 @@ rtp-searching: "<gold>正在寻找安全的位置..."
 rtp-teleporting: "<green>正在传送..."
 rtp-failed: "<red>未找到安全的位置，请重试。"
 rtp-cooldown: "<yellow>随机传送正在冷却中，还剩 <gold><seconds></gold><yellow> 秒。"
+rtp-in-progress: "<yellow>你已经有一个随机传送正在进行中。"
 rtp-delay: "<yellow>不要移动！<gold><seconds></gold><yellow> 秒后传送..."
 rtp-cancelled: "<red>传送取消 - 你移动了。"
 

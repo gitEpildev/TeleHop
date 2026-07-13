@@ -70,6 +70,7 @@ rtp-searching: "<gold>Buscando una ubicación segura..."
 rtp-teleporting: "<green>Teletransportando..."
 rtp-failed: "<red>No se encontró una ubicación segura. Inténtalo de nuevo."
 rtp-cooldown: "<yellow>RTP está en enfriamiento. <gold><seconds>s</gold><yellow> restantes."
+rtp-in-progress: "<yellow>Ya tienes un teletransporte aleatorio en curso."
 rtp-delay: "<yellow>¡No te muevas! Teletransportando en <gold><seconds></gold><yellow> segundos..."
 rtp-cancelled: "<red>Teletransporte cancelado - te moviste."
 

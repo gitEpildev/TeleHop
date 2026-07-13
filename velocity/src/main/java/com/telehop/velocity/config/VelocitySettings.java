@@ -47,7 +47,10 @@ public record VelocitySettings(
                 Integer.parseInt(props.getProperty("redis.port", "6379")),
                 props.getProperty("redis.password", ""),
                 props.getProperty("redis.channel-prefix", "telehop"),
-                proxyId
+                proxyId,
+                Boolean.parseBoolean(props.getProperty("redis.ssl", "false")),
+                Boolean.parseBoolean(props.getProperty("redis.ssl-verify", "true")),
+                props.getProperty("redis.ssl-ca-cert", "").trim()
         );
 
         return new VelocitySettings(

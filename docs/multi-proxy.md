@@ -50,6 +50,11 @@ redis.host=74.208.95.180
 redis.port=6379
 redis.password=your-redis-password
 redis.channel-prefix=telehop
+
+# Optional: encrypt the Redis connection with TLS
+redis.ssl=false
+redis.ssl-verify=true
+redis.ssl-ca-cert=
 ```
 
 The second proxy would have `proxy.id=proxy-eu-1` but identical Redis settings.
@@ -122,6 +127,9 @@ When `global-player-list` is true, player list requests aggregate names from all
 | `redis.port` | `6379` | Redis server port |
 | `redis.password` | (empty) | Redis auth password |
 | `redis.channel-prefix` | `telehop` | Prefix for Redis pub/sub channels |
+| `redis.ssl` | `false` | Connect to Redis over TLS (rediss) |
+| `redis.ssl-verify` | `true` | Verify the server certificate and hostname. Disable only for testing |
+| `redis.ssl-ca-cert` | (empty) | Path to a PEM CA certificate for self-signed setups. Empty uses the system trust store |
 
 ### Paper (`general.yml`)
 

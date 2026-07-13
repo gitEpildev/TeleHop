@@ -5,16 +5,16 @@
 
     <groupId>com.telehop</groupId>
     <artifactId>telehop-parent</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
     <packaging>pom</packaging>
 
     <name>TeleHop</name>
     <description>Cross-server teleportation plugin for Paper and Velocity networks.</description>
-    <url>https://developer.epildevconnect.uk/myhub/home</url>
+    <url>https://developer.epildevconnect.uk</url>
 
     <organization>
         <name>Epildevconnect Ltd</name>
-        <url>https://developer.epildevconnect.uk/myhub/home</url>
+        <url>https://developer.epildevconnect.uk</url>
     </organization>
 
     <developers>

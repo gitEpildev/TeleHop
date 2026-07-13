@@ -22,8 +22,8 @@ import java.nio.file.Path;
 @Plugin(
         id = "telehop-velocity",
         name = "TeleHop-Velocity",
-        version = "2.0.0",
-        url = "https://developer.epildevconnect.uk/myhub/home",
+        version = "2.1.0",
+        url = "https://developer.epildevconnect.uk",
         description = "Cross-server teleportation proxy bridge for TeleHop",
         authors = {"Epildev"}
 )

@@ -40,4 +40,8 @@ public final class VelocityServiceRegistry {
     /** Returns the Redis bridge, or {@code null} if multi-proxy is disabled. */
     public RedisCrossProxyBridge redisBridge() { return redisBridge; }
     public void setRedisBridge(RedisCrossProxyBridge redisBridge) { this.redisBridge = redisBridge; }
+
+    private ServerPingMonitor pingMonitor;
+    public ServerPingMonitor pingMonitor() { return pingMonitor; }
+    public void setPingMonitor(ServerPingMonitor pingMonitor) { this.pingMonitor = pingMonitor; }
 }

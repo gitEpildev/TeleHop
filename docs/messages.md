@@ -1,4 +1,4 @@
-# Messages Customization
+# Messages Customisation
 
 All player-facing messages are stored in language files inside `plugins/TeleHop/languages/` and use [MiniMessage](https://docs.advntr.dev/minimessage/format.html) format.
 
@@ -31,7 +31,7 @@ If a message key is missing from the selected language file, TeleHop automatical
 
 Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language: "fr"`, and reload.
 
-## Quick Color Reference
+## Quick Colour Reference
 
 | Tag | Result |
 |-----|--------|
@@ -46,7 +46,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 | `<bold>` | **Bold text** |
 | `<italic>` | *Italic text* |
 | `<gradient:red:blue>` | Gradient from red to blue |
-| `<#ff5555>` | Custom hex color |
+| `<#ff5555>` | Custom hex colour |
 | `<click:run_command:'/cmd'>` | Clickable text |
 | `<hover:show_text:'tip'>` | Hover tooltip |
 
@@ -121,6 +121,7 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 - `rtp-cooldown` - RTP on cooldown. Placeholder: `<seconds>` (remaining)
 - `rtp-delay` - Countdown before teleporting. Placeholder: `<seconds>`
 - `rtp-cancelled` - Teleport cancelled (player moved during countdown).
+- `rtp-in-progress` - Player already has an RTP warmup or transfer in flight.
 
 ### Listwarps
 - `listwarps-none` - No player warps found (global view).

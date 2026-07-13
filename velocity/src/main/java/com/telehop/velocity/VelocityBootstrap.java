@@ -9,6 +9,7 @@ import com.telehop.velocity.handler.VelocityPacketHandler;
 import com.telehop.velocity.messaging.RedisCrossProxyBridge;
 import com.telehop.velocity.messaging.VelocityMessagingManager;
 import com.telehop.velocity.service.PendingActionManager;
+import com.telehop.velocity.service.ServerPingMonitor;
 import com.telehop.velocity.service.VelocityPlayerTracker;
 import com.telehop.velocity.service.VelocityServiceRegistry;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -29,7 +30,7 @@ public final class VelocityBootstrap {
 
     private VelocityBootstrap() {}
 
-    private static final String PLUGIN_VERSION = "2.0.0";
+    private static final String PLUGIN_VERSION = "2.1.0";
 
     public static VelocityServiceRegistry init(NetworkVelocityPlugin plugin,
                                                ProxyServer proxy,
@@ -74,6 +75,11 @@ public final class VelocityBootstrap {
             reg.redisBridge().setPacketHandler(packetHandler::handle);
         }
 
+        ServerPingMonitor pingMonitor = new ServerPingMonitor(
+                plugin, proxy, messaging, settings.backends(), logger);
+        pingMonitor.start();
+        reg.setPingMonitor(pingMonitor);
+
         logger.info("\u001b[32mStartup complete! \u001b[90mMulti-proxy: \u001b[36m{}\u001b[0m",
                 settings.multiProxyEnabled() ? "enabled" : "disabled");
         return reg;
@@ -81,6 +87,7 @@ public final class VelocityBootstrap {
 
     public static void shutdown(VelocityServiceRegistry reg, Logger logger) {
         if (reg == null) return;
+        if (reg.pingMonitor() != null) reg.pingMonitor().shutdown();
         if (reg.redisBridge() != null) reg.redisBridge().shutdown();
         if (reg.messaging() != null) reg.messaging().shutdown();
         if (reg.databaseManager() != null) reg.databaseManager().shutdown();

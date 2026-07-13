@@ -19,6 +19,7 @@ public class RtpManager {
     private final JavaPlugin plugin;
     private final Random random = new Random();
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
+    private final Map<String, Long> pendingRtps = new ConcurrentHashMap<>();
 
     public RtpManager(JavaPlugin plugin) {
         this.plugin = plugin;
@@ -38,6 +39,29 @@ public class RtpManager {
 
     public void markCooldown(Player player, int cooldownSeconds) {
         cooldowns.put(player.getUniqueId().toString(), System.currentTimeMillis() + cooldownSeconds * 1000L);
+    }
+
+    /**
+     * Whether the player has an RTP warmup or transfer in flight. Entries
+     * expire automatically so a crash, quit, or server switch mid-warmup can
+     * never permanently lock a player out.
+     */
+    public boolean hasPendingRtp(Player player) {
+        Long expiry = pendingRtps.get(player.getUniqueId().toString());
+        return expiry != null && expiry > System.currentTimeMillis();
+    }
+
+    /**
+     * Marks an RTP as in progress. {@code expectedSeconds} should cover the
+     * warmup delay; a buffer is added for the teleport/transfer itself.
+     */
+    public void markPendingRtp(Player player, int expectedSeconds) {
+        pendingRtps.put(player.getUniqueId().toString(),
+                System.currentTimeMillis() + (expectedSeconds + 15) * 1000L);
+    }
+
+    public void clearPendingRtp(Player player) {
+        pendingRtps.remove(player.getUniqueId().toString());
     }
 
     public CompletableFuture<Location> findSafeLocation(World world, int radius) {

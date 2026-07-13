@@ -70,6 +70,7 @@ rtp-searching: "<gold>Searching for a safe location..."
 rtp-teleporting: "<green>Teleporting..."
 rtp-failed: "<red>No safe location found. Try again."
 rtp-cooldown: "<yellow>RTP is on cooldown. <gold><seconds>s</gold><yellow> remaining."
+rtp-in-progress: "<yellow>You already have a random teleport in progress."
 rtp-delay: "<yellow>Don't move! Teleporting in <gold><seconds></gold><yellow> seconds..."
 rtp-cancelled: "<red>Teleport cancelled - you moved."
 

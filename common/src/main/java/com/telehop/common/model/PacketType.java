@@ -38,6 +38,8 @@ public enum PacketType {
     CROSS_PROXY_PLAYER_LIST,
     /** Broadcasts player join/leave/switch events to other proxies. */
     CROSS_PROXY_PLAYER_UPDATE,
+    /** Proxy to backend broadcast of proxy-to-server round-trip times. */
+    SERVER_PING_UPDATE,
     RESPONSE,
     ERROR
 }

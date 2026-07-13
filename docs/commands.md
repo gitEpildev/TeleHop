@@ -76,6 +76,8 @@ Both commands work cross-server. Locations are session-only (not persisted acros
 |---------|-------------|------------|
 | `/rtp` | Random teleport, opens region/dimension GUI | `telehop.rtp` |
 
+Region items show the estimated ping the player will get on the destination server (configurable via `rtp.gui.ping` in `rtp.yml`). The cooldown starts when a destination is selected, not when the menu opens, and the GUI closes on selection so the warmup cannot be restarted by re-clicking.
+
 ## Admin Teleport
 
 | Command | Description | Permission |

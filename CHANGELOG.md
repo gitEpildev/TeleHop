@@ -9,6 +9,37 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [2.1.0] - 2026-07-13
+
+### Added
+
+**Redis TLS**
+- `redis.ssl` toggle in `config.properties` to connect to Redis over TLS (rediss)
+- `redis.ssl-verify` to control certificate and hostname verification
+- `redis.ssl-ca-cert` for self-signed setups (path to a PEM CA certificate)
+
+**Destination Ping in RTP GUI**
+- Region items now show the ping a player will get on the destination server, with the value colour-coded green/yellow/red
+- The ping line refreshes twice per second while the menu is open, including while hovering
+- Velocity measures proxy-to-backend RTT every 10 seconds and broadcasts it via the new `SERVER_PING_UPDATE` packet
+- Paper-side `PingService` caches the RTTs and estimates post-transfer ping from the player's current connection
+- New `rtp.gui.ping` section in `rtp.yml`: `enabled`, `proxy-ping`
+- GUI item tooltips hide vanilla attribute/material info (item flags applied)
+
+### Fixed
+
+**RTP**
+- The picker GUI closes immediately when a destination is selected, so players can no longer re-click items to restart or stack the warmup countdown
+- Cooldown is now consumed when a destination is actually selected, not when `/rtp` opens the menu; opening and closing the GUI no longer burns the cooldown
+- A pending-RTP guard blocks `/rtp` and further selections while a warmup or transfer is in flight (new `rtp-in-progress` message in all six languages)
+
+### Migration from 2.0.0
+- Update the Paper and Velocity JARs together: 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet
+- Existing servers: add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files (or regenerate them); defaults and the English fallback apply otherwise
+- No database changes
+
+---
+
 ## [2.0.0] - 2026-06-01
 
 ### Added

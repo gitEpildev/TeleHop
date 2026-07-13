@@ -38,23 +38,57 @@ public class RtpCommand extends BaseCommand {
             player.sendMessage(plugin.msg("rtp-cooldown", Map.of("seconds", String.valueOf(remaining))));
             return;
         }
-        plugin.rtpManager().markCooldown(player, plugin.settings().rtpCooldownSeconds());
+        if (plugin.rtpManager().hasPendingRtp(player)) {
+            player.sendMessage(plugin.msg("rtp-in-progress"));
+            return;
+        }
         player.sendMessage(plugin.msg("rtp-opening"));
-        new RtpGui(plugin, (region, dimension) -> {
-            int delay = plugin.settings().rtpDelaySeconds();
-            boolean bypass = plugin.permissionService().has(player, PermissionNodes.RTP_BYPASS_DELAY);
-            if (delay > 0 && !bypass) {
-                player.sendMessage(plugin.msg("rtp-delay", Map.of("seconds", String.valueOf(delay))));
-                new WarmupTask(plugin, player, delay,
-                        plugin.settings().rtpCancelOnMove(),
-                        plugin.settings().showCountdown(),
-                        () -> startRtp(player, region, dimension),
-                        () -> player.sendMessage(plugin.msg("rtp-cancelled"))
-                ).start();
-            } else {
-                startRtp(player, region, dimension);
-            }
-        }).openRegion(player);
+        new RtpGui(plugin, (region, dimension) -> onSelection(player, region, dimension)).openRegion(player);
+    }
+
+    /**
+     * Runs when the player picks a region and dimension in the GUI. The GUI
+     * has already closed itself at this point. Cooldown is consumed here, at
+     * selection time, so opening and closing the menu never burns it, and the
+     * pending guard stops any second selection from overriding the warmup.
+     */
+    private void onSelection(Player player, String region, String dimension) {
+        if (plugin.rtpManager().hasPendingRtp(player)) {
+            player.sendMessage(plugin.msg("rtp-in-progress"));
+            return;
+        }
+        if (!plugin.permissionService().has(player, PermissionNodes.RTP_BYPASS_COOLDOWN)
+                && plugin.rtpManager().onCooldown(player)) {
+            int remaining = plugin.rtpManager().remainingCooldown(player);
+            player.sendMessage(plugin.msg("rtp-cooldown", Map.of("seconds", String.valueOf(remaining))));
+            return;
+        }
+
+        int delay = plugin.settings().rtpDelaySeconds();
+        boolean bypass = plugin.permissionService().has(player, PermissionNodes.RTP_BYPASS_DELAY);
+        int effectiveDelay = (delay > 0 && !bypass) ? delay : 0;
+
+        plugin.rtpManager().markPendingRtp(player, effectiveDelay);
+        plugin.rtpManager().markCooldown(player, plugin.settings().rtpCooldownSeconds());
+
+        if (effectiveDelay > 0) {
+            player.sendMessage(plugin.msg("rtp-delay", Map.of("seconds", String.valueOf(effectiveDelay))));
+            new WarmupTask(plugin, player, effectiveDelay,
+                    plugin.settings().rtpCancelOnMove(),
+                    plugin.settings().showCountdown(),
+                    () -> {
+                        plugin.rtpManager().clearPendingRtp(player);
+                        startRtp(player, region, dimension);
+                    },
+                    () -> {
+                        plugin.rtpManager().clearPendingRtp(player);
+                        player.sendMessage(plugin.msg("rtp-cancelled"));
+                    }
+            ).start();
+        } else {
+            plugin.rtpManager().clearPendingRtp(player);
+            startRtp(player, region, dimension);
+        }
     }
 
     private void startRtp(Player player, String region, String dimension) {

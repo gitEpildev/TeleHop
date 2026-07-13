@@ -9,7 +9,7 @@ Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Veloc
 | Feature | Commands | Description |
 |---------|----------|-------------|
 | **Network Spawn** | `/spawn` | Teleports players to the configured hub server. Region-aware: EU players go to `lobby-eu`, US players to `lobby-usa`. |
-| **Random Teleport** | `/rtp` | Opens a GUI to pick a region and dimension, then finds a safe landing spot within the configured radius. Cooldown and warmup supported. |
+| **Random Teleport** | `/rtp` | Opens a GUI to pick a region and dimension, then finds a safe landing spot within the configured radius. Cooldown and warmup supported. Region items show the estimated ping the player will get on the destination server. |
 | **Admin Teleport** | `/tp`, `/tphere` | Cross-server admin TP. Supports player-to-player, coordinate-based (`/tp <x> <y> <z>`), and pull (`/tphere <player>`). |
 
 ### Homes
@@ -48,7 +48,7 @@ Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Veloc
 |---------|-------------|
 | **Random Respawn** | Players respawn at a random safe location on death instead of world spawn. Async HeightMap-based search. Respects beds and anchors. Configurable per-server. |
 | **Teleport Effects** | Configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back). |
-| **Multi-Proxy** | Opt-in Redis-based communication between multiple Velocity proxies. TPA, warps, homes, and player lists all work across proxy boundaries. |
+| **Multi-Proxy** | Opt-in Redis-based communication between multiple Velocity proxies. TPA, warps, homes, and player lists all work across proxy boundaries. Supports TLS (rediss) with optional custom CA certificates. |
 | **Feature Toggles** | Enable/disable any module per server via `features.yml`. Disabled commands still register but display "This feature is disabled." |
 | **Multi-Language** | 6 built-in languages (en, nl, de, es, zh, pl) with automatic English fallback for missing keys. |
 
@@ -227,8 +227,8 @@ The plugin ships a single JAR containing version adapters for both. At startup, 
 ## Quick Start
 
 1. Create a MySQL database and user
-2. Place `telehop-velocity-2.0.0.jar` on your Velocity proxy
-3. Place `telehop-paper-2.0.0.jar` on each Paper backend
+2. Place `telehop-velocity-2.1.0.jar` on your Velocity proxy
+3. Place `telehop-paper-2.1.0.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
 5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
 6. Restart Velocity first, then all Paper servers
@@ -247,7 +247,7 @@ plugins/TeleHop/
     features.yml      # feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle, last-location, random-respawn)
     teleport.yml      # particles and sounds per teleport type
     tpa.yml           # timeout, cooldown, delay, cancel-on-move
-    rtp.yml           # cooldown, delay, max-radius, regions, dimensions, GUI
+    rtp.yml           # cooldown, delay, max-radius, regions, dimensions, GUI, destination ping
     home.yml          # max-slots (10), gui-rows (5), bed colours, blocked servers, world/server colours
     respawn.yml       # random respawn world, radius, bed/anchor respect
     WIKI.md           # full configuration reference (auto-extracted)
@@ -284,6 +284,10 @@ Tables are created automatically on first startup. See [`sql/schema.sql`](sql/sc
 | [Protocol](docs/protocol.md) | Plugin messaging protocol, packet types, routing |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
 
+## Upgrading from 2.0.0
+
+Drop in the new 2.1.0 JARs on the proxy and every backend at the same time; 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet. On existing servers, add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, or delete them to regenerate. No database changes.
+
 ## Upgrading from 1.0.0
 
 Drop in the new 2.0.0 JARs (Paper + Velocity). The `homes` table is migrated automatically on first startup (slot-based to name-based). Existing homes are renamed "Home 1", "Home 2", etc. Grant `telehop.homes.2` through `telehop.homes.10` to ranks via LuckPerms for additional home slots. If you had a pre-split `config.yml`, the plugin auto-migrates it to the `config/` directory layout.
@@ -295,8 +299,8 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-2.0.0.jar` (includes both version adapters)
-- `velocity/target/telehop-velocity-2.0.0.jar`
+- `paper/target/telehop-paper-2.1.0.jar` (includes both version adapters)
+- `velocity/target/telehop-velocity-2.1.0.jar`
 
 Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
 
