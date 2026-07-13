@@ -1,324 +1,747 @@
-# TeleHop
+# 🌐 TeleHop
 
-Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Velocity 3.3+** networks. A single JAR works on both Minecraft versions, detecting the server version at runtime and loading the correct API adapter. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
+Cross-server teleportation suite for Paper and Velocity Minecraft networks.
 
-## Features
+TeleHop is built for multi-server Minecraft networks. It connects Paper backend servers through Velocity and keeps teleport data synced across the full network.
 
-### Teleportation
+Players can use homes, warps, player warps, TPA, RTP, `/back`, `/spawn`, and last-location teleporting across servers.
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Network Spawn** | `/spawn` | Teleports players to the configured hub server. Region-aware: EU players go to `lobby-eu`, US players to `lobby-usa`. |
-| **Random Teleport** | `/rtp` | Opens a GUI to pick a region and dimension, then finds a safe landing spot within the configured radius. Cooldown and warmup supported. Region items show the estimated ping the player will get on the destination server. |
-| **Admin Teleport** | `/tp`, `/tphere` | Cross-server admin TP. Supports player-to-player, coordinate-based (`/tp <x> <y> <z>`), and pull (`/tphere <player>`). |
+TeleHop stores shared data in MySQL, so homes, warps, player warps, TPA requests, player tracking, and logout locations stay synced across every server.
 
-### Homes
+[GitHub](https://github.com/gitEpildev/TeleHop) · [Documentation](https://github.com/gitEpildev/TeleHop/tree/main/docs) · [Setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/setup.md) · [Commands](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md) · [Permissions](https://github.com/gitEpildev/TeleHop/blob/main/docs/permissions.md) · [Configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md) · [Support](https://github.com/gitEpildev/TeleHop/issues)
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Named Homes** | `/home`, `/sethome <name>`, `/delhome <name>` | Up to 10 named homes per player, gated by `telehop.homes.1` through `telehop.homes.10` permissions. |
-| **Homes GUI** | `/home` (no args) | 5-row chest GUI with configurable bed colours. Click an empty bed to set a home, click an occupied bed to teleport, shift-click to delete. |
-| **Last Location** | `/lastlocation`, `/lastloc`, `/ll` | Persistent logout location tracking. Saved to MySQL on quit, survives restarts. Cross-server teleport back to where you last logged out. |
+---
 
-### TPA
+## ✨ What TeleHop Does
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Teleport Ask** | `/tpa <player>`, `/tpahere <player>` | Request to teleport to a player or pull them to you. Works across servers. |
-| **Accept / Deny** | `/tpaaccept`, `/tpadeny`, `/tpacancel` | Clickable accept/deny buttons in chat. Configurable timeout, cooldown, and warmup. |
-| **TPA Toggle** | `/tpatoggle` | Block incoming TPA requests. Cross-server aware (sender gets notified even from a different server). |
+TeleHop gives your Velocity network a complete teleport system.
 
-### Back
+* Cross-server `/spawn`
+* Cross-server TPA
+* Cross-server homes
+* Cross-server warps
+* Cross-server player warps
+* Cross-server `/back`
+* Cross-server admin teleport
+* Named homes
+* Last logout location teleporting
+* Random teleport GUI
+* Random respawn system
+* MySQL-backed storage
+* Optional Redis TLS support for multi-proxy networks
+* Modular config files
+* Multi-language support
+* LuckPerms support
+* Permission-based limits
+* Admin management tools
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Back** | `/back` | Return to your last location before any teleport. Cross-server. Session-only. |
-| **Death Back** | `/back death` | Return to your last death location. Cross-server. Session-only. |
+---
 
-### Warps
+## 📦 Version 2.1.0
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Admin Warps** | `/warp`, `/setwarp`, `/delwarp`, `/warps` | Global warps shared across all servers via MySQL. Per-warp access permissions supported. |
-| **Player Warps** | `/pwarp set`, `/pwarp del`, `/pwarp list`, `/pwarp public` | Personal warps with per-rank limits (`telehop.warps.1` through `telehop.warps.100`), public/private toggle, cross-server teleportation. |
+TeleHop 2.1.0 adds encrypted Redis connections, live destination-ping display in the RTP menu, and fixes the RTP selection and cooldown flow.
 
-### Server Features
+### Added
 
-| Feature | Description |
-|---------|-------------|
-| **Random Respawn** | Players respawn at a random safe location on death instead of world spawn. Async HeightMap-based search. Respects beds and anchors. Configurable per-server. |
-| **Teleport Effects** | Configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back). |
-| **Multi-Proxy** | Opt-in Redis-based communication between multiple Velocity proxies. TPA, warps, homes, and player lists all work across proxy boundaries. Supports TLS (rediss) with optional custom CA certificates. |
-| **Feature Toggles** | Enable/disable any module per server via `features.yml`. Disabled commands still register but display "This feature is disabled." |
-| **Multi-Language** | 6 built-in languages (en, nl, de, es, zh, pl) with automatic English fallback for missing keys. |
+* Redis TLS support through `redis.ssl`, `redis.ssl-verify`, and `redis.ssl-ca-cert`.
+* Certificate and hostname verification for Redis connections, with support for a custom PEM CA certificate.
+* Destination-ping display on RTP region items.
+* Colour-coded ping values: green below 80 ms, yellow below 150 ms, and red above.
+* Live ping refresh twice per second while the RTP region menu is open.
+* Proxy-to-backend RTT measurement and the `SERVER_PING_UPDATE` network packet.
+* `rtp.gui.ping.enabled` and `rtp.gui.ping.proxy-ping` configuration options.
 
-## Commands
+### Fixed
 
-### Spawn
+* RTP menus close immediately after a destination is selected.
+* RTP cooldown starts only after a player selects a destination.
+* Pending RTP protection prevents players from stacking warmups through repeated clicks or `/rtp` commands.
+* RTP GUI tooltips hide standard item information, leaving the configured name, description, and ping line.
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/spawn` | Teleport to the network spawn (hub server) | `telehop.spawn` |
+### Migration
 
-### Homes
+* Update the Paper and Velocity JARs together, as 2.0.0 does not recognise the new `SERVER_PING_UPDATE` packet.
+* Add the `rtp.gui.ping` section to existing `rtp.yml` files, or regenerate the file from the default configuration.
+* Add `rtp-in-progress` to customised language files. English fallback applies if the key is absent.
+* No database changes are required.
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/home` | Open the homes GUI | `telehop.homes` |
-| `/home <name>` | Quick-teleport to a named home | `telehop.homes` |
-| `/sethome <name>` | Set a named home at your current location | `telehop.sethome` |
-| `/delhome <name>` | Delete a named home | `telehop.delhome` |
-| `/lastlocation` | Teleport to your last logout location | `telehop.lastlocation` |
+---
 
-Aliases: `/lastloc`, `/backlast`, `/ll`
+## 🚀 Teleportation
 
-Homes are blocked on servers listed in `home.yml > blocked-servers` (e.g. lobby). Players can still open the GUI and teleport to existing homes from any server.
+### Network Spawn
 
-### TPA
+`/spawn` sends players to the configured hub server.
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/tpa <player>` | Ask to teleport TO another player | `telehop.tpa` |
-| `/tpahere <player>` | Ask another player to teleport to YOU | `telehop.tpahere` |
-| `/tpaaccept` | Accept an incoming request | `telehop.tpa.accept` |
-| `/tpadeny` | Deny an incoming request | `telehop.tpa.deny` |
-| `/tpacancel` | Cancel your outgoing request | `telehop.tpa.cancel` |
-| `/tpatoggle` | Toggle incoming TPA requests on/off (session-only) | `telehop.tpa.toggle` |
+Spawn supports region-aware routing for multi-proxy networks.
 
-### Back
+Example:
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/back` | Return to your last location before a teleport | `telehop.back` |
-| `/back death` | Return to your last death location | `telehop.back.death` |
-
-Both commands work cross-server. Locations are session-only (not persisted across restarts).
+* EU players can route to `lobby-eu`
+* US players can route to `lobby-usa`
 
 ### Random Teleport
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/rtp` | Random teleport, opens region/dimension GUI | `telehop.rtp` |
+`/rtp` opens a GUI where players choose a region and dimension.
+
+TeleHop then finds a safe landing spot inside the configured radius.
+
+RTP supports:
+
+* Region selection
+* Dimension selection
+* Destination-ping display with a live, colour-coded value
+* Cooldown applied after destination selection
+* Warmup with pending-RTP protection
+* Move cancellation
+* Async safe-location search
+* Safe landing checks
+* GUI back button
+
+### TPA
+
+TeleHop supports cross-server teleport requests.
+
+Commands:
+
+* `/tpa <player>`
+* `/tpahere <player>`
+* `/tpaaccept`
+* `/tpadeny`
+* `/tpacancel`
+* `/tpatoggle`
+
+TPA supports:
+
+* Cross-server requests
+* Clickable accept and deny buttons
+* Timeout
+* Cooldown
+* Warmup
+* Move cancellation
+* Session-based TPA toggle
+* Sender notification when the target has requests disabled
+
+### Back
+
+Commands:
+
+* `/back`
+* `/back death`
+
+Features:
+
+* Return to your last location before teleporting
+* Return to your last death location
+* Works across servers
+* Session-based location tracking
+
+---
+
+## 🏠 Named Homes
+
+TeleHop now uses named homes instead of numeric slots.
+
+Players can create, delete, and teleport to homes by name.
+
+### Commands
+
+* `/home`
+* `/home <name>`
+* `/sethome <name>`
+* `/delhome <name>`
+
+### Features
+
+* Up to 10 homes per player
+* Permission-based home limits
+* Cross-server home teleportation
+* Case-insensitive home names
+* Names support letters, numbers, and spaces
+* Maximum home name length of 32 characters
+* 5-row homes GUI
+* Configurable bed colours
+* Empty beds can set homes
+* Occupied beds teleport to homes
+* Shift-click can delete homes
+* Locked slots show upgrade messaging
+* Server and world labels in the GUI
+* Blocked servers for setting homes
+* Players can still teleport to existing homes from blocked servers
+
+---
+
+## 📍 Last Location
+
+TeleHop saves each player’s last logout location to MySQL.
+
+Players can return to their last saved logout location across servers.
+
+### Commands
+
+* `/lastlocation`
+* `/lastloc`
+* `/backlast`
+* `/ll`
+
+### Features
+
+* Saves location on quit
+* Persists across restarts
+* Works across servers
+* Sends players to the correct backend server
+* Admins can view, teleport to, or clear saved last locations
+
+---
+
+## 🌍 Warps
+
+TeleHop supports admin warps and player warps.
 
 ### Admin Warps
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/warp <name>` | Teleport to a global warp | `telehop.warp` |
-| `/setwarp <name>` | Create or update a global warp | `telehop.admin` |
-| `/delwarp <name>` | Delete a global warp | `telehop.admin` |
-| `/warps` | List all global warps | `telehop.warp` |
+Commands:
+
+* `/warp <name>`
+* `/setwarp <name>`
+* `/delwarp <name>`
+* `/warps`
+
+Features:
+
+* Global network warps
+* Shared across all servers
+* Stored in MySQL
+* Per-warp permission support
+* Cross-server teleporting
+
+Example permission:
+
+```text
+telehop.warp.shop
+```
 
 ### Player Warps
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/pwarp set <name>` | Create a personal warp at your location | `telehop.pwarp` |
-| `/pwarp del <name>` | Delete one of your warps | `telehop.pwarp` |
-| `/pwarp list` | List your warps with count/limit | `telehop.pwarp` |
-| `/pwarp <name>` | Teleport to your own warp | `telehop.pwarp` |
-| `/pwarp <player> <name>` | Teleport to another player's public warp | `telehop.pwarp` |
-| `/pwarp public <name>` | Toggle a warp between public and private | `telehop.pwarp` |
-| `/pwarp admin del <player> <name>` | Admin: delete any player's warp | `telehop.admin` |
+Commands:
 
-Aliases: `/playerwarp`, `/pwarps`
+* `/pwarp set <name>`
+* `/pwarp del <name>`
+* `/pwarp list`
+* `/pwarp <name>`
+* `/pwarp <player> <name>`
+* `/pwarp public <name>`
+* `/pwarp admin del <player> <name>`
+
+Aliases:
+
+* `/playerwarp`
+* `/pwarps`
+
+Features:
+
+* Personal player warps
+* Public or private toggle
+* Cross-server teleporting
+* Per-rank limits
+* Admin delete command
+* MySQL-backed storage
+
+---
+
+## 💀 Random Respawn
+
+TeleHop can respawn players at a safe random location after death.
+
+Features:
+
+* Async safe-location search
+* Paper HeightMap based lookup
+* Configurable world
+* Configurable radius
+* Bed and respawn anchor respect
+* Hub server skip support
+* Per-server control through config
+* Controlled through `config/respawn.yml`
+
+---
+
+## 🛠 Admin Commands
+
+TeleHop includes admin commands for cross-server teleporting, warp management, home management, last-location tools, player data checks, and plugin control.
+
+Admin commands are permission-gated and hidden from tab completion for players without access.
+
+### TeleHop Management
+
+| Command                | Description                             | Permission      |
+| ---------------------- | --------------------------------------- | --------------- |
+| `/telehop`             | Show TeleHop help                       | Everyone        |
+| `/telehop help`        | Show categorised command help           | Everyone        |
+| `/telehop version`     | Show the installed TeleHop version      | Everyone        |
+| `/telehop ver`         | Alias for version                       | Everyone        |
+| `/telehop reload`      | Reload config, messages, and warp cache | `telehop.admin` |
+| `/telehop perms`       | List all permission nodes               | `telehop.admin` |
+| `/telehop permissions` | Alias for permissions                   | `telehop.admin` |
 
 ### Admin Teleport
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
-| `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
-| `/tp <x> <y> <z>` | Teleport yourself to coordinates | `telehop.tp` |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` |
-| `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
+| Command                    | Description                                            | Permission       |
+| -------------------------- | ------------------------------------------------------ | ---------------- |
+| `/tp <player>`             | Teleport yourself to a player across servers           | `telehop.tp`     |
+| `/tp <player1> <player2>`  | Teleport one player to another player across servers   | `telehop.tp`     |
+| `/tp <x> <y> <z>`          | Teleport yourself to coordinates in your current world | `telehop.tp`     |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates                       | `telehop.tp`     |
+| `/tphere <player>`         | Pull a player to your location across servers          | `telehop.tphere` |
 
-Hidden from tab complete for players without the required permission.
+### Warp Admin
 
-### Admin Management
+| Command                            | Description                                 | Permission      |
+| ---------------------------------- | ------------------------------------------- | --------------- |
+| `/setwarp <name>`                  | Create or update a global admin warp        | `telehop.admin` |
+| `/delwarp <name>`                  | Delete a global admin warp                  | `telehop.admin` |
+| `/listwarps`                       | List all player warps across all servers    | `telehop.admin` |
+| `/listwarps <player>`              | List a specific player’s warps with details | `telehop.admin` |
+| `/forcedelwarp <name>`             | Force-delete an admin warp                  | `telehop.admin` |
+| `/forcedelwarp <player> <name>`    | Force-delete a specific player warp         | `telehop.admin` |
+| `/pwarp admin del <player> <name>` | Delete any player’s personal warp           | `telehop.admin` |
 
-| Command | Aliases | Description | Permission |
-|---------|---------|-------------|------------|
-| `/telehop help` | `/telehop` | Categorised command reference | Everyone |
-| `/telehop version` | `/telehop ver` | Show plugin version | Everyone |
-| `/telehop reload` | | Reload config, messages, and warp cache | `telehop.admin` |
-| `/telehop perms` | `/telehop permissions` | List all permission nodes | `telehop.admin` |
-| `/listwarps` | | List all player warps across all servers | `telehop.admin` |
-| `/listwarps <player>` | | List a specific player's warps | `telehop.admin` |
-| `/forcedelwarp <name>` | | Force-delete an admin warp | `telehop.admin` |
-| `/forcedelwarp <player> <name>` | | Force-delete a player's warp | `telehop.admin` |
-| `/forcedelhome <player>` | | List a player's homes with clickable delete buttons | `telehop.admin` |
-| `/forcesethome <player> <name>` | | Set a home for another player at your location | `telehop.admin` |
-| `/listhomes <player>` | | List a player's homes with [TP] and [DELETE] buttons | `telehop.admin` |
-| `/forcelastloc <player>` | `/forcell` | View a player's last logout location | `telehop.admin` |
-| `/forcelastloc <player> tp` | | Teleport to a player's last logout location | `telehop.admin` |
-| `/forcelastloc <player> clear` | | Clear a player's saved logout location | `telehop.admin` |
-| `/playerinfo <player>` | `/pinfo` | View a player's TeleHop data summary | `telehop.admin` |
+### Home Admin
 
-Admin-only subcommands are hidden from tab complete for players without `telehop.admin`.
+| Command                         | Description                                                      | Permission      |
+| ------------------------------- | ---------------------------------------------------------------- | --------------- |
+| `/forcedelhome <player>`        | List a player’s homes with clickable delete buttons              | `telehop.admin` |
+| `/forcesethome <player> <name>` | Set a named home for another player at your current location     | `telehop.admin` |
+| `/listhomes <player>`           | List a player’s homes with clickable teleport and delete buttons | `telehop.admin` |
 
-## Permissions
+### Last Location Admin
 
-### Player Permissions (default: everyone)
+| Command                        | Description                                                                    | Permission      |
+| ------------------------------ | ------------------------------------------------------------------------------ | --------------- |
+| `/forcelastloc <player>`       | View a player’s last logout location, including server, world, and coordinates | `telehop.admin` |
+| `/forcelastloc <player> tp`    | Teleport to a player’s saved last logout location                              | `telehop.admin` |
+| `/forcelastloc <player> clear` | Clear a player’s saved last logout location                                    | `telehop.admin` |
 
-| Permission | Command |
-|------------|---------|
-| `telehop.spawn` | `/spawn` |
-| `telehop.rtp` | `/rtp` |
-| `telehop.tpa` | `/tpa` |
-| `telehop.tpahere` | `/tpahere` |
-| `telehop.tpa.accept` | `/tpaaccept` |
-| `telehop.tpa.deny` | `/tpadeny` |
-| `telehop.tpa.cancel` | `/tpacancel` |
-| `telehop.tpa.toggle` | `/tpatoggle` |
-| `telehop.warp` | `/warp`, `/warps` |
-| `telehop.pwarp` | `/pwarp` |
-| `telehop.homes` | `/home` |
-| `telehop.sethome` | `/sethome` |
-| `telehop.delhome` | `/delhome` |
-| `telehop.lastlocation` | `/lastlocation` |
-| `telehop.back` | `/back` |
-| `telehop.back.death` | `/back death` |
+Alias:
 
-### Limit Permissions (assign ONE per rank)
+| Alias      | Command         |
+| ---------- | --------------- |
+| `/forcell` | `/forcelastloc` |
 
-| Permission | Effect |
-|------------|--------|
-| `telehop.homes.1` through `telehop.homes.10` | Number of home slots |
-| `telehop.warps.1` through `telehop.warps.100` | Number of player warp slots |
-| `telehop.warps.unlimited` | No player warp limit |
-| `telehop.warp.<name>` | Access to a specific admin warp |
+### Player Info
 
-### Bypass Permissions (default: OP)
+| Command                | Description                                                                             | Permission      |
+| ---------------------- | --------------------------------------------------------------------------------------- | --------------- |
+| `/playerinfo <player>` | Show a player’s TeleHop data, including homes, warps, last location, and current server | `telehop.admin` |
 
-| Permission | Effect |
-|------------|--------|
+Alias:
+
+| Alias    | Command       |
+| -------- | ------------- |
+| `/pinfo` | `/playerinfo` |
+
+---
+
+## 🔐 Permissions
+
+Use `/telehop perms` in-game to view the full permission list.
+
+### Player Permissions
+
+| Permission             | Command           |
+| ---------------------- | ----------------- |
+| `telehop.spawn`        | `/spawn`          |
+| `telehop.rtp`          | `/rtp`            |
+| `telehop.tpa`          | `/tpa`            |
+| `telehop.tpahere`      | `/tpahere`        |
+| `telehop.tpa.accept`   | `/tpaaccept`      |
+| `telehop.tpa.deny`     | `/tpadeny`        |
+| `telehop.tpa.cancel`   | `/tpacancel`      |
+| `telehop.tpa.toggle`   | `/tpatoggle`      |
+| `telehop.warp`         | `/warp`, `/warps` |
+| `telehop.pwarp`        | `/pwarp`          |
+| `telehop.homes`        | `/home`           |
+| `telehop.sethome`      | `/sethome`        |
+| `telehop.delhome`      | `/delhome`        |
+| `telehop.lastlocation` | `/lastlocation`   |
+| `telehop.back`         | `/back`           |
+| `telehop.back.death`   | `/back death`     |
+
+### Home Limit Permissions
+
+| Permission         | Effect   |
+| ------------------ | -------- |
+| `telehop.homes.1`  | 1 home   |
+| `telehop.homes.2`  | 2 homes  |
+| `telehop.homes.3`  | 3 homes  |
+| `telehop.homes.4`  | 4 homes  |
+| `telehop.homes.5`  | 5 homes  |
+| `telehop.homes.6`  | 6 homes  |
+| `telehop.homes.7`  | 7 homes  |
+| `telehop.homes.8`  | 8 homes  |
+| `telehop.homes.9`  | 9 homes  |
+| `telehop.homes.10` | 10 homes |
+
+TeleHop uses the highest matching home permission.
+
+### Player Warp Limit Permissions
+
+| Permission                | Effect                 |
+| ------------------------- | ---------------------- |
+| `telehop.warps.1`         | 1 player warp          |
+| `telehop.warps.3`         | 3 player warps         |
+| `telehop.warps.10`        | 10 player warps        |
+| `telehop.warps.100`       | 100 player warps       |
+| `telehop.warps.unlimited` | Unlimited player warps |
+
+TeleHop uses the highest matching player warp permission.
+
+### Per-Warp Access
+
+| Permission            | Effect                       |
+| --------------------- | ---------------------------- |
+| `telehop.warp.<name>` | Access a specific admin warp |
+
+Example:
+
+```text
+telehop.warp.shop
+```
+
+### Bypass Permissions
+
+| Permission                   | Effect            |
+| ---------------------------- | ----------------- |
 | `telehop.rtp.bypasscooldown` | Skip RTP cooldown |
-| `telehop.rtp.bypassdelay` | Skip RTP warmup countdown |
+| `telehop.rtp.bypassdelay`    | Skip RTP warmup   |
 | `telehop.tpa.bypasscooldown` | Skip TPA cooldown |
 
-### Admin Permissions (default: OP)
+### Admin Permissions
 
-| Permission | Effect |
-|------------|--------|
-| `telehop.admin` | All admin commands (`/setwarp`, `/delwarp`, `/forcedelhome`, `/forcesethome`, `/listhomes`, `/forcelastloc`, `/playerinfo`, `/listwarps`, `/forcedelwarp`, `/telehop reload`, `/telehop perms`) |
-| `telehop.tp` | `/tp` (cross-server admin teleport) |
-| `telehop.tphere` | `/tphere` (pull player to you) |
+| Permission                | Effect                                                                                                            |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `telehop.admin`           | Main admin tools, warp management, home management, last-location tools, player info, reload, and permission list |
+| `telehop.tp`              | Admin `/tp` commands                                                                                              |
+| `telehop.tphere`          | Admin `/tphere` command                                                                                           |
+| `telehop.back`            | Use `/back`                                                                                                       |
+| `telehop.back.death`      | Use `/back death`                                                                                                 |
+| `telehop.warps.unlimited` | Unlimited player warps                                                                                            |
 
-## Supported Versions
+### LuckPerms Example
 
-| Minecraft | Paper API | Java |
-|-----------|-----------|------|
-| 1.21.x | 1.21.11-R0.1 | 21+ |
-| 26.1.x | 26.1.2+ | 25+ |
+```bash
+# Default rank
+lp group default permission set telehop.warps.3 true
+lp group default permission set telehop.homes.2 true
+lp group default permission set telehop.lastlocation true
 
-The plugin ships a single JAR containing version adapters for both. At startup, `Bootstrap` detects the Minecraft version and loads the correct adapter via reflection. World name resolution and lookup are abstracted through `VersionAdapter`, so all features (homes, warps, RTP, back, etc.) work identically across versions.
+# VIP rank
+lp group vip permission set telehop.warps.10 true
+lp group vip permission set telehop.homes.5 true
 
-## Requirements
+# MVP rank
+lp group mvp permission set telehop.warps.unlimited true
+lp group mvp permission set telehop.homes.10 true
 
-| Software | Version |
-|----------|---------|
-| Paper | 1.21.x or 26.1.x |
-| Velocity | 3.3+ |
-| Java | 21+ (1.21.x servers) or 25+ (26.1.x servers) |
-| MySQL | 8.0+ (MariaDB 10.5+ also works) |
-| LuckPerms | 5.4+ (optional, recommended) |
-
-## Quick Start
-
-1. Create a MySQL database and user
-2. Place `telehop-velocity-2.1.0.jar` on your Velocity proxy
-3. Place `telehop-paper-2.1.0.jar` on each Paper backend
-4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
-5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
-6. Restart Velocity first, then all Paper servers
-
-See [docs/setup.md](docs/setup.md) for the full walkthrough.
-
-## Configuration
-
-TeleHop uses modular config files in `plugins/TeleHop/config/`:
-
+# Staff rank
+lp group staff permission set telehop.admin true
+lp group staff permission set telehop.tp true
+lp group staff permission set telehop.tphere true
+lp group staff permission set telehop.back true
+lp group staff permission set telehop.back.death true
+lp group staff permission set telehop.warps.unlimited true
+lp group staff permission set telehop.homes.10 true
 ```
+
+---
+
+## ⚡ Highlights
+
+* Built for Velocity networks
+* Supports Paper backend servers
+* Paper 1.21.x and 26.1.x support
+* Runtime version adapters
+* MySQL-backed shared storage
+* MariaDB support
+* Optional Redis support for multi-proxy networks
+* Region-aware hub routing
+* Named homes
+* Player warps
+* Admin warps
+* Cross-server TPA
+* Cross-server `/back`
+* Persistent last logout locations
+* Random respawn
+* RTP GUI
+* Modular configuration
+* Auto config migration
+* Auto database migration
+* Teleport effects
+* Multi-language support
+* LuckPerms support
+* Network-wide tab completion
+* Permission-gated admin suggestions
+* In-game help
+* In-game permission list
+
+---
+
+## 🧩 Multi-Server Support
+
+TeleHop is designed for Velocity networks.
+
+Paper handles teleport execution.
+
+Velocity handles routing and player tracking.
+
+MySQL stores shared network data.
+
+Redis can synchronise multiple Velocity proxies when multi-proxy mode is enabled. TeleHop supports TLS connections to Redis with certificate and hostname verification.
+
+This enables:
+
+* Cross-server TPA
+* Cross-server homes
+* Cross-server warps
+* Cross-server admin teleportation
+* Cross-server `/back`
+* Cross-server last-location teleportation
+* Shared player tracking
+* Shared player warp data
+* Shared TPA requests
+* Multi-proxy player lists
+* Region-aware spawn routing
+
+Both the Velocity plugin and Paper plugin are required.
+
+---
+
+## 📥 Requirements
+
+| Software  | Version                                    |
+| --------- | ------------------------------------------ |
+| Paper     | 1.21.x or 26.1.x                           |
+| Velocity  | 3.3+                                       |
+| Java      | 21+ for Paper 1.21.x, 25+ for Paper 26.1.x |
+| MySQL     | 8.0+                                       |
+| MariaDB   | 10.5+                                      |
+| LuckPerms | 5.4+ optional                              |
+| Redis     | Optional, for multi-proxy mode             |
+
+---
+
+## ⚙️ Setup
+
+1. Create a MySQL database and user.
+2. Place `telehop-velocity-2.1.0.jar` in your Velocity plugins folder.
+3. Place `telehop-paper-2.1.0.jar` in each Paper server plugins folder.
+4. Start Velocity and the Paper servers once to generate files.
+5. Stop the servers.
+6. Configure MySQL credentials in `plugins/TeleHop/config/database.yml`.
+7. Set each Paper server `server-name` in `plugins/TeleHop/config/general.yml`.
+8. Set the hub server.
+9. Start Velocity first.
+10. Start all backend Paper servers.
+
+Database tables are created automatically on first startup.
+
+---
+
+## 🔄 Updating
+
+### From 1.0.0 or 1.0.2
+
+* Replace the old Paper and Velocity JAR files.
+* Start the network normally.
+* Homes migrate from slot-based homes to named homes automatically.
+* New config files are added automatically.
+* Existing config files are not overwritten.
+* Legacy `config.yml` migrates into the split config layout when needed.
+* The old `config.yml` is renamed to `config.yml.old`.
+* Add new home permissions if ranks need more than one home.
+
+### From 2.0.0
+
+* Update the Paper and Velocity JARs together.
+* Add the `rtp.gui.ping` section to `config/rtp.yml` if you use customised configuration files.
+* Add `rtp-in-progress` to customised language files.
+* No database migration is required.
+
+### Home Migration
+
+Old homes convert into named homes during startup.
+
+Example:
+
+* Slot 1 becomes `Home 1`
+* Slot 2 becomes `Home 2`
+* Slot 3 becomes `Home 3`
+
+No manual SQL changes are needed.
+
+---
+
+## 📁 Paper Configuration Layout
+
+```text
 plugins/TeleHop/
   config/
-    general.yml       # server-name, hub-server, servers list, language, messaging, regions
-    database.yml      # MySQL connection settings
-    features.yml      # feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle, last-location, random-respawn)
-    teleport.yml      # particles and sounds per teleport type
-    tpa.yml           # timeout, cooldown, delay, cancel-on-move
-    rtp.yml           # cooldown, delay, max-radius, regions, dimensions, GUI, destination ping
-    home.yml          # max-slots (10), gui-rows (5), bed colours, blocked servers, world/server colours
-    respawn.yml       # random respawn world, radius, bed/anchor respect
-    WIKI.md           # full configuration reference (auto-extracted)
-  storage.yml         # runtime-mutable spawn location (written by /setspawn)
-  languages/          # en.yml, nl.yml, de.yml, es.yml, zh.yml, pl.yml
+    general.yml
+    database.yml
+    features.yml
+    teleport.yml
+    tpa.yml
+    rtp.yml
+    home.yml
+    respawn.yml
+    WIKI.md
+  storage.yml
+  languages/
+    en.yml
+    nl.yml
+    de.yml
+    es.yml
+    zh.yml
+    pl.yml
 ```
 
-Most settings reload live with `/telehop reload`. MySQL connection settings require a full server restart.
+### Config Files
 
-## Database
+| File           | Purpose                                                                |
+| -------------- | ---------------------------------------------------------------------- |
+| `general.yml`  | Server name, hub server, server list, language, messaging, and regions |
+| `database.yml` | MySQL connection settings                                              |
+| `features.yml` | Feature toggles                                                        |
+| `teleport.yml` | Particles and sounds per teleport type                                 |
+| `tpa.yml`      | Timeout, cooldown, warmup, and move cancellation                       |
+| `rtp.yml`      | Random teleport regions, dimensions, cooldowns, warmups, GUI, and ping |
+| `home.yml`     | Homes, GUI rows, bed colours, blocked servers, and labels              |
+| `respawn.yml`  | Random respawn behaviour                                               |
+| `WIKI.md`      | Generated config reference                                             |
+| `storage.yml`  | Runtime data such as spawn location                                    |
+| `languages/`   | Language files                                                         |
 
-Tables are created automatically on first startup. See [`sql/schema.sql`](sql/schema.sql) for the full schema.
+Most settings reload live with `/telehop reload`.
 
-| Table | Purpose |
-|-------|---------|
-| `players` | Tracks which server each player is on |
-| `warps` | Admin warps (name, location, server) |
-| `player_warps` | Player warps (owner, name, location, public/private) |
-| `tpa_requests` | Active TPA requests with sent_at timestamp |
-| `homes` | Player homes (uuid, name, server, world, coordinates) |
-| `last_locations` | Persistent logout locations (uuid, server, world, coordinates) |
+MySQL connection settings require a full server restart.
 
-## Documentation
+---
 
-| Guide | Description |
-|-------|-------------|
-| [Setup](docs/setup.md) | Installation, MySQL, Velocity + Paper configuration |
-| [Commands](docs/commands.md) | Every command with syntax, description, and permission |
-| [Permissions](docs/permissions.md) | All permission nodes, defaults, and LuckPerms examples |
-| [Configuration](docs/configuration.md) | Full config reference for Paper and Velocity |
-| [Homes](docs/homes.md) | Homes GUI, slots, blocked servers, world/server colours |
-| [Warps](docs/warps.md) | Admin warps vs player warps, limits, public/private |
-| [Messages](docs/messages.md) | Language system, all message keys, MiniMessage formatting |
-| [Protocol](docs/protocol.md) | Plugin messaging protocol, packet types, routing |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
+## 🌐 Velocity Configuration
 
-## Upgrading from 2.0.0
+Velocity uses `config.properties`.
 
-Drop in the new 2.1.0 JARs on the proxy and every backend at the same time; 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet. On existing servers, add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, or delete them to regenerate. No database changes.
+Main settings include:
 
-## Upgrading from 1.0.0
+* MySQL host
+* MySQL port
+* MySQL database
+* MySQL username
+* MySQL password
+* MySQL pool size
+* Messaging dedupe window
+* Request timeout
+* Hub server
+* Backend server list
+* Proxy ID
+* Multi-proxy toggle
+* Redis host
+* Redis port
+* Redis password
+* Redis channel prefix
+* Redis TLS toggle
+* Redis certificate and hostname verification
+* Optional Redis CA certificate path
 
-Drop in the new 2.0.0 JARs (Paper + Velocity). The `homes` table is migrated automatically on first startup (slot-based to name-based). Existing homes are renamed "Home 1", "Home 2", etc. Grant `telehop.homes.2` through `telehop.homes.10` to ranks via LuckPerms for additional home slots. If you had a pre-split `config.yml`, the plugin auto-migrates it to the `config/` directory layout.
+---
 
-## Building
+## 🗄 Database Tables
+
+TeleHop creates and updates database tables automatically.
+
+| Table            | Purpose                             |
+| ---------------- | ----------------------------------- |
+| `players`        | Tracks each player’s current server |
+| `warps`          | Stores admin warps                  |
+| `player_warps`   | Stores player warps                 |
+| `tpa_requests`   | Stores active TPA requests          |
+| `homes`          | Stores named player homes           |
+| `last_locations` | Stores persistent logout locations  |
+
+---
+
+## 💬 Languages
+
+TeleHop includes 6 built-in languages.
+
+* English
+* Dutch
+* German
+* Spanish
+* Chinese
+* Polish
+
+English fallback is used when a message key is missing.
+
+Messages support MiniMessage formatting and placeholders.
+
+---
+
+## 🧪 Building From Source
 
 ```bash
 mvn clean package
 ```
 
-Produces:
-- `paper/target/telehop-paper-2.1.0.jar` (includes both version adapters)
-- `velocity/target/telehop-velocity-2.1.0.jar`
+Build outputs:
 
-Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
+```text
+paper/target/telehop-paper-2.1.0.jar
+velocity/target/telehop-velocity-2.1.0.jar
+```
 
-## CI / CD
+Requires Java 21+ and Maven 3.8+.
 
-| Workflow | Trigger | What it does |
-|----------|---------|--------------|
-| `ci.yml` | push/PR to `main` | Checkstyle, unit tests, JaCoCo coverage, JAR build |
-| `pr.yml` | PR to `main` | Conventional Commits title check, artifact check, auto-labels |
-| `release.yml` | push tag `v*.*.*` | Validates version, builds, creates GitHub Release with JARs |
-| `codeql.yml` | push/PR + weekly | CodeQL static security analysis |
+The Paper 26.1.x adapter module compiles with Java 25 through Maven toolchains.
 
-## Author
+---
 
-**Epildev** - [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · Discord: `Epildev`
+## ⚠ Compatibility
 
-Developed by [Epildevconnect Ltd](https://developer.epildevconnect.uk/) (Company No. [17247566](https://find-and-update.company-information.service.gov.uk/company/17247566)), registered in England and Wales.
+Supported:
 
-## License
+* Paper
+* Velocity
+* MySQL
+* MariaDB
+* LuckPerms
+* Redis for multi-proxy mode
 
-MIT License with Additional Terms. Attribution to Epildevconnect Ltd is required. See [LICENSE](LICENSE) for full details.
+Not supported:
+
+* BungeeCord
+* Hybrid servers
+* Single-server-only setups without Velocity
+
+---
+
+## 👤 Author and Company
+
+Developed by Epildev.
+
+Company: Epildevconnect Ltd
+Company number: 17247566
+Registered in: England and Wales
+Website: https://developer.epildevconnect.uk/
+GitHub: https://github.com/GitEpildev
+Discord: Epildev
+
+---
+
+## 📄 License
+
+TeleHop is licensed under the MIT License with Additional Terms.
+
+Attribution to Epildevconnect Ltd is required.
+
+See the GitHub license file for full details.
