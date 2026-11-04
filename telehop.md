@@ -37,7 +37,11 @@ TeleHop gives your Velocity network a complete teleport system.
 
 ---
 
-## 📦 Version 2.1.0
+## Version 2.2.0
+
+TeleHop 2.2.0 adds a centred green warmup title and removes repeated countdown chat/action-bar messages. Existing delays and bypass permissions are preserved. Add `countdown-title` to customised language files before upgrading. See [release notes](docs/releases/2.2.0.md).
+
+### Retained improvements from 2.1.0
 
 TeleHop 2.1.0 adds encrypted Redis connections, live destination-ping display in the RTP menu, and fixes the RTP selection and cooldown flow.
 
@@ -62,7 +66,7 @@ TeleHop 2.1.0 adds encrypted Redis connections, live destination-ping display in
 
 * Update the Paper and Velocity JARs together, as 2.0.0 does not recognise the new `SERVER_PING_UPDATE` packet.
 * Add the `rtp.gui.ping` section to existing `rtp.yml` files, or regenerate the file from the default configuration.
-* Add `rtp-in-progress` to customised language files. English fallback applies if the key is absent.
+* Add `rtp-in-progress` to customised language files. Fallback requires the key to exist in the on-disk English file.
 * No database changes are required.
 
 ---
@@ -533,8 +537,8 @@ Both the Velocity plugin and Paper plugin are required.
 ## ⚙️ Setup
 
 1. Create a MySQL database and user.
-2. Place `telehop-velocity-2.1.0.jar` in your Velocity plugins folder.
-3. Place `telehop-paper-2.1.0.jar` in each Paper server plugins folder.
+2. Place `telehop-velocity-2.2.0.jar` in your Velocity plugins folder.
+3. Place `telehop-paper-2.2.0.jar` in each Paper server plugins folder.
 4. Start Velocity and the Paper servers once to generate files.
 5. Stop the servers.
 6. Configure MySQL credentials in `plugins/TeleHop/config/database.yml`.
@@ -681,7 +685,7 @@ TeleHop includes 6 built-in languages.
 * Chinese
 * Polish
 
-English fallback is used when a message key is missing.
+The on-disk English file supplies fallback values. Existing files do not automatically receive new bundled keys.
 
 Messages support MiniMessage formatting and placeholders.
 
@@ -696,8 +700,8 @@ mvn clean package
 Build outputs:
 
 ```text
-paper/target/telehop-paper-2.1.0.jar
-velocity/target/telehop-velocity-2.1.0.jar
+paper/target/telehop-paper-2.2.0.jar
+velocity/target/telehop-velocity-2.2.0.jar
 ```
 
 Requires Java 21+ and Maven 3.8+.

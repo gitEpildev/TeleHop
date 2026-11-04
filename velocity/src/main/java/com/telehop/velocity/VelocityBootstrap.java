@@ -30,7 +30,7 @@ public final class VelocityBootstrap {
 
     private VelocityBootstrap() {}
 
-    private static final String PLUGIN_VERSION = "2.1.0";
+    private static final String PLUGIN_VERSION = "2.2.0";
 
     public static VelocityServiceRegistry init(NetworkVelocityPlugin plugin,
                                                ProxyServer proxy,

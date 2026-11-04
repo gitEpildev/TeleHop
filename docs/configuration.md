@@ -70,7 +70,7 @@ When a feature is `false`, its commands still exist but display "This feature is
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `show-countdown` | boolean | `true` | Show action-bar countdown during warmup |
+| `show-countdown` | boolean | `true` | Show a centred title countdown during warmup |
 | `effects.<type>.particle.enabled` | boolean | `true` | Show particles for this teleport type |
 | `effects.<type>.particle.type` | string | `"PORTAL"` | Minecraft Particle enum name |
 | `effects.<type>.particle.count` | int | `40` | Number of particles |

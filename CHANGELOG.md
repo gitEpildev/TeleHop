@@ -7,6 +7,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ## [Unreleased]
 
+### Documentation
+- 4 November 2026: reconcile this standalone repository with the existing 2.2.0 network release. Correct language upgrade instructions and document recorded deployment and verification limits.
+
+---
+
+## [2.2.0] - 2026-10-19
+
+### Changed
+- Teleport warmups show a large green centred title, counting down once per second.
+- Removed repeated countdown numbers from chat and the action bar.
+- The existing `show-countdown` setting controls the title. Completion and movement cancellation clear it.
+- Added `countdown-title` translations in all six bundled languages.
+
+### Upgrade from 2.1.0
+- Update Paper and Velocity JARs to 2.2.0, preserving existing configuration, storage and databases.
+- No database migration or protocol change. All 2.1.0 functionality is retained.
+- Existing language files remain intact. Add `countdown-title` to customised language files, including the on-disk English fallback; missing bundled keys are not merged automatically.
+- Existing zero-second warmups and delay-bypass permissions remain unchanged.
+
 ---
 
 ## [2.1.0] - 2026-07-13
@@ -35,7 +54,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Migration from 2.0.0
 - Update the Paper and Velocity JARs together: 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet
-- Existing servers: add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files (or regenerate them); defaults and the English fallback apply otherwise
+- Existing servers: add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, preserving existing customisations; fallback requires the key in the on-disk English file
 - No database changes
 
 ---

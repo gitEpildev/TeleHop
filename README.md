@@ -1,5 +1,7 @@
 # TeleHop
 
+Current release: **2.2.0**. The standalone repository was reconciled with the recorded GalaxyRealms Network release on 4 November 2026. See [release and verification notes](docs/releases/2.2.0.md).
+
 Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Velocity 3.3+** networks. A single JAR works on both Minecraft versions, detecting the server version at runtime and loading the correct API adapter. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
 
 ## Features
@@ -50,7 +52,7 @@ Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Veloc
 | **Teleport Effects** | Configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back). |
 | **Multi-Proxy** | Opt-in Redis-based communication between multiple Velocity proxies. TPA, warps, homes, and player lists all work across proxy boundaries. Supports TLS (rediss) with optional custom CA certificates. |
 | **Feature Toggles** | Enable/disable any module per server via `features.yml`. Disabled commands still register but display "This feature is disabled." |
-| **Multi-Language** | 6 built-in languages (en, nl, de, es, zh, pl) with automatic English fallback for missing keys. |
+| **Multi-Language** | 6 built-in languages (en, nl, de, es, zh, pl) with fallback to the on-disk English file. New keys must be added to existing customised files. |
 
 ## Commands
 
@@ -227,8 +229,8 @@ The plugin ships a single JAR containing version adapters for both. At startup, 
 ## Quick Start
 
 1. Create a MySQL database and user
-2. Place `telehop-velocity-2.1.0.jar` on your Velocity proxy
-3. Place `telehop-paper-2.1.0.jar` on each Paper backend
+2. Place `telehop-velocity-2.2.0.jar` on your Velocity proxy
+3. Place `telehop-paper-2.2.0.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
 5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
 6. Restart Velocity first, then all Paper servers
@@ -284,9 +286,13 @@ Tables are created automatically on first startup. See [`sql/schema.sql`](sql/sc
 | [Protocol](docs/protocol.md) | Plugin messaging protocol, packet types, routing |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
 
+## Upgrading from 2.1.0
+
+Install the matching 2.2.0 Paper and Velocity JARs while preserving configuration and databases. Restart one instance at a time, keeping one proxy available. Add `countdown-title` to existing language files as explained in [messages](docs/messages.md). This release changes the warmup display to a centred title, without repeated countdown chat or action-bar messages. Existing zero-second delays and bypass permissions are preserved; set `rtp.delay-seconds` to `5` only if a five-second RTP warmup is wanted. No database migration or protocol change is required.
+
 ## Upgrading from 2.0.0
 
-Drop in the new 2.1.0 JARs on the proxy and every backend at the same time; 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet. On existing servers, add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, or delete them to regenerate. No database changes.
+Upgrade both proxy and backend components together in a coordinated rollout, keeping one proxy available; 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet. On existing servers, add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, preserving your existing customisations. Then follow the 2.1.0 upgrade steps above. No database changes.
 
 ## Upgrading from 1.0.0
 
@@ -299,8 +305,8 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-2.1.0.jar` (includes both version adapters)
-- `velocity/target/telehop-velocity-2.1.0.jar`
+- `paper/target/telehop-paper-2.2.0.jar` (includes both version adapters)
+- `velocity/target/telehop-velocity-2.2.0.jar`
 
 Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
 

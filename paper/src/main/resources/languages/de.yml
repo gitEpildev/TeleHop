@@ -223,3 +223,6 @@ playerinfo-homes: "<gray>  Homes: <aqua><count></aqua>"
 playerinfo-warps: "<gray>  Warps: <aqua><count></aqua>"
 playerinfo-lastloc: "<gray>  Last logout: <aqua><server></aqua> <white><world></white> <gold><x></gold>, <gold><y></gold>, <gold><z></gold>"
 playerinfo-lastloc-none: "<gray>  Last logout: <dark_gray>none"
+
+# Large centred teleport countdown.
+countdown-title: "<green><bold>Teleportation in <seconds></bold></green>"

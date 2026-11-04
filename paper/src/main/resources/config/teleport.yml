@@ -2,7 +2,7 @@
 #  TeleHop - Teleport Display & Effects
 # ═══════════════════════════════════════════════════════════════════════
 
-# Show action bar countdown during warmup delays (5... 4... 3... 2... 1...)
+# Show a large green centred title countdown during warmup delays (5... 4... 3... 2... 1...)
 show-countdown: true
 
 # ── Particles & Sounds ────────────────────────────────────────────────

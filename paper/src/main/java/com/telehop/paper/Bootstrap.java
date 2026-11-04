@@ -325,7 +325,7 @@ public final class Bootstrap {
         }, 40L, 20L * 5L);
     }
 
-    private static final String PLUGIN_VERSION = "2.1.0";
+    private static final String PLUGIN_VERSION = "2.2.0";
 
     private static void printBanner(NetworkPaperPlugin plugin) {
         net.kyori.adventure.text.logger.slf4j.ComponentLogger log = plugin.getComponentLogger();

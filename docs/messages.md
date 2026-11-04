@@ -15,7 +15,7 @@ TeleHop ships with 6 built-in languages:
 | `zh` | Chinese (Simplified) | `languages/zh.yml` |
 | `pl` | Polish | `languages/pl.yml` |
 
-Set your language in `config.yml`:
+Set your language in `config/general.yml`:
 
 ```yaml
 language: "en"
@@ -25,7 +25,7 @@ Change it and run `/telehop reload` -- no restart needed.
 
 ### Fallback Behaviour
 
-If a message key is missing from the selected language file, TeleHop automatically falls back to the English (`en.yml`) value. This means partial translations work fine -- you only need to translate the keys you care about.
+If a message key is missing from the selected language file, TeleHop falls back to the English (`en.yml`) value loaded from disk. New bundled keys are not merged into existing files automatically. This means partial translations work fine -- you only need to translate the keys you care about.
 
 ### Custom Languages
 
@@ -107,8 +107,8 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 - `tpa-warmup-cancelled` - TPA cancelled because the player moved during warmup.
 
 ### Countdown
-- `countdown-actionbar` - Action bar text during warmup countdown (shown once per second). Placeholder: `<seconds>`
-- `countdown-chat` - Chat message each second during countdown. Placeholder: `<seconds>`
+- `countdown-title` - Centred warmup title shown once per second when `show-countdown` is enabled. Placeholder: `<seconds>`.
+- `countdown-actionbar` and `countdown-chat` - Legacy keys retained for compatibility; 2.2.0 warmups no longer send them.
 
 ### Spawn
 - `spawn-sent` - After `/spawn`.
@@ -212,3 +212,13 @@ prefix: "<dark_purple>[<light_purple>TP</light_purple>]</dark_purple> "
 pwarp-created: "<light_purple>Warp <gold><name></gold> saved! <gray>(<count>/<limit>)"
 pwarp-teleporting: "<light_purple>Warping to <gold><name></gold>..."
 ```
+
+## Upgrading existing language files to 2.2.0
+
+Preserve customised files and add this key to `languages/en.yml`, plus the selected language file with your preferred translation:
+
+```yaml
+countdown-title: "<green><bold>Teleporting in <seconds></bold></green>"
+```
+
+Run `/telehop reload` after editing. A positive warmup delay is also required. Completion and movement cancellation clear the title. Existing zero-second delays and delay-bypass permissions still skip the countdown.

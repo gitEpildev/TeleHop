@@ -2,6 +2,9 @@ package com.telehop.paper.service;
 
 import com.telehop.paper.NetworkPaperPlugin;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.title.Title;
+
+import java.time.Duration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -10,14 +13,14 @@ import java.util.Map;
 
 /**
  * Reusable countdown warmup that ticks once per second. Optionally cancels
- * if the player moves, and optionally shows a live action-bar countdown.
+ * if the player moves, and optionally shows a large centred title countdown.
  */
 public class WarmupTask {
     private final NetworkPaperPlugin plugin;
     private final Player player;
     private final int totalSeconds;
     private final boolean cancelOnMove;
-    private final boolean showActionBar;
+    private final boolean showCountdown;
     private final Location startLocation;
     private final Runnable onComplete;
     private final Runnable onCancel;
@@ -25,13 +28,13 @@ public class WarmupTask {
     private int taskId = -1;
 
     public WarmupTask(NetworkPaperPlugin plugin, Player player, int seconds,
-                      boolean cancelOnMove, boolean showActionBar,
+                      boolean cancelOnMove, boolean showCountdown,
                       Runnable onComplete, Runnable onCancel) {
         this.plugin = plugin;
         this.player = player;
         this.totalSeconds = seconds;
         this.cancelOnMove = cancelOnMove;
-        this.showActionBar = showActionBar;
+        this.showCountdown = showCountdown;
         this.startLocation = player.getLocation().clone();
         this.onComplete = onComplete;
         this.onCancel = onCancel != null ? onCancel : () -> {};
@@ -52,22 +55,24 @@ public class WarmupTask {
             return;
         }
         if (cancelOnMove && hasMoved()) {
-            clearActionBar();
+            clearCountdown();
             stop();
             onCancel.run();
             return;
         }
         if (remaining <= 0) {
-            clearActionBar();
+            clearCountdown();
             stop();
             onComplete.run();
             return;
         }
         Map<String, String> countdownReplacements = Map.of("seconds", String.valueOf(remaining));
-        if (showActionBar) {
-            player.sendActionBar(plugin.messageService().rawFormat("countdown-actionbar", countdownReplacements));
+        if (showCountdown) {
+            player.showTitle(Title.title(
+                    plugin.messageService().rawFormat("countdown-title", countdownReplacements),
+                    Component.empty(),
+                    Title.Times.times(Duration.ZERO, Duration.ofMillis(1100), Duration.ZERO)));
         }
-        player.sendMessage(plugin.messageService().rawFormat("countdown-chat", countdownReplacements));
         remaining--;
     }
 
@@ -78,8 +83,8 @@ public class WarmupTask {
                 || current.getBlockZ() != startLocation.getBlockZ();
     }
 
-    private void clearActionBar() {
-        if (showActionBar) player.sendActionBar(Component.empty());
+    private void clearCountdown() {
+        if (showCountdown) player.clearTitle();
     }
 
     private void stop() {
