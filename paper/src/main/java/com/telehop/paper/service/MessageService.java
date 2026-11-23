@@ -1,5 +1,6 @@
 package com.telehop.paper.service;
 
+import com.telehop.paper.config.CommandNames;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -11,15 +12,18 @@ public class MessageService {
     private final FileConfiguration fallback;
     private final MiniMessage miniMessage = MiniMessage.miniMessage();
 
-    public MessageService(FileConfiguration messages, FileConfiguration fallback) {
+    private final CommandNames commands;
+
+    public MessageService(FileConfiguration messages, FileConfiguration fallback, CommandNames commands) {
+        this.commands = commands;
         this.messages = messages;
         this.fallback = fallback;
     }
 
     private String resolve(String key) {
         String val = messages.getString(key);
-        if (val != null) return val;
-        return fallback.getString(key, "<red>Missing message: " + key);
+        if (val == null) val = fallback.getString(key);
+        return commands.inMessage(val != null ? val : "<red>Missing message: " + key);
     }
 
     private String prefix() {

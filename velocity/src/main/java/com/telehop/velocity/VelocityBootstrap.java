@@ -30,13 +30,12 @@ public final class VelocityBootstrap {
 
     private VelocityBootstrap() {}
 
-    private static final String PLUGIN_VERSION = "2.2.0";
-
     public static VelocityServiceRegistry init(NetworkVelocityPlugin plugin,
                                                ProxyServer proxy,
                                                Logger logger,
                                                Path dataDirectory) throws Exception {
-        printBanner(logger);
+        printBanner(logger, proxy.getPluginManager().fromInstance(plugin).orElseThrow()
+                .getDescription().getVersion().orElseThrow());
         VelocityServiceRegistry reg = new VelocityServiceRegistry();
 
         VelocitySettings settings = loadSettings(plugin, dataDirectory);
@@ -94,7 +93,7 @@ public final class VelocityBootstrap {
         logger.info("\u001b[31mTeleHop \u001b[90mhas been \u001b[31mdisabled\u001b[90m. Goodbye!\u001b[0m");
     }
 
-    private static void printBanner(Logger logger) {
+    private static void printBanner(Logger logger, String version) {
         String cyan = "\u001b[36m";
         String purple = "\u001b[35m";
         String white = "\u001b[37m";
@@ -110,7 +109,7 @@ public final class VelocityBootstrap {
         logger.info("{}     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝{}", cyan, reset);
         logger.info("");
         logger.info("  {}Version: {}{} {}| {}Platform: {}Velocity {}| {}Author: {}Epildev{}",
-                cyan, white, PLUGIN_VERSION, grey, cyan, white, grey, cyan, white, reset);
+                cyan, white, version, grey, cyan, white, grey, cyan, white, reset);
         logger.info("");
     }
 

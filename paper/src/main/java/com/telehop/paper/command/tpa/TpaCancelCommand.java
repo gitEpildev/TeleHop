@@ -9,7 +9,7 @@ import com.telehop.common.model.PacketType;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tpacancel")
+@CommandAlias("%{cmd-tpacancel}")
 public class TpaCancelCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

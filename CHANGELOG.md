@@ -5,7 +5,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
-## [Unreleased]
+## [2.3.0] - 2026-11-23
+
+### Added
+
+- Paper command names and aliases can now be changed in `plugins/TeleHop/config/commands.yml`. Help text and clickable teleport actions use the configured names.
+- Separate permission overrides for teleporting yourself or other players to coordinates.
+- Manual and tag-triggered publication of matching Paper and Velocity builds to GitHub and Modrinth. See the [release guide](https://github.com/gitEpildev/TeleHop/blob/v2.3.0/docs/releases/publishing.md).
+- Release checks now require a complete build and a dated changelog entry matching the requested version. GitHub checks UK English spelling and punctuation before publication.
+
+### Fixed
+
+- Paper servers without LuckPerms now start with Bukkit permissions.
+
+### Upgrade
+
+Replace the TeleHop JAR on each Paper backend and Velocity proxy with its matching 2.3.0 build and restart the instance. Paper creates `plugins/TeleHop/config/commands.yml` on startup. To free `/tp` for another plugin, set `tp: [networktp, ntp]` and restart Paper. To keep player-to-player teleportation while restricting coordinates, grant `telehop.tp` and explicitly deny `telehop.tp.coordinates.self` or `telehop.tp.coordinates.others`.
 
 ### Documentation
 - 4 November 2026: reconcile this standalone repository with the existing 2.2.0 network release. Correct language upgrade instructions and document recorded deployment and verification limits.
@@ -33,7 +48,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 **Redis TLS**
-- `redis.ssl` toggle in `config.properties` to connect to Redis over TLS (rediss)
+- `redis.ssl` toggle in `config.properties` to connect to Redis over TLS (`rediss`)
 - `redis.ssl-verify` to control certificate and hostname verification
 - `redis.ssl-ca-cert` for self-signed setups (path to a PEM CA certificate)
 
@@ -91,7 +106,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 **Random Respawn**
 - Players respawn at a random safe location on death instead of world spawn
-- Fully async safe-location search using Paper's HeightMap API
+- Fully async safe-location search using Paper's `HeightMap` API
 - Configurable via `config/respawn.yml` (world, radius, bed/anchor respect)
 - Automatically skipped on the hub server
 
@@ -130,7 +145,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 **CI/CD**
 - GitHub Actions: CI (checkstyle, tests, build), PR checks, release workflow, CodeQL security scanning
-- Version consistency checks across pom.xml, plugin.yml, and Velocity @Plugin
+- Version consistency checks across `pom.xml`, `plugin.yml` and Velocity `@Plugin`
 - YAML syntax validation and language key parity checks
 - Tab completion works across the entire network (player names + warp names)
 - Permission-gated tab complete: `/tp`, `/tphere`, admin subcommands hidden from non-admins
@@ -148,7 +163,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Homes table is migrated automatically on first startup (slot numbers converted to names)
 - No manual database intervention needed
 - Grant `telehop.homes.N` (2-10) to ranks via LuckPerms for additional home slots
-- If upgrading from a pre-split `config.yml`, the plugin auto-migrates to the `config/` directory layout
+- If upgrading from an older single-file `config.yml`, the plugin auto-migrates to the `config/` directory layout
 
 ---
 
@@ -162,6 +177,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - **Random Teleport** - `/rtp` with region/dimension picker GUI
 - **Admin Teleport** - `/tp`, `/tphere` cross-server
 - **Feature Toggles** - enable/disable any module per server
-- **Multi-Language** - 6 built-in languages (en, nl, de, es, zh, pl) with fallback
+- **Multi-Language** - 6 built-in languages (`en`, `nl`, `de`, `es`, `zh`, `pl`) with fallback
 - **Cross-server messaging** - plugin messaging channel with deduplication and timeout
 - MySQL shared database for warps, player warps, TPA requests, and player tracking

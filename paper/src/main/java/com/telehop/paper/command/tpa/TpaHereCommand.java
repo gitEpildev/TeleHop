@@ -7,7 +7,7 @@ import com.telehop.common.model.TpaType;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tpahere")
+@CommandAlias("%{cmd-tpahere}")
 public class TpaHereCommand extends BaseCommand {
     private final TpaCommand delegate;
 

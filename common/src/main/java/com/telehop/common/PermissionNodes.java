@@ -15,6 +15,8 @@ public final class PermissionNodes {
     public static final String WARP = "telehop.warp";
     public static final String SPAWN = "telehop.spawn";
     public static final String TP = "telehop.tp";
+    public static final String TP_COORDINATES_SELF = "telehop.tp.coordinates.self";
+    public static final String TP_COORDINATES_OTHERS = "telehop.tp.coordinates.others";
     public static final String TPHERE = "telehop.tphere";
     public static final String ADMIN = "telehop.admin";
     public static final String PWARP = "telehop.pwarp";

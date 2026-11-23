@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("forcedelhome")
+@CommandAlias("%{cmd-forcedelhome}")
 @CommandPermission(PermissionNodes.ADMIN)
 public class ForceDelHomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
@@ -42,7 +42,7 @@ public class ForceDelHomeCommand extends BaseCommand {
                             "<gray>  " + home.name() + " <dark_gray>(" + home.server() + " " +
                                     (int) home.x() + "," + (int) home.y() + "," + (int) home.z() + ") ")
                             .append(plugin.messageService().deserialize("<red><bold>[DELETE]</bold></red>")
-                                    .clickEvent(ClickEvent.runCommand("/forcedelhome-confirm " + uuid + " " + home.name())));
+                                    .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + home.name())));
                     sender.sendMessage(line);
                 }
             });
@@ -50,7 +50,7 @@ public class ForceDelHomeCommand extends BaseCommand {
     }
 
     @co.aikar.commands.annotation.Subcommand("confirm")
-    @CommandAlias("forcedelhome-confirm")
+    @CommandAlias("%{cmd-forcedelhome-confirm}")
     public void confirm(Player sender, String uuid, String name) {
         plugin.services().homeService().delete(uuid, name).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->

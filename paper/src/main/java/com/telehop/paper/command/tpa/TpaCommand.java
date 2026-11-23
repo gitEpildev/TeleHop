@@ -16,7 +16,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 
-@CommandAlias("tpa")
+@CommandAlias("%{cmd-tpa}")
 public class TpaCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

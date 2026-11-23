@@ -7,7 +7,7 @@ import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tpatoggle")
+@CommandAlias("%{cmd-tpatoggle}")
 public class TpaToggleCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

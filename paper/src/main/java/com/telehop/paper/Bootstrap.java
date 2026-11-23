@@ -49,6 +49,7 @@ import com.telehop.paper.command.warp.SetWarpCommand;
 import com.telehop.paper.command.warp.WarpCommand;
 import com.telehop.paper.command.warp.WarpsCommand;
 import com.telehop.paper.config.ConfigMigrator;
+import com.telehop.paper.config.CommandNames;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.config.StorageManager;
 import com.telehop.paper.handler.PacketHandler;
@@ -77,6 +78,9 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -99,7 +103,7 @@ public final class Bootstrap {
     private static final String[] CONFIG_TEMPLATES = {
             "config/general.yml", "config/database.yml", "config/features.yml",
             "config/teleport.yml", "config/tpa.yml", "config/rtp.yml",
-            "config/home.yml", "config/respawn.yml", "config/WIKI.md"
+            "config/commands.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
@@ -117,6 +121,7 @@ public final class Bootstrap {
             ConfigMigrator.migrate(plugin);
         }
         initConfigFiles(plugin);
+        plugin.setCommandNames(CommandNames.load(plugin));
         ServiceRegistry reg = new ServiceRegistry();
 
         PaperSettings settings = PaperSettings.load(plugin);
@@ -236,13 +241,20 @@ public final class Bootstrap {
         }
         FileConfiguration langFile = YamlConfiguration.loadConfiguration(selected);
         FileConfiguration fallback = YamlConfiguration.loadConfiguration(new File(langDir, "en.yml"));
-        return new MessageService(langFile, fallback);
+        // Existing installations keep customised language files across upgrades.
+        try (var reader = new InputStreamReader(plugin.getResource("languages/en.yml"), StandardCharsets.UTF_8)) {
+            fallback.setDefaults(YamlConfiguration.loadConfiguration(reader));
+        } catch (IOException e) {
+            throw new IllegalStateException("Cannot read bundled English messages", e);
+        }
+        return new MessageService(langFile, fallback, plugin.commandNames());
     }
 
     private static void registerCommands(NetworkPaperPlugin plugin, ServiceRegistry reg) {
         PaperCommandManager manager = new PaperCommandManager(plugin);
         manager.enableUnstableAPI("brigadier");
         manager.enableUnstableAPI("help");
+        plugin.commandNames().register(manager.getCommandReplacements());
 
         try {
             String consoleMini = reg.messageService().rawString("console-not-allowed");
@@ -325,8 +337,6 @@ public final class Bootstrap {
         }, 40L, 20L * 5L);
     }
 
-    private static final String PLUGIN_VERSION = "2.2.0";
-
     private static void printBanner(NetworkPaperPlugin plugin) {
         net.kyori.adventure.text.logger.slf4j.ComponentLogger log = plugin.getComponentLogger();
         log.info(MINI.deserialize(""));
@@ -337,7 +347,7 @@ public final class Bootstrap {
         log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ███████╗███████╗███████╗██║  ██║╚██████╔╝██║</gradient>"));
         log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝</gradient>"));
         log.info(MINI.deserialize(""));
-        log.info(MINI.deserialize("  <aqua>Version: <white>" + PLUGIN_VERSION
+        log.info(MINI.deserialize("  <aqua>Version: <white>" + plugin.getPluginMeta().getVersion()
                 + "  <gray>|  <aqua>Platform: <white>Paper"
                 + "  <gray>|  <aqua>MC: <white>" + detectMinecraftVersion(plugin)));
         log.info(MINI.deserialize("  <aqua>Author: <white>Epildev  <gray>|  <aqua>Website: <white>developer.epildevconnect.uk"));

@@ -164,6 +164,7 @@ perms-warps-unlimited: "<gray>    <aqua>telehop.warps.unlimited</aqua> <dark_gra
 perms-admin-header: "<yellow>  Admin (domyślnie: OP)"
 perms-admin: "<gray>    <aqua>telehop.admin</aqua> <dark_gray>- /setwarp, /delwarp, /listwarps, /forcedelwarp, /telehop reload|perms"
 perms-tp: "<gray>    <aqua>telehop.tp</aqua> <dark_gray>- /tp - cross-server teleportacja admina"
+perms-tp-coordinates: "<gray>    <aqua>telehop.tp.coordinates.self</aqua> /tp \\<x> \\<y> \\<z> | <aqua>telehop.tp.coordinates.others</aqua> /tp \\<player> \\<x> \\<y> \\<z>"
 perms-tphere: "<gray>    <aqua>telehop.tphere</aqua> <dark_gray>- /tphere - przyciągnij gracza do siebie"
 perms-bypass-header: "<yellow>  Bypass (domyślnie: OP)"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>- Pomiń cooldown RTP"

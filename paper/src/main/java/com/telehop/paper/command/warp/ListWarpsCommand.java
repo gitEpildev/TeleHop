@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@CommandAlias("listwarps")
+@CommandAlias("%{cmd-listwarps}")
 @CommandPermission("telehop.admin")
 public class ListWarpsCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

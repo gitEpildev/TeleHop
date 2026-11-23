@@ -1,0 +1,234 @@
+name: Repository validation
+
+on:
+  workflow_call:
+    inputs:
+      publishing:
+        type: boolean
+        default: false
+      version:
+        type: string
+      channel:
+        type: string
+      notes:
+        type: string
+    outputs:
+      version:
+        value: ${{ jobs.validate.outputs.version }}
+      channel:
+        value: ${{ jobs.validate.outputs.channel }}
+      notes_artifact:
+        value: ${{ jobs.validate.outputs.notes_artifact }}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+
+    outputs:
+      version: ${{ steps.policy.outputs.version }}
+      channel: ${{ steps.policy.outputs.channel }}
+      notes_artifact: ${{ steps.policy.outputs.notes_artifact }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install the pinned UK spelling dictionary and Markdown checker
+        run: npm ci --prefix .github/release --ignore-scripts --no-audit --no-fund
+
+      - name: Validate changelog, release versions and public notes
+        id: policy
+        env:
+          PUBLISHING: ${{ inputs.publishing }}
+          REQUEST_VERSION: ${{ inputs.version }}
+          REQUEST_CHANNEL: ${{ inputs.channel }}
+          CUSTOM_NOTES: ${{ inputs.notes }}
+          TAG_NAME: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          CHANGE_BASE: ${{ !inputs.publishing && (github.event.pull_request.base.sha || github.event.before) || '' }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [[ "$PUBLISHING" == true ]]; then
+            python3 .github/release/prepare.py prepare
+          else
+            python3 .github/release/prepare.py check
+          fi
+          echo "notes_artifact=checked-notes-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+
+      - name: Test release rules and publishing retries
+        run: python3 -m unittest discover -v -s .github/release
+
+      - name: Save approved release notes
+        if: inputs.publishing
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.policy.outputs.notes_artifact }}
+          path: release-bundle/notes.md
+          if-no-files-found: error
+          retention-days: 14
+
+      # ── 3b. YAML syntax validation ───────────────────────────────────────
+      # Validates every config template and language file with Python's yaml
+      # parser. Catches typos like missing quotes, bad indentation, duplicate
+      # keys, etc. before they reach a live server.
+      - name: Validate YAML files
+        run: |
+          python3 - <<'PYEOF'
+          import sys, os, glob, yaml
+
+          errors = []
+          files = (
+            glob.glob("paper/src/main/resources/config/*.yml") +
+            glob.glob("paper/src/main/resources/languages/*.yml")
+          )
+          if not files:
+            print("::warning::No YAML files found to validate.")
+            sys.exit(0)
+
+          for path in sorted(files):
+            try:
+              with open(path, "r", encoding="utf-8") as f:
+                yaml.safe_load(f)
+              print(f"  OK  {path}")
+            except yaml.YAMLError as e:
+              errors.append((path, str(e)))
+              print(f"  FAIL {path}: {e}")
+
+          if errors:
+            for path, msg in errors:
+              print(f"::error file={path}::{msg}")
+            sys.exit(1)
+          else:
+            print(f"All {len(files)} YAML files are valid.")
+          PYEOF
+
+      # ── 3c. Language file key parity ────────────────────────────────────
+      # Every non-English language file must contain every key present in
+      # en.yml. Missing keys cause silent English fallback in production which
+      # is confusing for players on other locales.
+      - name: Check language file key parity
+        run: |
+          python3 - <<'PYEOF'
+          import sys, yaml, glob
+
+          def load_keys(path):
+            with open(path, encoding="utf-8") as f:
+              data = yaml.safe_load(f) or {}
+            return set(data.keys())
+
+          en_keys = load_keys("paper/src/main/resources/languages/en.yml")
+          fail = False
+
+          for path in sorted(glob.glob("paper/src/main/resources/languages/*.yml")):
+            if path.endswith("/en.yml"):
+              continue
+            lang_keys = load_keys(path)
+            missing = en_keys - lang_keys
+            extra   = lang_keys - en_keys
+            if missing:
+              for k in sorted(missing):
+                print(f"::error file={path}::Missing key '{k}' (present in en.yml)")
+              fail = True
+            if extra:
+              for k in sorted(extra):
+                print(f"::warning file={path}::Extra key '{k}' not in en.yml")
+            if not missing:
+              print(f"  OK  {path} ({len(lang_keys)} keys)")
+
+          sys.exit(1 if fail else 0)
+          PYEOF
+
+      # ── 3d. No em dashes or en dashes ──────────────────────────────────
+      # All text must use regular hyphens. Em dashes and en dashes are banned.
+      - name: Check for em dashes and en dashes
+        run: |
+          FOUND=$(git grep -n -e $'\u2014' -e $'\u2013' -- '*.java' '*.yml' '*.md' '*.xml' '*.properties' || [[ $? == 1 ]])
+          if [ -n "$FOUND" ]; then
+            echo "::error::Em dashes or en dashes found. Use regular hyphens (-) instead:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "No em dashes or en dashes found."
+
+      # ── 3e. UK English spelling ────────────────────────────────────────
+      # Scans documentation (.md) and language files for common US English
+      # spellings that should be UK English. Java source and config keys are
+      # excluded because API names (initialize, serialize, Color) are fixed.
+      - name: Check for US English spellings
+        run: |
+          python3 - <<'PYEOF'
+          import re, sys, glob
+
+          US_TO_UK = {
+              r'\bfavor\b': 'favour',
+              r'\bfavors\b': 'favours',
+              r'\bfavorable\b': 'favourable',
+              r'\bfavorite\b': 'favourite',
+              r'\bfavorites\b': 'favourites',
+              r'\bhonor\b': 'honour',
+              r'\bhonors\b': 'honours',
+              r'\bneighbor\b': 'neighbour',
+              r'\bneighbors\b': 'neighbours',
+              r'\bbehavior\b': 'behaviour',
+              r'\bcenter\b': 'centre',
+              r'\bcenters\b': 'centres',
+              r'\btheater\b': 'theatre',
+              r'\bfiber\b': 'fibre',
+              r'\btraveled\b': 'travelled',
+              r'\btraveling\b': 'travelling',
+              r'\bcanceled\b': 'cancelled',
+              r'\bcanceling\b': 'cancelling',
+              r'\blabeled\b': 'labelled',
+              r'\blabeling\b': 'labelling',
+              r'\bmodeled\b': 'modelled',
+              r'\bmodeling\b': 'modelling',
+              r'\bdefense\b': 'defence',
+              r'\boffense\b': 'offence',
+          }
+
+          SKIP_LINE = re.compile(
+              r'(https?://|LICENSE|License\b|\.jar\b|\.java\b|pom\.xml'
+              r'|```|import |package |color|Color|serialize|Serialize'
+              r'|initialize|Initialize|normalize|Normalize)', re.IGNORECASE)
+
+          files = (
+              glob.glob("docs/*.md") +
+              glob.glob("*.md") +
+              glob.glob("paper/src/main/resources/languages/*.yml")
+          )
+
+          errors = []
+          for path in sorted(files):
+              with open(path, encoding="utf-8") as f:
+                  for i, line in enumerate(f, 1):
+                      if SKIP_LINE.search(line):
+                          continue
+                      for pattern, fix in US_TO_UK.items():
+                          if re.search(pattern, line, re.IGNORECASE):
+                              errors.append((path, i, line.rstrip(), fix))
+
+          if errors:
+              for path, lineno, line, fix in errors:
+                  print(f"::error file={path},line={lineno}::US spelling found (use '{fix}'): {line}")
+              sys.exit(1)
+          else:
+              print(f"No US English spellings in {len(files)} files.")
+          PYEOF
+
+      # ── 3f. No TODO / FIXME left in source ─────────────────────────────
+      # Blocks merging if any TODO or FIXME comment survives into main.
+      # Keeps the codebase clean and forces issues into GitHub Issues instead.
+      - name: Check for TODO / FIXME in source
+        run: |
+          FOUND=$(grep -rn --include="*.java" "TODO\|FIXME" \
+            common/src/main/java paper/src/main/java velocity/src/main/java 2>/dev/null || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::TODO/FIXME comments found - resolve them or open a GitHub Issue:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "No TODO/FIXME comments found."

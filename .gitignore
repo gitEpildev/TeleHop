@@ -1,5 +1,7 @@
 # Build output
 target/
+/dist/
+/release-bundle/
 
 # IDE
 .idea/
@@ -22,3 +24,7 @@ dependency-reduced-pom.xml
 # Secrets
 .env
 .ssh/
+
+# Release validation
+/.github/release/node_modules/
+__pycache__/

@@ -14,6 +14,7 @@ import org.bukkit.entity.Player;
 import java.util.Locale;
 import java.util.Map;
 
+@CommandAlias("%{cmd-rtp}")
 public class RtpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -21,7 +22,6 @@ public class RtpCommand extends BaseCommand {
         this.plugin = plugin;
     }
 
-    @CommandAlias("rtp")
     @Default
     public void execute(Player player) {
         if (!plugin.isFeatureEnabled("rtp")) {

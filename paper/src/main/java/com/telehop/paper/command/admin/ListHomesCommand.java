@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("listhomes")
+@CommandAlias("%{cmd-listhomes}")
 @CommandPermission(PermissionNodes.ADMIN)
 public class ListHomesCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
@@ -41,9 +41,9 @@ public class ListHomesCommand extends BaseCommand {
                                     home.world() + " " +
                                     (int) home.x() + ", " + (int) home.y() + ", " + (int) home.z() + ") ");
                     Component tpBtn = plugin.messageService().deserialize("<green><bold>[TP]</bold></green> ")
-                            .clickEvent(ClickEvent.runCommand("/home " + home.name()));
+                            .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("home") + " " + home.name()));
                     Component delBtn = plugin.messageService().deserialize("<red><bold>[DELETE]</bold></red>")
-                            .clickEvent(ClickEvent.runCommand("/forcedelhome-confirm " + uuid + " " + home.name()));
+                            .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + home.name()));
                     sender.sendMessage(line.append(tpBtn).append(delBtn));
                 }
             });

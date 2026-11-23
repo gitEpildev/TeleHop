@@ -14,7 +14,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("pwarp|playerwarp|pwarps")
+@CommandAlias("%{cmd-pwarp}")
 public class PlayerWarpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

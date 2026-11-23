@@ -7,7 +7,7 @@ import org.bukkit.command.CommandSender;
 
 import java.util.Map;
 
-@CommandAlias("telehop")
+@CommandAlias("%{cmd-telehop}")
 public class TeleHopCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -44,7 +44,7 @@ public class TeleHopCommand extends BaseCommand {
             "perms-back", "perms-back-death",
             "perms-per-warp-header", "perms-warp-access",
             "perms-warp-limits-header", "perms-warps-number", "perms-warps-unlimited",
-            "perms-admin-header", "perms-admin", "perms-tp", "perms-tphere",
+            "perms-admin-header", "perms-admin", "perms-tp", "perms-tp-coordinates", "perms-tphere",
             "perms-bypass-header", "perms-rtp-bypass", "perms-rtp-bypass-delay", "perms-tpa-bypass"
         };
         for (String key : keys) {

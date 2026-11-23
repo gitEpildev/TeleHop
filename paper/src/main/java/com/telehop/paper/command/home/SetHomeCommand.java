@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-@CommandAlias("sethome")
+@CommandAlias("%{cmd-sethome}")
 public class SetHomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
     private static final int MAX_NAME_LENGTH = 32;

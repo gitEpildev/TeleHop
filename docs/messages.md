@@ -203,7 +203,7 @@ All `help-*` keys control the output of `/telehop help`. They use MiniMessage fo
 
 All `perms-*` keys control the output of `/telehop perms`. Same display rules as help. Keys:
 
-`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-tpa-toggle`, `perms-homes-header`, `perms-homes`, `perms-sethome`, `perms-delhome`, `perms-homes-limit`, `perms-lastloc`, `perms-back`, `perms-back-death`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
+`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-tpa-toggle`, `perms-homes-header`, `perms-homes`, `perms-sethome`, `perms-delhome`, `perms-homes-limit`, `perms-lastloc`, `perms-back`, `perms-back-death`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tp-coordinates`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
 
 ## Example: Custom Purple Theme
 

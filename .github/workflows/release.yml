@@ -1,73 +1,113 @@
 name: Release
 
-# Triggered when a version tag is pushed, e.g. git tag v1.2.0 && git push --tags
 on:
   push:
-    tags:
-      - 'v[0-9]+.[0-9]+.[0-9]+'
+    tags: ['v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Semantic version without v (for example 2.3.0)
+        required: true
+        type: string
+      channel:
+        description: Release type
+        required: true
+        type: choice
+        default: release
+        options: [release, beta, alpha]
+      notes:
+        description: Optional Markdown to replace the generated release notes
+        type: string
 
 permissions:
-  contents: write # required to create a GitHub Release and upload assets
-
-env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRIBUTION: 'temurin'
+  contents: read
 
 jobs:
-  release:
-    name: Build & Publish Release
+  validate:
+    uses: ./.github/workflows/validate.yml
+    with:
+      publishing: true
+      version: ${{ inputs.version || '' }}
+      channel: ${{ inputs.channel || '' }}
+      notes: ${{ inputs.notes || '' }}
+
+  build:
+    needs: validate
     runs-on: ubuntu-latest
-
+    outputs:
+      bundle: ${{ steps.build.outputs.bundle }}
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Fetch full history so the release-notes generator can see all commits
-          # since the previous tag.
-          fetch-depth: 0
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      # ---------------------------------------------------------------------------
-      # Guard: tag version must match the <version> declared in pom.xml.
-      # This prevents accidentally releasing a stale or wrong build.
-      # ---------------------------------------------------------------------------
-      - name: Validate tag matches pom.xml version
+          distribution: temurin
+          java-version: |
+            25
+            21
+      - name: Build, test and verify shaded JARs
+        id: build
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          TAG_VERSION="${GITHUB_REF_NAME#v}"
-          POM_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout --no-transfer-progress)
-          echo "Tag version : $TAG_VERSION"
-          echo "POM version : $POM_VERSION"
-          if [ "$TAG_VERSION" != "$POM_VERSION" ]; then
-            echo "::error::Tag version ($TAG_VERSION) does not match pom.xml version ($POM_VERSION)."
-            echo "::error::Update <version> in pom.xml and commit before tagging."
-            exit 1
-          fi
-
-      # ---------------------------------------------------------------------------
-      # Full build including checkstyle and tests.  No skipping on a release.
-      # ---------------------------------------------------------------------------
-      - name: Build, Checkstyle & Test
-        run: mvn -B clean verify --no-transfer-progress
-
-      # ---------------------------------------------------------------------------
-      # Create the GitHub Release and attach both JARs.
-      # Release notes are auto-generated from commit messages between this tag
-      # and the previous one.
-      # ---------------------------------------------------------------------------
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+          mvn -B -ntp clean verify
+          bash .github/tests/bundle.sh "$VERSION"
+          echo "bundle=release-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: TeleHop ${{ github.ref_name }}
-          files: |
-            paper/target/telehop-paper-*.jar
-            velocity/target/telehop-velocity-*.jar
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          name: release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 14
+
+  runtime:
+    needs: [validate, build]
+    uses: ./.github/workflows/runtime-tests.yml
+    with:
+      bundle: ${{ needs.build.outputs.bundle }}
+      version: ${{ needs.validate.outputs.version }}
+
+  publish:
+    needs: [validate, build, runtime]
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    concurrency:
+      group: telehop-release-${{ needs.validate.outputs.version }}
+      cancel-in-progress: false
+    env:
+      VERSION: ${{ needs.validate.outputs.version }}
+      CHANNEL: ${{ needs.validate.outputs.channel }}
+      MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.build.outputs.bundle }}
+          path: release-bundle/
+      - name: Restore validated release notes
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.validate.outputs.notes_artifact }}
+          path: release-bundle/
+      - name: Require a successful push build of this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/release/ci_status.py
+      - name: Check Modrinth credentials and project
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 .github/release/publish.py preflight
+      - name: Publish GitHub release and retrieve its JARs and notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/release/publish.py github
+      - name: Publish or verify Paper and Velocity on Modrinth
+        env:
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+        run: python3 .github/release/publish.py modrinth

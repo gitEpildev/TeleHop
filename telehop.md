@@ -37,9 +37,9 @@ TeleHop gives your Velocity network a complete teleport system.
 
 ---
 
-## Version 2.2.0
+## Version 2.3.0
 
-TeleHop 2.2.0 adds a centred green warmup title and removes repeated countdown chat/action-bar messages. Existing delays and bypass permissions are preserved. Add `countdown-title` to customised language files before upgrading. See [release notes](docs/releases/2.2.0.md).
+Set Paper command names and aliases in `config/commands.yml`. For example, `tp: [networktp, ntp]` moves TeleHop to `/networktp` and `/ntp` after a restart. Staff permissions can now control coordinate teleports for self and others separately. [2.3.0 changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md#230---2026-11-23)
 
 ### Retained improvements from 2.1.0
 
@@ -294,8 +294,8 @@ Admin commands are permission-gated and hidden from tab completion for players w
 | -------------------------- | ------------------------------------------------------ | ---------------- |
 | `/tp <player>`             | Teleport yourself to a player across servers           | `telehop.tp`     |
 | `/tp <player1> <player2>`  | Teleport one player to another player across servers   | `telehop.tp`     |
-| `/tp <x> <y> <z>`          | Teleport yourself to coordinates in your current world | `telehop.tp`     |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates                       | `telehop.tp`     |
+| `/tp <x> <y> <z>`          | Teleport yourself to coordinates in your current world | `telehop.tp` + `telehop.tp.coordinates.self`     |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates                       | `telehop.tp` + `telehop.tp.coordinates.others`     |
 | `/tphere <player>`         | Pull a player to your location across servers          | `telehop.tphere` |
 
 ### Warp Admin
@@ -537,8 +537,8 @@ Both the Velocity plugin and Paper plugin are required.
 ## ⚙️ Setup
 
 1. Create a MySQL database and user.
-2. Place `telehop-velocity-2.2.0.jar` in your Velocity plugins folder.
-3. Place `telehop-paper-2.2.0.jar` in each Paper server plugins folder.
+2. Place `telehop-velocity-2.3.0.jar` in your Velocity plugins folder.
+3. Place `telehop-paper-2.3.0.jar` in each Paper server plugins folder.
 4. Start Velocity and the Paper servers once to generate files.
 5. Stop the servers.
 6. Configure MySQL credentials in `plugins/TeleHop/config/database.yml`.
@@ -700,8 +700,8 @@ mvn clean package
 Build outputs:
 
 ```text
-paper/target/telehop-paper-2.2.0.jar
-velocity/target/telehop-velocity-2.2.0.jar
+paper/target/telehop-paper-2.3.0.jar
+velocity/target/telehop-velocity-2.3.0.jar
 ```
 
 Requires Java 21+ and Maven 3.8+.

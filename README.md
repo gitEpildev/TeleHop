@@ -1,6 +1,6 @@
 # TeleHop
 
-Current release: **2.2.0**. The standalone repository was reconciled with the recorded GalaxyRealms Network release on 4 November 2026. See [release and verification notes](docs/releases/2.2.0.md).
+**TeleHop 2.3.0** adds configurable Paper command names and aliases, plus separate permissions for teleporting yourself or another player to coordinates. [Changelog](CHANGELOG.md#230---2026-11-23)
 
 Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Velocity 3.3+** networks. A single JAR works on both Minecraft versions, detecting the server version at runtime and loading the correct API adapter. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
 
@@ -131,8 +131,8 @@ Aliases: `/playerwarp`, `/pwarps`
 |---------|-------------|------------|
 | `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
 | `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
-| `/tp <x> <y> <z>` | Teleport yourself to coordinates | `telehop.tp` |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` |
+| `/tp <x> <y> <z>` | Teleport yourself to coordinates | `telehop.tp` + `telehop.tp.coordinates.self` |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` + `telehop.tp.coordinates.others` |
 | `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
 
 Hidden from tab complete for players without the required permission.
@@ -229,8 +229,8 @@ The plugin ships a single JAR containing version adapters for both. At startup, 
 ## Quick Start
 
 1. Create a MySQL database and user
-2. Place `telehop-velocity-2.2.0.jar` on your Velocity proxy
-3. Place `telehop-paper-2.2.0.jar` on each Paper backend
+2. Place `telehop-velocity-2.3.0.jar` on your Velocity proxy
+3. Place `telehop-paper-2.3.0.jar` on each Paper backend
 4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
 5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
 6. Restart Velocity first, then all Paper servers
@@ -244,6 +244,7 @@ TeleHop uses modular config files in `plugins/TeleHop/config/`:
 ```
 plugins/TeleHop/
   config/
+    commands.yml      # primary command names and aliases (restart required)
     general.yml       # server-name, hub-server, servers list, language, messaging, regions
     database.yml      # MySQL connection settings
     features.yml      # feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle, last-location, random-respawn)
@@ -286,6 +287,10 @@ Tables are created automatically on first startup. See [`sql/schema.sql`](sql/sc
 | [Protocol](docs/protocol.md) | Plugin messaging protocol, packet types, routing |
 | [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
 
+## Upgrading to 2.3.0
+
+Replace the TeleHop JAR in each instance’s `plugins/` folder with the matching 2.3.0 Paper or Velocity JAR, then restart the instance. Paper creates `config/commands.yml` with the default command names. See [command configuration](docs/configuration.md#command-names-and-aliases) for an example.
+
 ## Upgrading from 2.1.0
 
 Install the matching 2.2.0 Paper and Velocity JARs while preserving configuration and databases. Restart one instance at a time, keeping one proxy available. Add `countdown-title` to existing language files as explained in [messages](docs/messages.md). This release changes the warmup display to a centred title, without repeated countdown chat or action-bar messages. Existing zero-second delays and bypass permissions are preserved; set `rtp.delay-seconds` to `5` only if a five-second RTP warmup is wanted. No database migration or protocol change is required.
@@ -305,8 +310,8 @@ mvn clean package
 ```
 
 Produces:
-- `paper/target/telehop-paper-2.2.0.jar` (includes both version adapters)
-- `velocity/target/telehop-velocity-2.2.0.jar`
+- `paper/target/telehop-paper-2.3.0.jar` (includes both version adapters)
+- `velocity/target/telehop-velocity-2.3.0.jar`
 
 Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
 
@@ -314,10 +319,12 @@ Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 2
 
 | Workflow | Trigger | What it does |
 |----------|---------|--------------|
-| `ci.yml` | push/PR to `main` | Checkstyle, unit tests, JaCoCo coverage, JAR build |
+| `ci.yml` | every branch push and PR | Release readiness covers changelog and version checks, the full build, compatibility, Paper and Velocity startup, MySQL upgrades and Redis recovery |
 | `pr.yml` | PR to `main` | Conventional Commits title check, artifact check, auto-labels |
-| `release.yml` | push tag `v*.*.*` | Validates version, builds, creates GitHub Release with JARs |
+| `release.yml` | manual or version tag | Requires a green build of the exact commit and publishes the validated JARs and notes to GitHub and Modrinth |
 | `codeql.yml` | push/PR + weekly | CodeQL static security analysis |
+
+For token setup, release channels, changelog generation and retries, see the [release guide](docs/releases/publishing.md).
 
 ## Author
 

@@ -1,6 +1,7 @@
 # TeleHop - Configuration Wiki
 
-> **Plugin version:** 1.0.2  
+> **Plugin version:** 2.3.0
+>
 > **Config folder:** `plugins/TeleHop/config/`  
 > **Language folder:** `plugins/TeleHop/languages/`
 
@@ -75,6 +76,10 @@ Shared MySQL / MariaDB connection used by all servers and the Velocity proxy.
 > TeleHop creates its tables automatically on first startup.
 
 ---
+
+## commands.yml
+
+Each list starts with the primary command, followed by any aliases. For example, `tp: [networktp, ntp]` registers `/networktp` and `/ntp` and frees `/tp` for another plugin. Restart the Paper server after editing command names.
 
 ## features.yml
 
@@ -296,7 +301,9 @@ Assign via LuckPerms: `lp user/group <name> permission set <node> [true/false]`
 | Node | Description |
 |------|-------------|
 | `telehop.admin` | `/setwarp`, `/delwarp`, `/listwarps`, `/forcedelwarp`, `/forcedelhome`, `/telehop reload\|perms\|version\|help` |
-| `telehop.tp` | `/tp` - admin cross-server teleport |
+| `telehop.tp` | Use the admin teleport command. Grants both coordinate permissions by default. |
+| `telehop.tp.coordinates.self` | Teleport yourself to coordinates. |
+| `telehop.tp.coordinates.others` | Teleport another player to coordinates. |
 | `telehop.tphere` | `/tphere` - pull a player to you |
 | `telehop.back` | `/back` - return to last teleport location |
 | `telehop.back.death` | `/back death` - return to death location |

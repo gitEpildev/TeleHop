@@ -12,7 +12,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("forcesethome")
+@CommandAlias("%{cmd-forcesethome}")
 @CommandPermission(PermissionNodes.ADMIN)
 public class ForceSetHomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

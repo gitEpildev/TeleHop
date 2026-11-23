@@ -196,3 +196,14 @@ Managed by the plugin -- do not edit manually unless setting spawn coordinates.
 | `spawn.z` | double | `0.5` | Spawn Z |
 | `spawn.yaw` | double | `0.0` | Spawn yaw |
 | `spawn.pitch` | double | `0.0` | Spawn pitch |
+
+## Command names and aliases
+
+Edit `plugins/TeleHop/config/commands.yml` on each Paper backend and restart it. Each key identifies a built-in command. Its first list entry is the primary name and subsequent entries are optional aliases.
+
+```yaml
+tp: [networktp, ntp]
+pwarp: [mywarp]
+```
+
+This registers `/networktp` and `/ntp`, leaving `/tp` available to another plugin. The player warp command uses only `/mywarp`. Omitted keys inherit the bundled defaults. Use unique lowercase labels containing letters, digits, hyphens or underscores. TeleHop reports unknown keys, invalid labels and duplicates during startup.

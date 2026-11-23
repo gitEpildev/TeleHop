@@ -164,6 +164,7 @@ perms-warps-unlimited: "<gray>    <aqua>telehop.warps.unlimited</aqua> <dark_gra
 perms-admin-header: "<yellow>  管理（默认：OP）"
 perms-admin: "<gray>    <aqua>telehop.admin</aqua> <dark_gray>- /setwarp, /delwarp, /listwarps, /forcedelwarp, /telehop reload|perms"
 perms-tp: "<gray>    <aqua>telehop.tp</aqua> <dark_gray>- /tp - 跨服管理员传送"
+perms-tp-coordinates: "<gray>    <aqua>telehop.tp.coordinates.self</aqua> /tp \\<x> \\<y> \\<z> | <aqua>telehop.tp.coordinates.others</aqua> /tp \\<player> \\<x> \\<y> \\<z>"
 perms-tphere: "<gray>    <aqua>telehop.tphere</aqua> <dark_gray>- /tphere - 将玩家拉到你身边"
 perms-bypass-header: "<yellow>  绕过（默认：OP）"
 perms-rtp-bypass: "<gray>    <aqua>telehop.rtp.bypasscooldown</aqua> <dark_gray>- 跳过随机传送冷却"

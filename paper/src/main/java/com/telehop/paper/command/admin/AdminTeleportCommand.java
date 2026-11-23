@@ -12,7 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tp")
+@CommandAlias("%{cmd-tp}")
 @CommandPermission(PermissionNodes.TP)
 public class AdminTeleportCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
@@ -41,6 +41,15 @@ public class AdminTeleportCommand extends BaseCommand {
         if (!plugin.permissionService().has(sender, PermissionNodes.TP)) {
             sender.sendMessage(plugin.msg("no-permission"));
             return;
+        }
+
+        if (arg3 != null) {
+            boolean self = arg4 == null || sender.getName().equalsIgnoreCase(arg1);
+            String permission = self ? PermissionNodes.TP_COORDINATES_SELF : PermissionNodes.TP_COORDINATES_OTHERS;
+            if (!sender.hasPermission(permission)) {
+                sender.sendMessage(plugin.msg("no-permission"));
+                return;
+            }
         }
 
         // /tp <player> <x> <y> <z>

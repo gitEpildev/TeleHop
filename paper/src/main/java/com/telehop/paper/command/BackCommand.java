@@ -12,7 +12,7 @@ import com.telehop.paper.service.BackLocationManager;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
-@CommandAlias("back")
+@CommandAlias("%{cmd-back}")
 public class BackCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

@@ -47,6 +47,8 @@ The plugin finds the **highest** matching `telehop.homes.<n>` value. Locked slot
 | `telehop.back` | Use `/back` (return to last teleport location) |
 | `telehop.back.death` | Use `/back death` (return to death location) |
 | `telehop.tp` | Admin teleport (`/tp`), cross-server |
+| `telehop.tp.coordinates.self` | Teleport yourself to coordinates, including by naming yourself |
+| `telehop.tp.coordinates.others` | Teleport another player to coordinates on this server or across the network |
 | `telehop.tphere` | Admin pull command (`/tphere`), cross-server |
 | `telehop.rtp.bypasscooldown` | Skip the RTP cooldown |
 | `telehop.rtp.bypassdelay` | Skip the RTP warmup delay |
@@ -99,3 +101,5 @@ lp group staff permission set telehop.back.death
 lp group staff permission set telehop.warps.unlimited
 lp group staff permission set telehop.homes.10
 ```
+
+Both coordinate permissions are children of `telehop.tp`. Existing grants of the parent include both. Keep the parent for player-to-player teleportation and deny the child for the operation you want to restrict. For example, to allow staff to teleport themselves to coordinates while blocking coordinate teleports of other players, run `lp group staff permission set telehop.tp.coordinates.others false`.

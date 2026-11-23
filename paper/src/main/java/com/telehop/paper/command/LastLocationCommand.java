@@ -13,7 +13,7 @@ import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
 
-@CommandAlias("lastlocation|lastloc|backlast|ll")
+@CommandAlias("%{cmd-lastlocation}")
 public class LastLocationCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

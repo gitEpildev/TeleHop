@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("delwarp")
+@CommandAlias("%{cmd-delwarp}")
 @CommandPermission("telehop.admin")
 public class DelWarpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

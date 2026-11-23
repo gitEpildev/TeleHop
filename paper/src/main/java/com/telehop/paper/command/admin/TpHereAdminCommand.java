@@ -11,7 +11,7 @@ import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tphere")
+@CommandAlias("%{cmd-tphere}")
 @CommandPermission(PermissionNodes.TPHERE)
 public class TpHereAdminCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

@@ -9,7 +9,7 @@ import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.gui.HomeGui;
 import org.bukkit.entity.Player;
 
-@CommandAlias("home")
+@CommandAlias("%{cmd-home}")
 public class HomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

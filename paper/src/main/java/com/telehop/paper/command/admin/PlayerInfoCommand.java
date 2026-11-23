@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-@CommandAlias("playerinfo|pinfo")
+@CommandAlias("%{cmd-playerinfo}")
 @CommandPermission(PermissionNodes.ADMIN)
 public class PlayerInfoCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

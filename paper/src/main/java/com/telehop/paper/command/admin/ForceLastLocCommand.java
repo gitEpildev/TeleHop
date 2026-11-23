@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("forcelastloc|forcell")
+@CommandAlias("%{cmd-forcelastloc}")
 @CommandPermission(PermissionNodes.ADMIN)
 public class ForceLastLocCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;

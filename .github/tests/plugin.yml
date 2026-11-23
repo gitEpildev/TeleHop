@@ -1,0 +1,5 @@
+name: TeleHopCommandProbe
+version: '1'
+main: com.telehop.paper.smoke.CommandProbe
+api-version: '1.21'
+depend: [TeleHop]

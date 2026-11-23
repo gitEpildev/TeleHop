@@ -84,8 +84,8 @@ Region items show the estimated ping the player will get on the destination serv
 |---------|-------------|------------|
 | `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
 | `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
-| `/tp <x> <y> <z>` | Teleport yourself to coordinates in your current world | `telehop.tp` |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` |
+| `/tp <x> <y> <z>` | Teleport yourself to coordinates in your current world | `telehop.tp` + `telehop.tp.coordinates.self` |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` + `telehop.tp.coordinates.others` |
 | `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
 
 These commands are **hidden from tab complete** for players who do not have the required permission.
@@ -118,3 +118,5 @@ Aliases: `/forcell` for `/forcelastloc`, `/pinfo` for `/playerinfo`
 | `/telehop perms` | List all permission nodes with descriptions | `telehop.admin` |
 
 Admin-only subcommands (`reload`, `perms`) are hidden from tab complete for players without `telehop.admin`.
+
+Command examples use the default names. Set primary names and aliases in `config/commands.yml` and restart Paper. See [configuration](configuration.md#command-names-and-aliases).

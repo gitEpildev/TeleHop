@@ -10,7 +10,7 @@ import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-@CommandAlias("tpadeny")
+@CommandAlias("%{cmd-tpadeny}")
 public class TpaDenyCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

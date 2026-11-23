@@ -9,7 +9,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("delhome")
+@CommandAlias("%{cmd-delhome}")
 public class DelHomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

@@ -13,7 +13,7 @@ import org.bukkit.entity.Player;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-@CommandAlias("spawn")
+@CommandAlias("%{cmd-spawn}")
 public class SpawnCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
     private final ConcurrentHashMap<UUID, Long> spawnDebounceMs = new ConcurrentHashMap<>();

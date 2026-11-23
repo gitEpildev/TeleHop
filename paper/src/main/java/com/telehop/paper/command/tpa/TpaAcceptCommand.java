@@ -15,7 +15,7 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 
-@CommandAlias("tpaaccept")
+@CommandAlias("%{cmd-tpaaccept}")
 public class TpaAcceptCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

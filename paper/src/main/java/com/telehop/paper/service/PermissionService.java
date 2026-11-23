@@ -3,17 +3,20 @@ package com.telehop.paper.service;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import net.luckperms.api.model.user.User;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 public class PermissionService {
     private final LuckPerms luckPerms;
 
     public PermissionService() {
-        LuckPerms lp;
-        try {
-            lp = LuckPermsProvider.get();
-        } catch (IllegalStateException ex) {
-            lp = null;
+        LuckPerms lp = null;
+        if (Bukkit.getPluginManager().isPluginEnabled("LuckPerms")) {
+            try {
+                lp = LuckPermsProvider.get();
+            } catch (IllegalStateException ignored) {
+                // The provider is unavailable during startup. Fall back to Bukkit permissions.
+            }
         }
         this.luckPerms = lp;
     }

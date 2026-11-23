@@ -2,9 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: ['**']
   pull_request:
-    branches: [main]
 
 # Cancel in-progress runs for the same ref so a rapid push doesn't waste minutes.
 concurrency:
@@ -13,23 +12,6 @@ concurrency:
 
 permissions:
   contents: read
-  checks: write
-  pull-requests: write
-
-env:
-  JAVA_VERSION: '21'
-  JAVA_DISTRIBUTION: 'temurin'
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Pipeline overview
-#
-#  checkstyle ──┐
-#  compile    ──┤──► test ──┐
-#  validate   ──┘           └──► build
-#
-#  All three gate jobs must pass before the final JAR build runs.
-#  A failure in any gate is reported immediately without waiting for the others.
-# ─────────────────────────────────────────────────────────────────────────────
 
 jobs:
 
@@ -42,42 +24,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          java-version: '21'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          persist-credentials: false
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
-          java-version: '25'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          distribution: temurin
+          java-version: |
+            25
+            21
           cache: maven
-
-      - name: Configure Maven Toolchains
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/toolchains.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <toolchains>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>21</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>25</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
-            </toolchain>
-          </toolchains>
-          EOF
-
-      - name: Set JAVA_HOME to 21
-        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
 
       - name: Run Checkstyle
         run: mvn -B checkstyle:check --no-transfer-progress
@@ -94,42 +51,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          java-version: '21'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          persist-credentials: false
 
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
-          java-version: '25'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          distribution: temurin
+          java-version: |
+            25
+            21
           cache: maven
-
-      - name: Configure Maven Toolchains
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/toolchains.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <toolchains>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>21</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>25</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
-            </toolchain>
-          </toolchains>
-          EOF
-
-      - name: Set JAVA_HOME to 21
-        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
 
       - name: Compile
         run: mvn -B compile --no-transfer-progress
@@ -146,206 +78,8 @@ jobs:
       - name: Compile test sources
         run: mvn -B test-compile --no-transfer-progress
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Gate 3 - Structural validation
-  # Checks that don't require Maven compilation but must pass before tests.
-  # ───────────────────────────────────────────────────────────────────────────
   validate:
-    name: Validate
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      # ── 3a. Version consistency ──────────────────────────────────────────
-      # The version in pom.xml must match the version in plugin.yml and the
-      # Velocity @Plugin annotation. Catches the common mistake of bumping one
-      # but forgetting the others.
-      - name: Check version consistency
-        run: |
-          POM_VERSION=$(grep -m1 '<version>' pom.xml | sed 's/.*<version>\(.*\)<\/version>.*/\1/' | tr -d '[:space:]')
-          PLUGIN_VERSION=$(grep '^version:' paper/src/main/resources/plugin.yml | sed 's/version: //' | tr -d '[:space:]"')
-          VELOCITY_VERSION=$(grep -oP 'version\s*=\s*"\K[^"]+' velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java | head -1 | tr -d '[:space:]')
-
-          echo "pom.xml:            $POM_VERSION"
-          echo "plugin.yml:         $PLUGIN_VERSION"
-          echo "Velocity @Plugin:   $VELOCITY_VERSION"
-
-          FAIL=0
-          if [ "$POM_VERSION" != "$PLUGIN_VERSION" ]; then
-            echo "::error file=paper/src/main/resources/plugin.yml::plugin.yml version ($PLUGIN_VERSION) does not match pom.xml ($POM_VERSION)"
-            FAIL=1
-          fi
-          if [ "$POM_VERSION" != "$VELOCITY_VERSION" ]; then
-            echo "::error file=velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java::Velocity @Plugin version ($VELOCITY_VERSION) does not match pom.xml ($POM_VERSION)"
-            FAIL=1
-          fi
-          [ $FAIL -eq 0 ] && echo "All versions consistent: $POM_VERSION" || exit 1
-
-      # ── 3b. YAML syntax validation ───────────────────────────────────────
-      # Validates every config template and language file with Python's yaml
-      # parser. Catches typos like missing quotes, bad indentation, duplicate
-      # keys, etc. before they reach a live server.
-      - name: Validate YAML files
-        run: |
-          python3 - <<'PYEOF'
-          import sys, os, glob, yaml
-
-          errors = []
-          files = (
-            glob.glob("paper/src/main/resources/config/*.yml") +
-            glob.glob("paper/src/main/resources/languages/*.yml")
-          )
-          if not files:
-            print("::warning::No YAML files found to validate.")
-            sys.exit(0)
-
-          for path in sorted(files):
-            try:
-              with open(path, "r", encoding="utf-8") as f:
-                yaml.safe_load(f)
-              print(f"  OK  {path}")
-            except yaml.YAMLError as e:
-              errors.append((path, str(e)))
-              print(f"  FAIL {path}: {e}")
-
-          if errors:
-            for path, msg in errors:
-              print(f"::error file={path}::{msg}")
-            sys.exit(1)
-          else:
-            print(f"All {len(files)} YAML files are valid.")
-          PYEOF
-
-      # ── 3c. Language file key parity ────────────────────────────────────
-      # Every non-English language file must contain every key present in
-      # en.yml. Missing keys cause silent English fallback in production which
-      # is confusing for players on other locales.
-      - name: Check language file key parity
-        run: |
-          python3 - <<'PYEOF'
-          import sys, yaml, glob
-
-          def load_keys(path):
-            with open(path, encoding="utf-8") as f:
-              data = yaml.safe_load(f) or {}
-            return set(data.keys())
-
-          en_keys = load_keys("paper/src/main/resources/languages/en.yml")
-          fail = False
-
-          for path in sorted(glob.glob("paper/src/main/resources/languages/*.yml")):
-            if path.endswith("/en.yml"):
-              continue
-            lang_keys = load_keys(path)
-            missing = en_keys - lang_keys
-            extra   = lang_keys - en_keys
-            if missing:
-              for k in sorted(missing):
-                print(f"::error file={path}::Missing key '{k}' (present in en.yml)")
-              fail = True
-            if extra:
-              for k in sorted(extra):
-                print(f"::warning file={path}::Extra key '{k}' not in en.yml")
-            if not missing:
-              print(f"  OK  {path} ({len(lang_keys)} keys)")
-
-          sys.exit(1 if fail else 0)
-          PYEOF
-
-      # ── 3d. No em dashes or en dashes ──────────────────────────────────
-      # All text must use regular hyphens. Em dashes and en dashes are banned.
-      - name: Check for em dashes and en dashes
-        run: |
-          FOUND=$(grep -rn $'\xe2\x80\x94\|\xe2\x80\x93' \
-            --include="*.java" --include="*.yml" --include="*.md" \
-            --include="*.xml" --include="*.properties" \
-            . 2>/dev/null | grep -v '/target/' | grep -v '/.git/' || true)
-          if [ -n "$FOUND" ]; then
-            echo "::error::Em dashes or en dashes found. Use regular hyphens (-) instead:"
-            echo "$FOUND"
-            exit 1
-          fi
-          echo "No em dashes or en dashes found."
-
-      # ── 3e. UK English spelling ────────────────────────────────────────
-      # Scans documentation (.md) and language files for common US English
-      # spellings that should be UK English. Java source and config keys are
-      # excluded because API names (initialize, serialize, Color) are fixed.
-      - name: Check for US English spellings
-        run: |
-          python3 - <<'PYEOF'
-          import re, sys, glob
-
-          US_TO_UK = {
-              r'\bfavor\b': 'favour',
-              r'\bfavors\b': 'favours',
-              r'\bfavorable\b': 'favourable',
-              r'\bfavorite\b': 'favourite',
-              r'\bfavorites\b': 'favourites',
-              r'\bhonor\b': 'honour',
-              r'\bhonors\b': 'honours',
-              r'\bneighbor\b': 'neighbour',
-              r'\bneighbors\b': 'neighbours',
-              r'\bbehavior\b': 'behaviour',
-              r'\bcenter\b': 'centre',
-              r'\bcenters\b': 'centres',
-              r'\btheater\b': 'theatre',
-              r'\bfiber\b': 'fibre',
-              r'\btraveled\b': 'travelled',
-              r'\btraveling\b': 'travelling',
-              r'\bcanceled\b': 'cancelled',
-              r'\bcanceling\b': 'cancelling',
-              r'\blabeled\b': 'labelled',
-              r'\blabeling\b': 'labelling',
-              r'\bmodeled\b': 'modelled',
-              r'\bmodeling\b': 'modelling',
-              r'\bdefense\b': 'defence',
-              r'\boffense\b': 'offence',
-          }
-
-          SKIP_LINE = re.compile(
-              r'(https?://|LICENSE|License\b|\.jar\b|\.java\b|pom\.xml'
-              r'|```|import |package |color|Color|serialize|Serialize'
-              r'|initialize|Initialize|normalize|Normalize)', re.IGNORECASE)
-
-          files = (
-              glob.glob("docs/*.md") +
-              glob.glob("*.md") +
-              glob.glob("paper/src/main/resources/languages/*.yml")
-          )
-
-          errors = []
-          for path in sorted(files):
-              with open(path, encoding="utf-8") as f:
-                  for i, line in enumerate(f, 1):
-                      if SKIP_LINE.search(line):
-                          continue
-                      for pattern, fix in US_TO_UK.items():
-                          if re.search(pattern, line, re.IGNORECASE):
-                              errors.append((path, i, line.rstrip(), fix))
-
-          if errors:
-              for path, lineno, line, fix in errors:
-                  print(f"::error file={path},line={lineno}::US spelling found (use '{fix}'): {line}")
-              sys.exit(1)
-          else:
-              print(f"No US English spellings in {len(files)} files.")
-          PYEOF
-
-      # ── 3f. No TODO / FIXME left in source ─────────────────────────────
-      # Blocks merging if any TODO or FIXME comment survives into main.
-      # Keeps the codebase clean and forces issues into GitHub Issues instead.
-      - name: Check for TODO / FIXME in source
-        run: |
-          FOUND=$(grep -rn --include="*.java" "TODO\|FIXME" \
-            common/src/main/java paper/src/main/java velocity/src/main/java 2>/dev/null || true)
-          if [ -n "$FOUND" ]; then
-            echo "::error::TODO/FIXME comments found - resolve them or open a GitHub Issue:"
-            echo "$FOUND"
-            exit 1
-          fi
-          echo "No TODO/FIXME comments found."
+    uses: ./.github/workflows/validate.yml
 
   # ───────────────────────────────────────────────────────────────────────────
   # Tests + Coverage
@@ -355,116 +89,125 @@ jobs:
   # ───────────────────────────────────────────────────────────────────────────
   test:
     name: Test & Coverage
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
     runs-on: ubuntu-latest
-    needs: [compile]
+    needs: [compile, validate]
+
+    outputs:
+      version: ${{ steps.bundle.outputs.version }}
+      bundle: ${{ steps.bundle.outputs.name }}
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK ${{ env.JAVA_VERSION }}
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: |
+            25
+            21
           cache: maven
-
-      - name: Set JAVA_HOME to 21
-        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
-
-      - name: Run Tests
-        run: mvn -B verify -pl common --no-transfer-progress
+      - name: Clean build and test every module
+        run: mvn -B -ntp clean verify
+      - name: Verify and bundle runtime test artifacts
+        id: bundle
+        run: |
+          version=$(sed -n 's/^version: //p' paper/src/main/resources/plugin.yml)
+          bash .github/tests/bundle.sh "$version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "name=test-bundle-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ${{ steps.bundle.outputs.name }}
+          path: release-bundle/
+          if-no-files-found: error
+          retention-days: 7
 
       - name: Publish JUnit Results
         if: always()
-        uses: mikepenz/action-junit-report@v4
+        uses: mikepenz/action-junit-report@a16be3a69023e9bd7e748ede768b3282ea7b30ce # v6.7.1
         with:
           report_paths: '**/target/surefire-reports/TEST-*.xml'
           check_name: JUnit Test Results
+          annotate_only: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository }}
+          require_tests: true
           fail_on_failure: true
           detailed_summary: true
 
       - name: Upload Coverage Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: jacoco-report
-          path: common/target/site/jacoco/
+          path: '*/target/site/jacoco/'
           if-no-files-found: ignore
 
       - name: Post Coverage Comment
-        if: github.event_name == 'pull_request'
-        uses: madrapps/jacoco-report@v1.7.1
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        uses: madrapps/jacoco-report@e51ce1f46f7f8b5331593f935e59cbaf44b84920 # v1.8.0
         with:
-          paths: common/target/site/jacoco/jacoco.xml
+          paths: common/target/site/jacoco/jacoco.xml,paper/target/site/jacoco/jacoco.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 75
           min-coverage-changed-files: 80
           title: Test Coverage Report
           update-comment: true
 
-  # ───────────────────────────────────────────────────────────────────────────
-  # Final build
-  # Only runs when ALL three gates pass. Produces the shaded JARs and uploads
-  # them as artifacts on pushes to main (not on PRs, to avoid artifact spam).
-  # ───────────────────────────────────────────────────────────────────────────
-  build:
-    name: Build JARs
+  runtime:
+    needs: test
+    uses: ./.github/workflows/runtime-tests.yml
+    with:
+      bundle: ${{ needs.test.outputs.bundle }}
+      version: ${{ needs.test.outputs.version }}
+
+  compatibility:
+    uses: ./.github/workflows/compatibility.yml
+
+  readiness:
+    name: Release readiness
+    if: always()
+    needs: [checkstyle, compile, validate, test, compatibility, runtime]
     runs-on: ubuntu-latest
-    needs: [checkstyle, test, validate]
-
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: '21'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-
-      - name: Set up JDK 25
-        uses: actions/setup-java@v4
-        with:
-          java-version: '25'
-          distribution: ${{ env.JAVA_DISTRIBUTION }}
-          cache: maven
-
-      - name: Configure Maven Toolchains
+      - name: Require successful results for every build and test job
+        env:
+          RESULTS: ${{ toJSON(needs) }}
         run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/toolchains.xml << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <toolchains>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>21</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_21_X64 }}</jdkHome></configuration>
-            </toolchain>
-            <toolchain>
-              <type>jdk</type>
-              <provides><version>25</version></provides>
-              <configuration><jdkHome>${{ env.JAVA_HOME_25_X64 }}</jdkHome></configuration>
-            </toolchain>
-          </toolchains>
-          EOF
+          python3 - <<'PYTHON'
+          import json, os, sys
+          results = json.loads(os.environ["RESULTS"])
+          for job, status in results.items():
+              print(f"{job}: {status['result']}")
+          if any(job["result"] != "success" for job in results.values()):
+              sys.exit("Release readiness failed. Every required job must run and succeed.")
+          PYTHON
 
-      - name: Set JAVA_HOME to 21
-        run: echo "JAVA_HOME=${{ env.JAVA_HOME_21_X64 }}" >> $GITHUB_ENV
-
-      - name: Build
-        run: mvn -B package -DskipTests --no-transfer-progress
-
+  build:
+    name: Distribute verified JARs
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    needs: [readiness, test]
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ needs.test.outputs.bundle }}
+          path: bundle
       - name: Upload Paper JAR
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: telehop-paper
-          path: paper/target/telehop-paper-*.jar
+          path: bundle/telehop-paper-*.jar
           if-no-files-found: error
 
       - name: Upload Velocity JAR
         if: github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: telehop-velocity
-          path: velocity/target/telehop-velocity-*.jar
+          path: bundle/telehop-velocity-*.jar
           if-no-files-found: error
