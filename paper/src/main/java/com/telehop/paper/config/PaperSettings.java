@@ -365,7 +365,11 @@ public record PaperSettings(
     }
 
     private static Sound parseSound(String name) {
-        try { return Sound.valueOf(name.toUpperCase()); }
-        catch (Exception e) { return Sound.ENTITY_ENDERMAN_TELEPORT; }
+        // Sound changed from an enum to an interface during 1.21. Both expose the named constants.
+        try {
+            return (Sound) Sound.class.getField(name.toUpperCase(java.util.Locale.ROOT)).get(null);
+        } catch (NoSuchFieldException | IllegalAccessException | ClassCastException ignored) {
+            return Sound.ENTITY_ENDERMAN_TELEPORT;
+        }
     }
 }

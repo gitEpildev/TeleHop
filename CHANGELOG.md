@@ -17,7 +17,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
-- The Paper build now uses Java 21 class files throughout so older Paper servers can remap the entire plugin. Newer Paper servers still run on Java 25.
+- The Paper build now uses Java 21 class files throughout so older Paper servers can remap the entire plugin. Newer Paper servers still run on Java 25. Configured teleport sounds now load across the full 1.21 series.
 - Players sharing a backend can travel through different proxies. Named spawn requests and replies follow the traveller's connection, including when another player joined the backend first.
 - A rejected transfer clears its pending teleport. Returning to the backend later no longer repeats the failed action.
 - Conversion of an old Paper configuration can resume after an interruption. Existing split files, saved spawns and earlier backups are preserved.
