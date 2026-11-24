@@ -68,6 +68,19 @@ class ChangelogTests(unittest.TestCase):
             changelog.check_update(entry("2.2.0"), "### Added\n\n- Fixed the colour of home labels.")
         changelog.check_update(entry("2.2.0"), "- Fixed home labels on reconnect.")
 
+    def test_push_checks_generated_commit_notes_before_a_release(self):
+        with tempfile.TemporaryDirectory() as tmp, chdir(tmp), patch.dict(os.environ, CHANGE_BASE="", GITHUB_OUTPUT=""):
+            Path("pom.xml").write_text("<project><version>3.0.0</version></project>")
+            Path("CHANGELOG.md").write_text(entry("3.0.0"))
+            with patch.object(prepare, "source_versions"), patch.object(prepare, "notes") as generated:
+                generated.return_value = "- List every TeleHop permission in the README."
+                prepare.prepare(False)
+                generated.assert_called_once_with("3.0.0")
+                generated.return_value = "- Update the color in the README."
+                with self.assertRaisesRegex(ValueError, "UK English spelling 'color'"):
+                    prepare.prepare(False)
+            self.assertFalse(Path("release-bundle").exists())
+
 
 class BuildTests(unittest.TestCase):
     def test_source_checks_reject_child_or_descriptor_drift_without_rewriting_files(self):

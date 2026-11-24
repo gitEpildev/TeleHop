@@ -21,6 +21,7 @@ LuckPerms
 Modrinth
 MySQL
 PEM
+README
 Redis
 respawn
 RTP

@@ -19,7 +19,7 @@ Prepare the version in source control first. The requested version, newest dated
 
 GitHub receives a release with separate Paper and Velocity JARs. Modrinth receives one entry per loader, using the files downloaded from GitHub and the GitHub release body. The Paper entry lists published Paper server versions. The Velocity entry lists client versions, including Minecraft 1.21.2, which shares the 1.21.3 protocol. [Platform table](../../README.md#installation)
 
-The default public notes include the reviewed changelog entry and group commits since the nearest reachable previous version tag. For the first release, history starts after the standalone 2.2.0 reconciliation. Use conventional commit subjects such as `fix(paper): respect the self-coordinate permission`. A `!` or `BREAKING CHANGE:` footer places the change in the breaking changes section.
+The default public notes include the reviewed changelog entry and group commits since the nearest reachable previous version tag. Push and pull request CI checks the spelling and formatting of these generated notes before the release is started. For the first release, history starts after the standalone 2.2.0 reconciliation. Use conventional commit subjects such as `fix(paper): respect the self-coordinate permission`. A `!` or `BREAKING CHANGE:` footer places the change in the breaking changes section.
 
 ## Checks before publication
 

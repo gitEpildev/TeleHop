@@ -115,9 +115,9 @@ def prepare(publishing):
 
     if publishing:
         check_product_changes(git("rev-parse", previous_release(version) + "^{commit}"), entry)
-        custom = os.getenv("CUSTOM_NOTES", "").strip()
-        body = custom or (entry + "\n\n" + notes(version))
-        final = checked_notes(version, body)
+    custom = os.getenv("CUSTOM_NOTES", "").strip() if publishing else ""
+    final = checked_notes(version, custom or (entry + "\n\n" + notes(version)))
+    if publishing:
         DIST.mkdir(parents=True, exist_ok=True)
         (DIST / "notes.md").write_text(final)
     if os.getenv("GITHUB_OUTPUT"):
