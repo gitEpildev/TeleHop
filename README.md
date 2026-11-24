@@ -4,7 +4,7 @@ TeleHop connects spawn, homes, warps, random teleportation and player teleport r
 
 **TeleHop 3.0.0** lets you give destinations your own names in `spawns.yml` and let members use `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
 
-[Installation](#installation) · [Commands](#commands) · [Upgrade guide](LEGACY.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Licence](LICENSE)
+[Installation](#installation) · [Commands](#commands) · [Permissions](#permissions) · [Upgrade guide](LEGACY.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Licence](LICENSE)
 
 ## Installation
 
@@ -109,10 +109,126 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 
 `/forcell` is an alias for `/forcelastloc`, including its `tp` and `clear` subcommands. Home lists only show staff actions the viewer has permission to perform.
 
-## Permissions and configuration
+## Permissions
 
-- Grant each staff group the individual nodes it needs. `telehop.admin` grants the management commands. `telehop.tp` grants all four `/tp` forms. `telehop.tphere` controls the pull command separately. [Permission defaults](docs/permissions.md) · [LuckPerms examples](docs/spawns.md#member-moderator-and-administrator-examples)
-- Grant `telehop.homes.1` through `telehop.homes.10` for home slots. Grant a positive limit such as `telehop.warps.3` or use `telehop.warps.unlimited` for personal warps. [Homes](docs/homes.md) · [Warps](docs/warps.md)
+These tables list every permission declared by the Paper plugin and the three permission patterns for named spawns, individual warps and personal warp limits. A permissions manager such as LuckPerms can grant or deny individual nodes.
+
+### Member permissions
+
+Granted to everyone by default.
+
+| Permission | Purpose |
+|---|---|
+| `telehop.spawn` | Use bare `/spawn`. |
+| `telehop.rtp` | Open the random teleport menu. |
+| `telehop.warp` | List and visit global warps. |
+| `telehop.pwarp` | Use personal warp commands. Creating one also requires an allowance. |
+| `telehop.tpa` | Ask to visit a player. |
+| `telehop.tpahere` | Invite a player to you. |
+| `telehop.tpa.accept` | Accept a request. |
+| `telehop.tpa.deny` | Decline a request. |
+| `telehop.tpa.cancel` | Cancel your outgoing request. |
+| `telehop.tpa.toggle` | Toggle incoming requests. |
+| `telehop.homes` | Open the homes menu and travel to a saved home. |
+| `telehop.sethome` | Save a home within your allowance. |
+| `telehop.delhome` | Delete one of your own homes. |
+| `telehop.homes.1` | Allow up to 1 home. |
+| `telehop.lastlocation` | Return to your saved logout location. |
+| `telehop.hub` | Use the optional `/hub` command when enabled. |
+| `telehop.spawn.named` | Choose a named spawn with `/spawn <name>`. Requires `telehop.spawn` and destination access. |
+
+### Operator permissions
+
+Granted to server operators by default. Grant individual nodes to delegate only the actions a group needs.
+
+| Permission | Purpose |
+|---|---|
+| `telehop.tp` | Grants all four player and coordinate teleport permissions listed below. |
+| `telehop.tphere` | Bring another player to your location. |
+| `telehop.admin` | Grants the management permissions listed below. |
+| `telehop.back` | Return to your last pre-teleport location. |
+| `telehop.back.death` | Return to your last death location. |
+| `telehop.rtp.bypasscooldown` | Skip the RTP cooldown. |
+| `telehop.rtp.bypassdelay` | Skip the RTP warmup. |
+| `telehop.tpa.bypasscooldown` | Skip the outgoing TPA or TPA-here request cooldown. |
+| `telehop.warps.unlimited` | Create unlimited personal warps. |
+
+### Staff teleport actions
+
+Each node defaults to false and is granted through `telehop.tp`. You can also grant each action directly.
+
+| Permission | Purpose |
+|---|---|
+| `telehop.tp.player.self` | Visit another player. |
+| `telehop.tp.player.others` | Move one player to another player. |
+| `telehop.tp.coordinates.self` | Teleport yourself to coordinates. |
+| `telehop.tp.coordinates.others` | Teleport another player to coordinates. |
+
+### Staff management actions
+
+Each node defaults to false and is granted through `telehop.admin`. You can also grant each action directly.
+
+| Permission | Purpose |
+|---|---|
+| `telehop.admin.spawn.list` | List named destinations. |
+| `telehop.admin.spawn.set` | Set named spawns and the ordinary backend spawn. |
+| `telehop.admin.spawn.delete` | Delete a named spawn after confirmation. |
+| `telehop.admin.homes.list` | Inspect another player’s homes. |
+| `telehop.admin.homes.visit` | Visit another player’s listed home. |
+| `telehop.admin.homes.set` | Set a home for another player. |
+| `telehop.admin.homes.delete` | Delete a home for another player after confirmation. |
+| `telehop.admin.lastlocation.view` | Inspect a saved logout location. |
+| `telehop.admin.lastlocation.visit` | Visit a saved logout location. |
+| `telehop.admin.lastlocation.clear` | Remove a saved logout location. |
+| `telehop.admin.warps.set` | Create or update a global warp. |
+| `telehop.admin.warps.list` | List personal warps across the network or by owner. |
+| `telehop.admin.warps.delete` | Delete a global warp. |
+| `telehop.admin.playerwarps.delete` | Delete another player’s personal warp. |
+| `telehop.admin.playerinfo` | Inspect a player’s TeleHop data. |
+| `telehop.admin.reload` | Reload supported Paper settings, spawn routes and messages. |
+| `telehop.admin.permissions` | View the in-game permission reference. |
+
+### Additional home slots
+
+These nodes default to false. TeleHop uses the highest granted slot count up to `homes.max-slots`. Members receive `telehop.homes.1` by default.
+
+| Permission | Purpose |
+|---|---|
+| `telehop.homes.2` | Allow up to 2 homes. |
+| `telehop.homes.3` | Allow up to 3 homes. |
+| `telehop.homes.4` | Allow up to 4 homes. |
+| `telehop.homes.5` | Allow up to 5 homes. |
+| `telehop.homes.6` | Allow up to 6 homes. |
+| `telehop.homes.7` | Allow up to 7 homes. |
+| `telehop.homes.8` | Allow up to 8 homes. |
+| `telehop.homes.9` | Allow up to 9 homes. |
+| `telehop.homes.10` | Allow up to 10 homes. |
+
+### Permissions generated from your configuration
+
+| Permission pattern | How it works |
+|---|---|
+| `telehop.spawn.destination.<name>` | Use the destination’s actual name. Public destinations allow travel by default. Restricted destinations require a grant. An explicit denial also blocks a public destination. |
+| `telehop.warp.<name>` | Gives access to one global warp by name. The general `telehop.warp` permission already grants access to all global warps. To offer selected warps only, remove the general grant for that group and grant the named warps. Listing with `/warps` requires the general permission. |
+| `telehop.warps.<number>` | Sets a personal warp allowance. Use a positive whole number such as `telehop.warps.3`. TeleHop takes the highest effective positive allowance. With no allowance a member cannot create personal warps. `telehop.warps.unlimited` removes the limit. |
+
+### LuckPerms console examples
+
+```text
+lp group default permission set telehop.homes.2 true
+lp group default permission set telehop.warps.3 true
+lp group moderator permission set telehop.tp.player.self true
+lp group moderator permission set telehop.admin.homes.list true
+lp group moderator permission set telehop.spawn.destination.staff-room true
+lp group admin permission set telehop.admin true
+lp group admin permission set telehop.tp true
+lp group admin permission set telehop.tphere true
+```
+
+The moderator in this example can inspect a home list. Grant `telehop.admin.homes.visit` as well for visits, or `telehop.admin.homes.delete` for deletion. [More LuckPerms examples](docs/permissions.md#luckperms-quick-setup)
+
+## Configuration
+
 - Paper uses split YAML files in `plugins/TeleHop/config/`. Set per-backend feature toggles in `features.yml`, RTP menus and region settings in `rtp.yml`, effects in `teleport.yml` and death behaviour in `respawn.yml`. The saved default spawn lives in `plugins/TeleHop/storage.yml`. Restart Paper after changing database settings, command names or optional hub command registration. [Configuration reference](docs/configuration.md)
 - Player messages support English, Dutch, German, Spanish, Chinese and Polish. Edit the files in `plugins/TeleHop/languages/` and reload. [Messages and translations](docs/messages.md)
 - MySQL stores player presence, requests, homes, logout locations and warps. It also stores the backend defaults, routes and named destinations published from Paper, including their worlds, coordinates and access settings. [SQL schema](sql/schema.sql) · [Spawn storage](docs/spawns.md#mysql-upgrades-and-backups)
