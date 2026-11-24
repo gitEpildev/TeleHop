@@ -2,24 +2,16 @@
 
 ## Requirements
 
-| Software   | Minimum Version | Notes                       |
-|------------|----------------|-----------------------------|
-| Paper      | 1.21+          | Folia is not supported      |
-| Velocity   | 3.3+           | BungeeCord is not supported |
-| Java       | 21+            |                             |
-| MySQL      | 8.0+           | MariaDB 10.5+ also works   |
-| LuckPerms  | 5.4+           | Optional                    |
+Install the Paper JAR on each backend and the Velocity JAR from the same TeleHop release on each proxy. Check the Java version required for each instance. [Supported platforms and Java versions](../README.md#installation)
 
-All Paper backends and the Velocity proxy **must connect to the same MySQL database**.
-
----
+All instances connect to the same MySQL 8.0+ or MariaDB 10.5+ database. LuckPerms is optional. Multiple proxies can share player presence through Redis. [Multi-proxy configuration](multi-proxy.md)
 
 ## Step 1 - Create the MySQL Database
 
 ```sql
 CREATE DATABASE telehop;
 CREATE USER 'telehop'@'%' IDENTIFIED BY 'your-secure-password';
-GRANT SELECT, INSERT, UPDATE, DELETE ON telehop.* TO 'telehop'@'%';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER ON telehop.* TO 'telehop'@'%';
 FLUSH PRIVILEGES;
 ```
 
@@ -29,7 +21,7 @@ Use `'telehop'@'localhost'` instead of `'%'` if all servers are on the same mach
 
 ## Step 2 - Install on the Velocity Proxy
 
-1. Place `telehop-velocity-2.3.0.jar` in `plugins/`.
+1. Place `telehop-velocity-3.0.0.jar` in `plugins/`.
 2. Start the proxy. A config is created at `plugins/telehop-velocity/config.properties`.
 3. Edit the config with your MySQL credentials and server list:
 
@@ -53,21 +45,22 @@ Server names must exactly match your `velocity.toml` `[servers]` entries.
 
 ## Step 3 - Install on Each Paper Server
 
-1. Place `telehop-paper-2.3.0.jar` in `plugins/`.
-2. Start the server. Two config files are created:
-   - `plugins/TeleHop/config.yml` - static settings (edit this)
-   - `plugins/TeleHop/storage.yml` - runtime data like spawn location (managed by the plugin)
-3. Edit `config.yml` - **`server-name` must be different on each server**:
+1. Place `telehop-paper-3.0.0.jar` in `plugins/`.
+2. Start the server once to create the split files in `plugins/TeleHop/config/`. Keep `plugins/TeleHop/storage.yml` for the backend's saved default spawn.
+3. In `config/general.yml`, set a unique backend name matching its registration on each Velocity proxy.
 
 ```yaml
-server-name: "usa"        # Must match velocity.toml
+server-name: "usa"
 hub-server: "lobby"
-
 servers:
   lobby: "lobby"
   eu: "eu"
   us: "usa"
+```
 
+4. In `config/database.yml`, enter the shared database details.
+
+```yaml
 mysql:
   host: "127.0.0.1"
   port: 3306
@@ -77,7 +70,7 @@ mysql:
   pool-size: 5
 ```
 
-4. Restart each server.
+5. Restart each server. For an existing installation, check the steps for your installed version. [Legacy upgrade guide](../LEGACY.md)
 
 ---
 
@@ -92,11 +85,11 @@ mysql:
 
 TeleHop supports 6 languages out of the box: English (`en`), Dutch (`nl`), German (`de`), Spanish (`es`), Chinese (`zh`), and Polish (`pl`).
 
-Language files are stored in `plugins/TeleHop/languages/` and are automatically created on first startup. You can edit them freely or create your own (e.g. `fr.yml`). Missing keys in any language automatically fall back to English.
+Language files are stored in `plugins/TeleHop/languages/` and are automatically created on first startup. You can edit them freely or create your own (e.g. `fr.yml`). For a missing key, TeleHop checks the bundled translation for the selected language and then English.
 
 ### Single-Server Setup
 
-Set your language in `config.yml` and restart (or use `/telehop reload`):
+Set your language in `config/general.yml` and restart (or use `/telehop reload`):
 
 ```yaml
 language: "de"   # All players see German
@@ -104,9 +97,9 @@ language: "de"   # All players see German
 
 ### Multi-Server Setup
 
-Each Paper server has its own `config.yml`, so each can use a different language:
+Each Paper server has its own `config/general.yml`, so each can use a different language:
 
-| Server | `config.yml` setting |
+| Server | `config/general.yml` setting |
 |--------|---------------------|
 | EU     | `language: "de"`    |
 | US     | `language: "en"`    |
@@ -118,7 +111,7 @@ The Velocity proxy has no language setting -- it doesn't send player-facing mess
 
 1. Copy `plugins/TeleHop/languages/en.yml` to a new file (e.g. `fr.yml`).
 2. Translate all the values (keep the keys and MiniMessage tags intact).
-3. Set `language: "fr"` in `config.yml`.
+3. Set `language: "fr"` in `config/general.yml`.
 4. Run `/telehop reload` or restart.
 
 ---

@@ -36,13 +36,15 @@ public final class VelocityBootstrap {
                                                Path dataDirectory) throws Exception {
         printBanner(logger, proxy.getPluginManager().fromInstance(plugin).orElseThrow()
                 .getDescription().getVersion().orElseThrow());
+        String runtime = proxy.getVersion().getVersion();
+        if (!runtime.matches("[34]\\..*")) throw new IllegalStateException("Unsupported Velocity version " + runtime);
+        logger.info("Using Velocity {} shared messaging API (runtime {})", runtime.charAt(0), runtime);
         VelocityServiceRegistry reg = new VelocityServiceRegistry();
 
         VelocitySettings settings = loadSettings(plugin, dataDirectory);
         reg.setSettings(settings);
 
-        DatabaseManager db = new DatabaseManager(settings.databaseConfig());
-        db.initSchema();
+        DatabaseManager db = DatabaseManager.open(settings.databaseConfig());
         reg.setDatabaseManager(db);
 
         VelocityPlayerTracker tracker = new VelocityPlayerTracker(

@@ -42,8 +42,8 @@ public class HomeGui {
                 Gui gui = Gui.gui()
                         .title(plugin.messageService().deserialize(cfg.homeGuiTitle()))
                         .rows(rows)
+                        .disableAllInteractions()
                         .create();
-                gui.setDefaultClickAction(event -> event.setCancelled(true));
 
                 int totalDisplaySlots = cfg.homeMaxSlots();
                 int slotsPerRow = Math.min(5, totalDisplaySlots);
@@ -112,8 +112,8 @@ public class HomeGui {
         Gui gui = Gui.gui()
                 .title(plugin.messageService().deserialize("<gold>" + home.name()))
                 .rows(3)
+                .disableAllInteractions()
                 .create();
-        gui.setDefaultClickAction(event -> event.setCancelled(true));
 
         gui.setItem(12, ItemBuilder.from(buildItem(Material.LIME_WOOL, "<green>Teleport",
                 List.of("<gray>Go to " + home.name()))).asGuiItem(click -> {
@@ -134,8 +134,8 @@ public class HomeGui {
         Gui gui = Gui.gui()
                 .title(plugin.messageService().deserialize("<red>Delete " + home.name() + "?"))
                 .rows(3)
+                .disableAllInteractions()
                 .create();
-        gui.setDefaultClickAction(event -> event.setCancelled(true));
 
         gui.setItem(12, ItemBuilder.from(buildItem(Material.LIME_WOOL, "<green>Confirm", List.of()))
                 .asGuiItem(click -> {
@@ -164,7 +164,7 @@ public class HomeGui {
             packet.put("postAction", "HOME");
             packet.put("homeName", home.name());
             packet.put("homeUuid", home.uuid());
-            plugin.messaging().send(packet);
+            plugin.messaging().send(player, packet);
             player.sendMessage(plugin.msg("home-teleporting", Map.of("name", home.name())));
             return;
         }

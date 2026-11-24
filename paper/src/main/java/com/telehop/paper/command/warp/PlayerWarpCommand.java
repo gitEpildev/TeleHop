@@ -152,7 +152,7 @@ public class PlayerWarpCommand extends BaseCommand {
     }
 
     @Subcommand("admin del|admin delete|admin remove")
-    @CommandPermission("telehop.admin")
+    @CommandPermission(PermissionNodes.ADMIN_PLAYERWARPS_DELETE)
     @Description("Admin: delete any player's warp")
     @CommandCompletion("@networkplayers @nothing")
     public void adminDel(Player player, String targetName, String warpName) {
@@ -194,13 +194,14 @@ public class PlayerWarpCommand extends BaseCommand {
 
     private void teleportToOwn(Player player, String name) {
         String uuid = player.getUniqueId().toString();
-        plugin.playerWarpService().find(uuid, name).thenAccept(opt -> {
+        plugin.playerWarpService().find(uuid, name).thenAccept(opt -> Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
             if (opt.isEmpty()) {
                 player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", name)));
                 return;
             }
             doTeleport(player, opt.get());
-        });
+        }));
     }
 
     private void teleportToOther(Player player, String targetName, String warpName) {
@@ -212,13 +213,14 @@ public class PlayerWarpCommand extends BaseCommand {
         }
 
         String targetUuid = target.getUniqueId().toString();
-        plugin.playerWarpService().findPublic(targetUuid, warpName).thenAccept(opt -> {
+        plugin.playerWarpService().findPublic(targetUuid, warpName).thenAccept(opt -> Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
             if (opt.isEmpty()) {
                 player.sendMessage(plugin.msg("pwarp-not-yours", Map.of("name", warpName)));
                 return;
             }
             doTeleport(player, opt.get());
-        });
+        }));
     }
 
     private void doTeleport(Player player, PlayerWarpRecord warp) {
@@ -230,7 +232,7 @@ public class PlayerWarpCommand extends BaseCommand {
             }
             player.sendMessage(plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
             Location loc = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
-            Bukkit.getScheduler().runTask(plugin, () -> player.teleportAsync(loc));
+            player.teleportAsync(loc);
         } else {
             player.sendMessage(plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
             NetworkPacket packet = NetworkPacket.request(
@@ -240,7 +242,7 @@ public class PlayerWarpCommand extends BaseCommand {
                     .put("postAction", "PWARP")
                     .put("pwarpOwner", warp.ownerUuid())
                     .put("pwarpName", warp.name());
-            plugin.messaging().send(packet);
+            plugin.messaging().send(player, packet);
         }
     }
 

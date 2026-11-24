@@ -1,53 +1,96 @@
 package com.telehop.paper.config;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 /**
- * One-time migration: reads the legacy monolithic {@code config.yml},
- * writes split YAML files into {@code config/}, and renames the old
- * file to {@code config.yml.old}.
+ * Migrates the original Paper configuration while preserving the input and any existing split files.
  */
 public final class ConfigMigrator {
+    private static final String STAGING = ".telehop-legacy-migration";
+    private static final List<String> SPLIT_FILES = List.of(
+            "database.yml", "features.yml", "teleport.yml", "tpa.yml", "rtp.yml", "home.yml", "general.yml");
 
     private ConfigMigrator() {}
 
+    /** A staging directory marks an interrupted migration, even after general.yml was published. */
     public static boolean needsMigration(JavaPlugin plugin) {
-        File configDir = new File(plugin.getDataFolder(), "config");
-        File general = new File(configDir, "general.yml");
-        File legacy = new File(plugin.getDataFolder(), "config.yml");
-        return !general.exists() && legacy.exists();
+        Path root = plugin.getDataFolder().toPath();
+        return Files.exists(root.resolve(STAGING))
+                || Files.exists(root.resolve("config.yml")) && !Files.isRegularFile(root.resolve("config/general.yml"));
     }
 
-    public static void migrate(JavaPlugin plugin) {
-        File legacy = new File(plugin.getDataFolder(), "config.yml");
-        FileConfiguration old = YamlConfiguration.loadConfiguration(legacy);
-        File configDir = new File(plugin.getDataFolder(), "config");
-        configDir.mkdirs();
-
-        try {
-            writeGeneral(old, new File(configDir, "general.yml"));
-            writeDatabase(old, new File(configDir, "database.yml"));
-            writeFeatures(old, new File(configDir, "features.yml"));
-            writeTeleport(old, new File(configDir, "teleport.yml"));
-            writeTpa(old, new File(configDir, "tpa.yml"));
-            writeRtp(old, new File(configDir, "rtp.yml"));
-            writeHome(new File(configDir, "home.yml"));
-
-            File backup = new File(plugin.getDataFolder(), "config.yml.old");
-            if (backup.exists()) backup.delete();
-            legacy.renameTo(backup);
-
-            plugin.getLogger().info("Migrated config.yml -> config/ (7 files). Old file renamed to config.yml.old");
-        } catch (IOException e) {
-            plugin.getLogger().log(Level.SEVERE, "Config migration failed", e);
+    /** Publishes validated YAML before archiving the legacy source. A failed attempt can run again at startup. */
+    public static void migrate(JavaPlugin plugin) throws IOException, InvalidConfigurationException {
+        Path root = plugin.getDataFolder().toPath();
+        Path legacy = root.resolve("config.yml");
+        Path stage = root.resolve(STAGING);
+        Path config = root.resolve("config");
+        if (Files.notExists(legacy)) {
+            // Only the empty staging directory can remain after the final archive move.
+            if (!Files.isDirectory(stage) || !Files.isRegularFile(root.resolve("config.yml.old"))
+                    || !Files.isRegularFile(root.resolve("storage.yml"))
+                    || !SPLIT_FILES.stream().allMatch(name -> Files.isRegularFile(config.resolve(name)))) {
+                throw new IOException("Incomplete legacy migration: restore " + legacy + " to resume");
+            }
+            Files.delete(stage);
+            return;
         }
+
+        var old = readYaml(legacy);
+        Files.createDirectories(stage);
+        writeGeneral(old, stage.resolve("general.yml").toFile());
+        writeDatabase(old, stage.resolve("database.yml").toFile());
+        writeFeatures(old, stage.resolve("features.yml").toFile());
+        writeTeleport(old, stage.resolve("teleport.yml").toFile());
+        writeTpa(old, stage.resolve("tpa.yml").toFile());
+        writeRtp(old, stage.resolve("rtp.yml").toFile());
+        writeHome(stage.resolve("home.yml").toFile());
+        StorageManager.legacySpawn(old).save(stage.resolve("storage.yml").toFile());
+
+        Files.createDirectories(config);
+        for (String name : SPLIT_FILES) {
+            publish(stage.resolve(name), config.resolve(name));
+        }
+        publish(stage.resolve("storage.yml"), root.resolve("storage.yml"));
+
+        Path backup = root.resolve("config.yml.old");
+        for (int suffix = 1; Files.exists(backup); suffix++) {
+            backup = root.resolve("config.yml.old." + suffix);
+        }
+        Files.move(legacy, backup);
+        Files.delete(stage);
+        plugin.getLogger().info("Migrated legacy configuration. Original saved as " + backup.getFileName());
+    }
+
+    private static void publish(Path staged, Path target) throws IOException, InvalidConfigurationException {
+        if (Files.exists(target)) {
+            // Existing settings may have been customised or published before an interruption.
+            readYaml(target);
+            Files.delete(staged);
+        } else {
+            Files.move(staged, target);
+        }
+    }
+
+    private static YamlConfiguration readYaml(Path path) throws IOException, InvalidConfigurationException {
+        var yaml = new YamlConfiguration();
+        try {
+            yaml.load(path.toFile());
+        } catch (InvalidConfigurationException ex) {
+            // Parser messages can echo lines containing database credentials.
+            throw new InvalidConfigurationException("Invalid YAML in " + path);
+        }
+        return yaml;
     }
 
     private static void writeGeneral(FileConfiguration old, File target) throws IOException {

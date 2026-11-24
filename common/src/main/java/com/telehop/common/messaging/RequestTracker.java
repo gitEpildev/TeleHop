@@ -23,7 +23,7 @@ import java.util.concurrent.TimeoutException;
  */
 public class RequestTracker {
     private final ScheduledExecutorService scheduler;
-    private final Map<UUID, CompletableFuture<NetworkPacket>> pending = new ConcurrentHashMap<>();
+    private final Map<UUID, Pending> pending = new ConcurrentHashMap<>();
     private final Map<UUID, Long> seenRequests = new ConcurrentHashMap<>();
 
     public RequestTracker(ScheduledExecutorService scheduler) {
@@ -31,21 +31,39 @@ public class RequestTracker {
     }
 
     public CompletableFuture<NetworkPacket> track(NetworkPacket request, long timeoutMs) {
-        CompletableFuture<NetworkPacket> future = new CompletableFuture<>();
-        pending.put(request.getRequestId(), future);
-        scheduler.schedule(() -> {
-            CompletableFuture<NetworkPacket> pendingFuture = pending.remove(request.getRequestId());
-            if (pendingFuture != null && !pendingFuture.isDone()) {
-                pendingFuture.completeExceptionally(new TimeoutException("Request timed out: " + request.getRequestId()));
-            }
-        }, timeoutMs, TimeUnit.MILLISECONDS);
+        return track(request, timeoutMs, null);
+    }
+
+    /** Pin a reply to the very same live connection, even across reconnects with the same UUID. */
+    public CompletableFuture<NetworkPacket> track(NetworkPacket request, long timeoutMs, Object carrier) {
+        var future = new CompletableFuture<NetworkPacket>();
+        UUID id = request.getRequestId();
+        var entry = new Pending(carrier, request.getTargetServer(), request.getOriginServer(), future);
+        if (pending.putIfAbsent(id, entry) != null) {
+            throw new IllegalArgumentException("Request is already pending: " + id);
+        }
+        var timeout = scheduler.schedule(() -> future.completeExceptionally(
+                new TimeoutException("Request timed out: " + id)), timeoutMs, TimeUnit.MILLISECONDS);
+        future.whenComplete((reply, error) -> {
+            pending.remove(id, entry);
+            timeout.cancel(false);
+        });
         return future;
     }
 
     public void complete(NetworkPacket response) {
-        CompletableFuture<NetworkPacket> future = pending.remove(response.getRequestId());
-        if (future != null) {
-            future.complete(response);
+        complete(response, null);
+    }
+
+    public void complete(NetworkPacket response, Object carrier) {
+        Pending entry = pending.get(response.getRequestId());
+        if (entry != null && entry.accepts(response, carrier)) entry.future().complete(response);
+    }
+
+    private record Pending(Object carrier, String origin, String target, CompletableFuture<NetworkPacket> future) {
+        boolean accepts(NetworkPacket reply, Object inbound) {
+            return carrier == null || (carrier == inbound && origin.equalsIgnoreCase(reply.getOriginServer())
+                    && target.equalsIgnoreCase(reply.getTargetServer()));
         }
     }
 
@@ -56,8 +74,7 @@ public class RequestTracker {
             return true;
         }
         if (now - firstSeen > dedupeWindowMs) {
-            seenRequests.put(requestId, now);
-            return true;
+            return seenRequests.replace(requestId, firstSeen, now);
         }
         return false;
     }

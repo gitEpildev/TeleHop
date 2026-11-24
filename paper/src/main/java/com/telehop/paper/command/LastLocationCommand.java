@@ -54,7 +54,7 @@ public class LastLocationCommand extends BaseCommand {
                     packet.put("z", String.valueOf(record.z()));
                     packet.put("yaw", String.valueOf(record.yaw()));
                     packet.put("pitch", String.valueOf(record.pitch()));
-                    plugin.messaging().send(packet);
+                    plugin.messaging().send(player, packet);
                     player.sendMessage(plugin.msg("lastloc-teleporting"));
                     return;
                 }

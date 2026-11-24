@@ -28,3 +28,6 @@ tpatoggle: [tpatoggle]
 tphere: [tphere]
 warp: [warp]
 warps: [warps]
+
+# Registered only when enabled in spawns.yml.
+hub: [hub]

@@ -13,6 +13,10 @@ public class PendingActionManager {
         pendingByPlayer.put(action.playerUuid(), action);
     }
 
+    public boolean remove(PendingAction expected) {
+        return pendingByPlayer.remove(expected.playerUuid(), expected);
+    }
+
     public PendingAction take(UUID playerUuid) {
         return pendingByPlayer.remove(playerUuid);
     }

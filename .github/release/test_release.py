@@ -6,11 +6,25 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
+import compatibility
 import prepare
 import publish
 
 
 class ReleaseTests(unittest.TestCase):
+    def test_every_supported_release_has_matching_server_or_client_coverage(self):
+        all_clients = {"1.21", *(f"1.21.{patch}" for patch in range(1, 12)), "26.1.2", "26.2"}
+        paper = set(compatibility.game_versions("paper"))
+        self.assertEqual(paper, all_clients - {"1.21.2"})
+        self.assertEqual(set(compatibility.game_versions("velocity")), all_clients)
+        rows = compatibility.runtime_matrix()["include"]
+        self.assertEqual({r["server"][6:] for r in rows if r["server"].startswith("paper-")}, paper)
+        self.assertIn({"server": "paper-1.21.3", "java": "21", "suite": "client-login", "client": "1.21.2"}, rows)
+        tags = [{"version": v, "version_type": "release"} for v in all_clients]
+        publish.check_modrinth_versions(tags)
+        with self.assertRaisesRegex(ValueError, "26.2"):
+            publish.check_modrinth_versions([t for t in tags if t["version"] != "26.2"])
+
     def test_channels_and_invalid_inputs(self):
         for channel in ("alpha", "beta"):
             self.assertEqual(prepare.release_version("2.3.0", channel), (f"2.3.0-{channel}", channel))
@@ -56,6 +70,7 @@ class ReleaseTests(unittest.TestCase):
                 data = publish.json.loads(args[1].removeprefix("data="))
                 platform, = data["loaders"]
                 uploads.append(platform)
+                self.assertEqual(data["game_versions"], compatibility.game_versions(platform))
                 if uploads == ["paper", "velocity"]:
                     raise RuntimeError("temporary Modrinth failure")
                 jar = assets / f"telehop-{platform}-{version}.jar"

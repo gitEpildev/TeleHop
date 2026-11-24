@@ -5,6 +5,29 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [3.0.0] - 2026-11-24
+
+### Added
+
+- Members can select a spawn by its configured name across worlds and servers. Owners can set a default route for a backend or a single world and enable a separate hub command.
+- Staff can delegate home inspection, visits, removal and player teleport commands separately. Restricted destinations support individual permission grants.
+- Owners can add, rename or remove a destination in YAML and reload it in game. MySQL stores the complete locations, access rules and routes for each backend.
+- The proxy build recognises Velocity 3 and 4. The runtime checks cover both generations.
+- Release checks start every published Paper server version in the supported 1.21 series, plus 26.1.2 and 26.2. A Minecraft 1.21.2 client connects through Velocity to Paper 1.21.3.
+
+### Fixed
+
+- The Paper build now uses Java 21 class files throughout so older Paper servers can remap the entire plugin. Newer Paper servers still run on Java 25.
+- Players sharing a backend can travel through different proxies. Named spawn requests and replies follow the traveller's connection, including when another player joined the backend first.
+- A rejected transfer clears its pending teleport. Returning to the backend later no longer repeats the failed action.
+- Conversion of an old Paper configuration can resume after an interruption. Existing split files, saved spawns and earlier backups are preserved.
+- Concurrent server starts now share one database upgrade at a time. A conflicting legacy home name stops the upgrade and preserves the original slot for recovery.
+- Visiting a listed home uses the selected owner's location. Existing language files inherit new messages in the selected language.
+
+### Upgrade
+
+Replace the Paper and Velocity builds together. The existing spawn location and regional hub remain the defaults. Follow the [spawn guide](docs/spawns.md) to enable routing and grant staff permissions.
+
 ## [2.3.0] - 2026-11-23
 
 ### Added

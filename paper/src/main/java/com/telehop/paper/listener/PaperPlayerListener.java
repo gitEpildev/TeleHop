@@ -33,6 +33,7 @@ public class PaperPlayerListener implements Listener {
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
+        plugin.services().spawns().forget(event.getPlayer().getUniqueId());
         plugin.playerService().remove(event.getPlayer().getUniqueId());
         plugin.services().backLocationManager().remove(event.getPlayer().getUniqueId());
         plugin.tpaRuntimeManager().clearToggle(event.getPlayer().getUniqueId());

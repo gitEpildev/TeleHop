@@ -1,5 +1,5 @@
 name: TeleHop
-version: 2.3.0
+version: 3.0.0
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]
@@ -85,6 +85,8 @@ permissions:
     description: Admin teleport
     default: op
     children:
+      telehop.tp.player.self: true
+      telehop.tp.player.others: true
       telehop.tp.coordinates.self: true
       telehop.tp.coordinates.others: true
   telehop.tp.coordinates.self:
@@ -99,6 +101,24 @@ permissions:
   telehop.admin:
     description: Admin commands - setwarp, delwarp, listwarps, forcedelwarp, forcedelhome, telehop reload/perms
     default: op
+    children:
+      telehop.admin.spawn.list: true
+      telehop.admin.spawn.set: true
+      telehop.admin.spawn.delete: true
+      telehop.admin.homes.list: true
+      telehop.admin.homes.visit: true
+      telehop.admin.homes.set: true
+      telehop.admin.homes.delete: true
+      telehop.admin.lastlocation.view: true
+      telehop.admin.lastlocation.visit: true
+      telehop.admin.lastlocation.clear: true
+      telehop.admin.warps.set: true
+      telehop.admin.warps.list: true
+      telehop.admin.warps.delete: true
+      telehop.admin.playerwarps.delete: true
+      telehop.admin.playerinfo: true
+      telehop.admin.reload: true
+      telehop.admin.permissions: true
   telehop.back:
     description: Use /back (last teleport location)
     default: op
@@ -117,3 +137,45 @@ permissions:
   telehop.warps.unlimited:
     description: Unlimited player warps
     default: op
+  telehop.admin.spawn.list:
+    default: false
+  telehop.admin.spawn.set:
+    default: false
+  telehop.admin.spawn.delete:
+    default: false
+  telehop.admin.homes.list:
+    default: false
+  telehop.admin.homes.visit:
+    default: false
+  telehop.admin.homes.set:
+    default: false
+  telehop.admin.homes.delete:
+    default: false
+  telehop.admin.lastlocation.view:
+    default: false
+  telehop.admin.lastlocation.visit:
+    default: false
+  telehop.admin.lastlocation.clear:
+    default: false
+  telehop.admin.warps.set:
+    default: false
+  telehop.admin.warps.list:
+    default: false
+  telehop.admin.warps.delete:
+    default: false
+  telehop.admin.playerwarps.delete:
+    default: false
+  telehop.admin.playerinfo:
+    default: false
+  telehop.admin.reload:
+    default: false
+  telehop.admin.permissions:
+    default: false
+  telehop.hub:
+    default: true
+  telehop.spawn.named:
+    default: true
+  telehop.tp.player.self:
+    default: false
+  telehop.tp.player.others:
+    default: false

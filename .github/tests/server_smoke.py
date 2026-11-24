@@ -1,6 +1,7 @@
 """Boot unmodified distribution JARs twice against a disposable MySQL service."""
 import argparse
 import hashlib
+import json
 import os
 from pathlib import Path
 import re
@@ -10,11 +11,12 @@ import subprocess
 import time
 import zipfile
 
-# Pinned PaperMC downloads, identified by the digest published by the Fill API.
+COMPATIBILITY = json.loads((Path(__file__).resolve().parents[1] / "release/compatibility.json").read_text())
+# The release job and the runtime checks use the same PaperMC download pins.
 SERVERS = {
-    "paper-1.21.11": ("paper-1.21.11-132.jar", "5ffef465eeeb5f2a3c23a24419d97c51afd7dbb4923ff42df9a3f58bba1ccfba"),
-    "paper-26.1.2": ("paper-26.1.2-74.jar", "1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7"),
-    "velocity-3.3": ("velocity-3.3.0-SNAPSHOT-436.jar", "06bb2a6ac16228a2f33a0336952624e6918a97535d36a3660725b18e2a6efdfb"),
+    f"{platform}-{version}": (build["file"], build["sha256"])
+    for platform in ("paper", "velocity")
+    for version, build in COMPATIBILITY[platform].items()
 }
 ROWS = [
     ("00000000-0000-4000-8000-000000000001", 1, "lobby", "world", 5, 64, -9, 0, 90),
@@ -35,11 +37,31 @@ def seed_legacy_homes():
         uuid VARCHAR(36) NOT NULL, slot INT NOT NULL, server VARCHAR(64) NOT NULL,
         world VARCHAR(64) NOT NULL, x DOUBLE NOT NULL, y DOUBLE NOT NULL, z DOUBLE NOT NULL,
         yaw FLOAT NOT NULL, pitch FLOAT NOT NULL, PRIMARY KEY (uuid, slot))""")
+    mysql("""CREATE TABLE tpa_requests (
+        sender_uuid VARCHAR(36) NOT NULL, target_uuid VARCHAR(36) NOT NULL, type VARCHAR(16) NOT NULL,
+        expiry BIGINT NOT NULL, PRIMARY KEY (sender_uuid, target_uuid))""")
+    mysql("INSERT INTO tpa_requests VALUES ('00000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000004', 'TPA', 4102444800000)")
     for row in ROWS:
         mysql("INSERT INTO homes VALUES " + repr(row))
 
 
+def check_conflicting_upgrade(bundle, version):
+    # Reproduce a partially migrated 1.x schema with a conflicting name for one owner.
+    mysql("ALTER TABLE homes ADD name VARCHAR(32) NOT NULL DEFAULT ''")
+    mysql("UPDATE homes SET name='Home 2' WHERE slot=1")
+    subprocess.run(["java", "-cp", str(bundle / f"telehop-velocity-{version}.jar"),
+                    str(Path(__file__).with_name("LegacyMigrationCheck.java"))], check=True)
+    retained = mysql("SELECT uuid,slot,server,world,x,y,z,yaw,pitch FROM homes ORDER BY uuid,slot")
+    assert retained == ["\t".join(map(str, row)) for row in ROWS]
+    key = mysql("SELECT column_name FROM information_schema.statistics WHERE table_schema=DATABASE() "
+                "AND table_name='homes' AND index_name='PRIMARY' ORDER BY seq_in_index")
+    assert key == ["uuid", "slot"]
+    mysql("UPDATE homes SET name='' WHERE slot=1")
+
+
 def check_migration():
+    timestamp = mysql("SELECT sent_at FROM tpa_requests WHERE sender_uuid='00000000-0000-4000-8000-000000000003'")
+    assert timestamp == ["4102444800000"], timestamp
     actual = mysql("SELECT uuid,name,server,world,x,y,z,yaw,pitch FROM homes ORDER BY uuid,name")
     expected = ["\t".join(map(str, [uuid, f"Home {slot}", *fields])) for uuid, slot, *fields in ROWS]
     if actual != expected:
@@ -75,6 +97,25 @@ def configure(directory, platform, bundle, version):
         (config / "config.properties").write_text(
             f"mysql.host=127.0.0.1\nmysql.port={port}\nmysql.database=telehop_ci\n"
             "mysql.username=telehop\nmysql.password=ci-password\n")
+
+
+def use_legacy_paper_config(directory):
+    plugin = directory / "plugins/TeleHop"
+    database = plugin / "config/database.yml"
+    legacy = (database.read_text() + "server-name: legacy-review\nhub-server: legacy-review\n"
+              "spawn: {location: {world: world, x: 14.5, y: 86, z: -9.5, yaw: 67, pitch: -12}}\n")
+    (plugin / "config.yml").write_text(legacy)
+    database.unlink()  # This fixture starts with the pre-split layout.
+    return legacy
+
+
+def check_legacy_paper_config(directory, original):
+    plugin = directory / "plugins/TeleHop"
+    assert (plugin / "config.yml.old").read_text() == original
+    assert not (plugin / "config.yml").exists()
+    assert (plugin / "config/database.yml").is_file() and (plugin / "storage.yml").is_file()
+    assert mysql("SELECT default_world,default_x,default_y,default_z,default_yaw,default_pitch "
+                 "FROM spawn_backends WHERE server='legacy-review'") == ["world\t14.5\t86\t-9.5\t67\t-12"]
 
 
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
@@ -132,12 +173,18 @@ def main():
         raise ValueError("Server download checksum mismatch")
     platform = args.server.split("-")[0]
     configure(directory, platform, args.bundle, args.version)
+    legacy = use_legacy_paper_config(directory) if args.server == "paper-1.21.11" else None
     seed_legacy_homes()
+    if args.server == "velocity-3.3":
+        check_conflicting_upgrade(args.bundle, args.version)
     for second in (False, True):
         if second and platform == "paper":
+            (directory / "plugins/TeleHop/config/spawns.yml").write_text("hub-command: {enabled: true}\n")
             (directory / "plugins/TeleHop/config/commands.yml").write_text("tp: [networktp, ntp]\n")
         boot(directory, platform, second)
         check_migration()
+        if legacy:
+            check_legacy_paper_config(directory, legacy)
     print(f"{args.server}: both startups, shutdowns and legacy home migration checks passed")
 
 

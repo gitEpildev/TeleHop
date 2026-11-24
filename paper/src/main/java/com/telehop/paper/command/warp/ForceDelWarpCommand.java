@@ -2,6 +2,7 @@ package com.telehop.paper.command.warp;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
+import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -9,7 +10,6 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 
 @CommandAlias("%{cmd-forcedelwarp}")
-@CommandPermission("telehop.admin")
 public class ForceDelWarpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -20,6 +20,11 @@ public class ForceDelWarpCommand extends BaseCommand {
     @Default
     @CommandCompletion("@warps|@networkplayers @nothing")
     public void execute(Player player, String arg1, @Optional String arg2) {
+        String permission = arg2 == null ? PermissionNodes.ADMIN_WARPS_DELETE : PermissionNodes.ADMIN_PLAYERWARPS_DELETE;
+        if (!player.hasPermission(permission)) {
+            player.sendMessage(plugin.msg("no-permission"));
+            return;
+        }
         if (arg2 != null && !arg2.isBlank()) {
             deletePlayerWarp(player, arg1, arg2);
         } else {

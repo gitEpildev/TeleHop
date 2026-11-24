@@ -61,7 +61,7 @@ public class NetworkPaperPlugin extends JavaPlugin {
         return services.settings().isFeatureEnabled(feature);
     }
 
-    public void reload() {
-        Bootstrap.reload(this, services);
+    public java.util.concurrent.CompletableFuture<Void> reload() {
+        return Bootstrap.reload(this, services);
     }
 }

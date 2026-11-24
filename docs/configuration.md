@@ -1,15 +1,22 @@
 # Configuration Reference
 
-TeleHop uses **modular config files** on each Paper server, stored in `plugins/TeleHop/config/`:
+## Spawn routes in 3.0.0
+
+Choose a spawn by backend, world or name. On a single Paper server, players can move between loaded Multiverse worlds. On a network, Velocity connects the player to the owning backend before Paper places them at the saved location. Configure routes in `config/spawns.yml` and save destinations with `/telehop spawn set`. [Configuration, permissions and upgrade instructions](spawns.md)
+
+The paths below are relative to the Paper plugin folder, `plugins/TeleHop/`.
 
 | File | Purpose |
 |------|---------|
-| `config/general.yml` | Server identity, language, messaging, audit |
+| `config/general.yml` | Server identity, regional hubs, language, messaging and audit |
+| `config/spawns.yml` | Named destinations, world routes, backend defaults and optional hub command |
+| `config/commands.yml` | Command names and aliases. Restart Paper after editing |
 | `config/database.yml` | MySQL connection settings |
 | `config/features.yml` | Feature on/off toggles |
 | `config/teleport.yml` | Show-countdown, particles and sounds per teleport type |
 | `config/tpa.yml` | TPA timeout, cooldown, delay, cancel-on-move |
 | `config/rtp.yml` | RTP cooldown, delay, regions, dimensions, GUI |
+| `config/respawn.yml` | Death respawn settings, beds, anchors and excluded worlds |
 | `config/home.yml` | Homes: slots, GUI, bed colours, blocked servers, world/server colours |
 | `storage.yml` | Runtime-mutable values (spawn location). Written by the plugin. |
 
@@ -17,7 +24,7 @@ The split prevents `/telehop reload` or server restarts from overwriting values 
 
 ### Auto-Migration from Legacy `config.yml`
 
-If the plugin detects a `config.yml` but no `config/general.yml`, it performs a one-time migration: splits the old file into the new modular layout and renames `config.yml` to `config.yml.old`.
+Where an old `config.yml` exists and `config/general.yml` has yet to be created, Paper migrates the known settings into the split files. It preserves custom files and archives the source. A failed migration stops startup and resumes after the cause is corrected. [Legacy upgrade guide](../LEGACY.md#from-1x)
 
 > **Reload vs Restart:** Most settings can be reloaded live with `/telehop reload`. However, **MySQL connection settings** (`database.yml`) require a full server restart -- the connection pool is created once at startup.
 
@@ -62,6 +69,7 @@ If the plugin detects a `config.yml` but no `config/general.yml`, it performs a 
 | `features.homes` | boolean | `true` | Enable/disable `/home`, `/sethome` |
 | `features.back` | boolean | `true` | Enable/disable `/back` |
 | `features.tpa-toggle` | boolean | `true` | Enable/disable `/tpatoggle` |
+| `features.random-respawn` | boolean | `true` | Enable random death respawn on this backend |
 | `features.last-location` | boolean | `true` | Enable/disable `/lastlocation` |
 
 When a feature is `false`, its commands still exist but display "This feature is disabled on this server."
@@ -124,7 +132,7 @@ rtp:
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `homes.max-slots` | int | `10` | Maximum home slots (1-10) |
-| `homes.confirm-set` | boolean | `true` | Show confirmation GUI before setting a home |
+| `homes.confirm-set` | boolean | `true` | Retained for compatibility. The homes menu saves an empty slot when clicked and confirms deletion separately. |
 | `homes.gui-title` | string | `"<gradient:red:gold>Your Homes</gradient>"` | Homes GUI title (MiniMessage) |
 | `homes.gui-rows` | int | `5` | Number of rows. Beds are displayed across two rows with a blank row between them. |
 | `homes.bed-set` | string | `"LIME_BED"` | Bed material for occupied home slots |
@@ -186,7 +194,7 @@ Any server not listed displays in plain white.
 
 ## Paper `storage.yml`
 
-Managed by the plugin -- do not edit manually unless setting spawn coordinates.
+Use `/telehop spawn setdefault` in game to save the current backend spawn and publish it to the shared directory.
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|

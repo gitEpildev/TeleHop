@@ -21,6 +21,12 @@ public final class CommandProbe extends JavaPlugin {
                     throw new AssertionError("TeleHop did not register /" + name);
                 }
             }
+            if ((commands.getCommand("telehop:hub") != null) != custom) throw new AssertionError("Optional hub registration");
+            var permissions = Bukkit.getPluginManager();
+            if (!permissions.getPermission("telehop.admin").getChildren().containsKey("telehop.admin.homes.visit")
+                    || !permissions.getPermission("telehop.tp").getChildren().containsKey("telehop.tp.player.self")) {
+                throw new AssertionError("Missing delegated permissions");
+            }
             if (custom) {
                 Command tp = commands.getCommand("tp");
                 Command vanilla = commands.getCommand("minecraft:tp");

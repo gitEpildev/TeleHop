@@ -24,12 +24,17 @@ public final class CommandNames {
     private final Map<String, List<String>> labels;
 
     CommandNames(YamlConfiguration defaults, YamlConfiguration configured) {
+        this(defaults, configured, true);
+    }
+
+    CommandNames(YamlConfiguration defaults, YamlConfiguration configured, boolean hubEnabled) {
         Map<String, List<String>> names = new HashMap<>();
         Set<String> used = new HashSet<>();
         for (String key : configured.getKeys(false)) {
             if (!defaults.contains(key)) throw new IllegalArgumentException("Unknown command in " + RESOURCE + ": " + key);
         }
         for (String key : defaults.getKeys(false)) {
+            if (key.equals("hub") && !hubEnabled) continue;
             Object value = configured.get(key, defaults.get(key));
             if (!(value instanceof List<?> list) || list.isEmpty()) {
                 throw new IllegalArgumentException(RESOURCE + ": " + key + " needs a non-empty list of names");
@@ -44,11 +49,11 @@ public final class CommandNames {
         labels = Map.copyOf(names);
     }
 
-    public static CommandNames load(JavaPlugin plugin) {
+    public static CommandNames load(JavaPlugin plugin, boolean hubEnabled) {
         try (var reader = new InputStreamReader(Objects.requireNonNull(plugin.getResource(RESOURCE)), StandardCharsets.UTF_8)) {
             var configured = new YamlConfiguration();
             configured.load(new File(plugin.getDataFolder(), RESOURCE));
-            return new CommandNames(YamlConfiguration.loadConfiguration(reader), configured);
+            return new CommandNames(YamlConfiguration.loadConfiguration(reader), configured, hubEnabled);
         } catch (IOException | InvalidConfigurationException e) {
             throw new IllegalStateException("Cannot load " + RESOURCE, e);
         }

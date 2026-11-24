@@ -5,13 +5,14 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
+import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 
 @CommandAlias("%{cmd-delwarp}")
-@CommandPermission("telehop.admin")
+@CommandPermission(PermissionNodes.ADMIN_WARPS_DELETE)
 public class DelWarpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

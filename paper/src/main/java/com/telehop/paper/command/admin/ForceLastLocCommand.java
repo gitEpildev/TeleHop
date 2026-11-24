@@ -12,7 +12,6 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 
 @CommandAlias("%{cmd-forcelastloc}")
-@CommandPermission(PermissionNodes.ADMIN)
 public class ForceLastLocCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -22,6 +21,7 @@ public class ForceLastLocCommand extends BaseCommand {
 
     @Default
     @CommandCompletion("@networkplayers")
+    @CommandPermission(PermissionNodes.ADMIN_LASTLOCATION_VIEW)
     public void info(Player sender, String playerName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
         String uuid = target.getUniqueId().toString();
@@ -47,6 +47,7 @@ public class ForceLastLocCommand extends BaseCommand {
 
     @Subcommand("tp")
     @CommandCompletion("@networkplayers")
+    @CommandPermission(PermissionNodes.ADMIN_LASTLOCATION_VISIT)
     public void teleport(Player sender, String playerName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
         String uuid = target.getUniqueId().toString();
@@ -73,7 +74,7 @@ public class ForceLastLocCommand extends BaseCommand {
                     packet.put("z", String.valueOf(loc.z()));
                     packet.put("yaw", String.valueOf(loc.yaw()));
                     packet.put("pitch", String.valueOf(loc.pitch()));
-                    plugin.messaging().send(packet);
+                    plugin.messaging().send(sender, packet);
                     sender.sendMessage(plugin.msg("forcelastloc-tp", Map.of("player", playerName, "server", loc.server())));
                     return;
                 }
@@ -92,6 +93,7 @@ public class ForceLastLocCommand extends BaseCommand {
 
     @Subcommand("clear")
     @CommandCompletion("@networkplayers")
+    @CommandPermission(PermissionNodes.ADMIN_LASTLOCATION_CLEAR)
     public void clear(Player sender, String playerName) {
         OfflinePlayer target = Bukkit.getOfflinePlayer(playerName);
         String uuid = target.getUniqueId().toString();

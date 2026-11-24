@@ -35,6 +35,17 @@ public class NetworkPacket {
         return packet;
     }
 
+    /** Older endpoints recognise PING and ignore the optional capability query. */
+    public static NetworkPacket spawnProbe(String origin, String target, UUID traveller) {
+        return request(PacketType.PING, origin, target)
+                .put("capability", com.telehop.common.NetworkConstants.SPAWN_CAPABILITY)
+                .put("uuid", traveller.toString());
+    }
+
+    public boolean supportsSpawns() {
+        return com.telehop.common.NetworkConstants.SPAWN_CAPABILITY.equals(get("capability"));
+    }
+
     public static NetworkPacket response(NetworkPacket request, boolean success, String errorMessage) {
         NetworkPacket packet = new NetworkPacket();
         packet.requestId = request.requestId;

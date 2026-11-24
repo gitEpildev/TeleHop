@@ -23,6 +23,11 @@ import com.telehop.common.service.WarpService;
 import com.telehop.paper.command.BackCommand;
 import com.telehop.paper.command.RtpCommand;
 import com.telehop.paper.command.SpawnCommand;
+import com.telehop.paper.command.HubCommand;
+import com.telehop.paper.config.SpawnRoutes;
+import com.telehop.paper.service.SpawnService;
+import com.telehop.common.service.SpawnDirectory;
+import com.telehop.common.db.SpawnRepository;
 import com.telehop.paper.command.admin.AdminTeleportCommand;
 import com.telehop.paper.command.admin.ForceDelHomeCommand;
 import com.telehop.paper.command.admin.ForceLastLocCommand;
@@ -73,6 +78,7 @@ import com.telehop.paper.service.TpaRuntimeManager;
 import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
@@ -82,6 +88,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -103,7 +110,7 @@ public final class Bootstrap {
     private static final String[] CONFIG_TEMPLATES = {
             "config/general.yml", "config/database.yml", "config/features.yml",
             "config/teleport.yml", "config/tpa.yml", "config/rtp.yml",
-            "config/commands.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
+            "config/spawns.yml", "config/commands.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
@@ -118,10 +125,17 @@ public final class Bootstrap {
         plugin.setVersionAdapter(versionAdapter);
 
         if (ConfigMigrator.needsMigration(plugin)) {
-            ConfigMigrator.migrate(plugin);
+            try {
+                ConfigMigrator.migrate(plugin);
+            } catch (IOException | InvalidConfigurationException ex) {
+                plugin.getLogger().log(Level.SEVERE, "Could not migrate the legacy Paper configuration", ex);
+                Bukkit.getPluginManager().disablePlugin(plugin);
+                return null;
+            }
         }
         initConfigFiles(plugin);
-        plugin.setCommandNames(CommandNames.load(plugin));
+        SpawnRoutes routes = SpawnRoutes.load(plugin.getDataFolder());
+        plugin.setCommandNames(CommandNames.load(plugin, routes.hubCommand()));
         ServiceRegistry reg = new ServiceRegistry();
 
         PaperSettings settings = PaperSettings.load(plugin);
@@ -146,14 +160,18 @@ public final class Bootstrap {
 
         DatabaseManager db;
         try {
-            db = new DatabaseManager(settings.databaseConfig());
-            db.initSchema();
+            db = DatabaseManager.open(settings.databaseConfig());
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to initialize database: " + e.getMessage());
             Bukkit.getPluginManager().disablePlugin(plugin);
             return null;
         }
         reg.setDatabaseManager(db);
+        reg.setSpawns(new SpawnService(plugin, new SpawnDirectory(db, new SpawnRepository(db.dataSource())), routes, storage));
+        reg.spawns().apply(settings.serverName(), routes, null).exceptionally(error -> {
+            plugin.getLogger().severe("Could not publish spawns.yml: " + error.getMessage());
+            return null;
+        });
 
         reg.setPlayerService(new PlayerService(db, new PlayerRepository(db.dataSource()), new PlayerServerCache()));
         reg.setWarpService(new WarpService(db, new WarpRepository(db.dataSource()), new WarpCache()));
@@ -169,7 +187,8 @@ public final class Bootstrap {
         reg.setTeleportEffectPlayer(effectPlayer);
         reg.teleportService().wire(reg.messageService(), reg.auditLogger(), reg.rtpManager(), effectPlayer, backManager, settings.serverName());
 
-        PaperMessagingManager messaging = new PaperMessagingManager(plugin, settings.dedupeWindowMs(), settings.requestTimeoutMs());
+        PaperMessagingManager messaging = new PaperMessagingManager(plugin, settings.dedupeWindowMs(),
+                settings.requestTimeoutMs(), () -> reg.settings().serverName());
         messaging.register();
         messaging.setHandler(new PacketHandler(plugin, reg));
         reg.setMessaging(messaging);
@@ -198,14 +217,18 @@ public final class Bootstrap {
         clog.info(MINI.deserialize("<red>TeleHop <gray>has been <red>disabled<gray>. Goodbye!"));
     }
 
-    public static void reload(NetworkPaperPlugin plugin, ServiceRegistry reg) {
+    public static java.util.concurrent.CompletableFuture<Void> reload(NetworkPaperPlugin plugin, ServiceRegistry reg) {
+        SpawnRoutes routes = SpawnRoutes.load(plugin.getDataFolder());
         PaperSettings settings = PaperSettings.load(plugin);
-        reg.setSettings(settings);
         initLanguageFiles(plugin);
-        reg.setMessageService(buildMessageService(plugin, settings));
-        reg.warpService().refreshCache();
-        reg.setAuditLogger(new AuditLogger(plugin, settings.auditEnabled()));
-        plugin.getLogger().info("TeleHop configuration reloaded (language: " + settings.language() + ").");
+        var messages = buildMessageService(plugin, settings);
+        return reg.spawns().apply(settings.serverName(), routes, null).thenRun(() -> {
+            reg.setSettings(settings);
+            reg.setMessageService(messages);
+            reg.warpService().refreshCache();
+            reg.setAuditLogger(new AuditLogger(plugin, settings.auditEnabled()));
+            plugin.getLogger().info("Reloaded TeleHop settings and spawn destinations.");
+        });
     }
 
     // ── internal helpers ─────────────────────────────────────────────
@@ -240,6 +263,13 @@ public final class Bootstrap {
             selected = new File(langDir, "en.yml");
         }
         FileConfiguration langFile = YamlConfiguration.loadConfiguration(selected);
+        try (var stream = plugin.getResource("languages/" + lang + ".yml")) {
+            if (stream != null) {
+                try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+                    langFile.setDefaults(YamlConfiguration.loadConfiguration(reader));
+                }
+            }
+        } catch (IOException ex) { throw new IllegalStateException("Cannot read bundled translation", ex); }
         FileConfiguration fallback = YamlConfiguration.loadConfiguration(new File(langDir, "en.yml"));
         // Existing installations keep customised language files across upgrades.
         try (var reader = new InputStreamReader(plugin.getResource("languages/en.yml"), StandardCharsets.UTF_8)) {
@@ -267,6 +297,7 @@ public final class Bootstrap {
             plugin.getLogger().warning("Could not set ACF console message: " + e.getMessage());
         }
 
+        manager.getCommandCompletions().registerCompletion("spawns", c -> reg.spawns().suggestions(c.getPlayer()));
         manager.getCommandCompletions().registerCompletion("networkplayers",
                 c -> reg.networkPlayerNameCache().list());
         manager.getCommandCompletions().registerCompletion("warps",
@@ -282,6 +313,7 @@ public final class Bootstrap {
         });
 
         manager.registerCommand(new SpawnCommand(plugin));
+        if (reg.spawns().hubCommand()) manager.registerCommand(new HubCommand(plugin));
         manager.registerCommand(new WarpCommand(plugin));
         manager.registerCommand(new SetWarpCommand(plugin));
         manager.registerCommand(new DelWarpCommand(plugin));
@@ -312,6 +344,7 @@ public final class Bootstrap {
     }
 
     private static void startScheduledTasks(NetworkPaperPlugin plugin, ServiceRegistry reg) {
+        Bukkit.getScheduler().runTaskTimer(plugin, reg.spawns()::refreshSuggestions, 1L, 200L);
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () ->
                 reg.tpaService().expiredNow(reg.settings().tpaTimeoutSeconds()).thenAccept(expired -> {
                     for (var request : expired) {

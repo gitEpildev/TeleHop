@@ -14,17 +14,26 @@ permissions:
   contents: read
 
 jobs:
-  servers:
-    name: ${{ matrix.server }} / MySQL migration
+  inventory:
+    name: Select pinned runtime builds
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    outputs:
+      matrix: ${{ steps.inventory.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: inventory
+        run: echo "matrix=$(python3 .github/release/compatibility.py matrix)" >> "$GITHUB_OUTPUT"
+
+  servers:
+    needs: inventory
+    name: ${{ matrix.server }} / ${{ matrix.suite || 'MySQL migration' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 26
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - {server: paper-1.21.11, java: '21'}
-          - {server: paper-26.1.2, java: '25'}
-          - {server: velocity-3.3, java: '21'}
+      matrix: ${{ fromJSON(needs.inventory.outputs.matrix) }}
     services:
       mysql:
         image: mysql:8.4
@@ -41,6 +50,12 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Install Java 25 for the newer proxy in the player travel test
+        if: matrix.suite == 'network-v4' || matrix.suite == 'network-mixed'
+        uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '25'
       - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
         with:
           distribution: temurin
@@ -56,12 +71,49 @@ jobs:
           MYSQL_PWD: ci-password
           MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
         run: python3 .github/tests/server_smoke.py "$SERVER" "$VERSION" bundle smoke
+      - name: Install Minecraft client
+        if: matrix.suite
+        run: npm ci --prefix .github/tests/network --ignore-scripts --no-audit --no-fund
+      - name: Test a Minecraft client with a shared protocol version
+        if: matrix.suite == 'client-login'
+        env:
+          CLIENT_VERSION: ${{ matrix.client }}
+          VERSION: ${{ inputs.version }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          MYSQL_PWD: ci-password
+        run: python3 .github/tests/network/client_compatibility.py smoke bundle "$VERSION" network-client "$CLIENT_VERSION"
+      - name: Test world and server travel with a Minecraft client
+        if: matrix.suite == 'network-v3' || matrix.suite == 'network-v4'
+        env:
+          VERSION: ${{ inputs.version }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          MYSQL_PWD: ci-password
+          SUITE: ${{ matrix.suite }}
+        run: |
+          java -cp "bundle/telehop-velocity-$VERSION.jar" .github/tests/network/SpawnDirectoryCheck.java
+          if [[ "$SUITE" == network-v4 ]]; then
+            python3 .github/tests/network/run.py smoke bundle "$VERSION" "$SUITE" --proxy velocity-4.3.1 --proxy-java "$JAVA_HOME_25_X64/bin/java"
+          else
+            python3 .github/tests/network/run.py smoke bundle "$VERSION" "$SUITE"
+          fi
+      - name: Test two live proxy generations and a rolling upgrade
+        if: matrix.suite == 'network-mixed'
+        env:
+          VERSION: ${{ inputs.version }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          MYSQL_PWD: ci-password
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y redis-server redis-tools
+          python3 .github/tests/network/mixed.py smoke bundle "$VERSION" network-mixed --java25 "$JAVA_HOME_25_X64/bin/java"
       - name: Save startup and shutdown logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: logs-${{ matrix.server }}-${{ github.run_attempt }}
-          path: smoke/boot-*.log
+          name: logs-${{ matrix.server }}-${{ matrix.suite || 'smoke' }}-${{ github.run_attempt }}
+          path: |
+            smoke/boot-*.log
+            network*/**/acceptance.log
           if-no-files-found: ignore
 
   redis:

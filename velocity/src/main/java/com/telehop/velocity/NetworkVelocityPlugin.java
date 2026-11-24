@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.LoginEvent;
-import com.velocitypowered.api.event.player.ServerConnectedEvent;
+import com.velocitypowered.api.event.player.ServerPostConnectEvent;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyShutdownEvent;
 import com.velocitypowered.api.plugin.Plugin;
@@ -22,7 +22,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "telehop-velocity",
         name = "TeleHop-Velocity",
-        version = "2.3.0",
+        version = "3.0.0",
         url = "https://developer.epildevconnect.uk",
         description = "Cross-server teleportation proxy bridge for TeleHop",
         authors = {"Epildev"}
@@ -63,16 +63,18 @@ public class NetworkVelocityPlugin {
     }
 
     @Subscribe
-    public void onServerSwitch(ServerConnectedEvent event) {
+    public void onServerSwitch(ServerPostConnectEvent event) {
         if (services == null) return;
-        String serverName = event.getServer().getServerInfo().getName();
-        services.playerTracker().update(event.getPlayer(), serverName);
-        services.packetHandler().executePendingAction(event.getPlayer(), serverName);
+        event.getPlayer().getCurrentServer().ifPresent(joined -> {
+            services.playerTracker().update(event.getPlayer(), joined.getServerInfo().getName());
+            services.packetHandler().executePendingAction(event.getPlayer(), joined);
+        });
     }
 
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         if (services == null) return;
+        services.pendingActionManager().remove(event.getPlayer().getUniqueId());
         services.playerTracker().remove(event.getPlayer());
     }
 }

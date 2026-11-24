@@ -1,6 +1,6 @@
 # Agent Development Guidelines: TeleHop
 
-This document defines the architectural constraints and development standards for TeleHop - a cross-server teleportation plugin for **Paper 1.21+ / Velocity 3.3+** networks.
+This document defines the architectural constraints and development standards for TeleHop - a cross-server teleportation plugin for **Paper 1.21+ / Velocity 3 and 4** networks.
 
 ---
 
@@ -85,10 +85,11 @@ homeService.find(uuid, slot).thenAccept(opt ->
 ## 6. Configuration
 
 ### Paper (split config files)
-Config lives in `plugins/TeleHop/config/` as 7 YAML files:
+Config lives in `plugins/TeleHop/config/` as split YAML files:
 
 | File | Content |
 | :--- | :--- |
+| `spawns.yml` | Backend and world spawn routes, optional hub command |
 | `general.yml` | Server name, hub server, servers list, language, messaging, audit |
 | `database.yml` | MySQL connection details and pool size |
 | `features.yml` | Feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle) |
@@ -141,7 +142,7 @@ Single `config.properties` file. Loaded by `VelocitySettings`.
 
 ## 10. Testing
 
-- Tests live in `common/src/test/java/`. Use **JUnit 5** + **Mockito**.
+- Shared tests live in `common/src/test/java/`. Paper and Velocity regressions live under the corresponding module’s `src/test/java/`. Use **JUnit 5** + **Mockito**.
 - Mock `DatabaseManager` for service tests - never hit a real database in unit tests.
 - Every test must assert concrete behaviour, not just execution.
 - CI runs `mvn clean verify` (compile + tests + Checkstyle) on every push and PR.

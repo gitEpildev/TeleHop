@@ -7,6 +7,8 @@ All permissions can be viewed in-game with `/telehop perms`.
 | Node | Description |
 |------|-------------|
 | `telehop.spawn` | Use `/spawn` |
+| `telehop.spawn.named` | Select a destination by ID |
+| `telehop.hub` | Use the optional hub command |
 | `telehop.rtp` | Use `/rtp` |
 | `telehop.warp` | Use `/warp` and `/warps` |
 | `telehop.pwarp` | Use `/pwarp` (player warps) |
@@ -102,4 +104,10 @@ lp group staff permission set telehop.warps.unlimited
 lp group staff permission set telehop.homes.10
 ```
 
-Both coordinate permissions are children of `telehop.tp`. Existing grants of the parent include both. Keep the parent for player-to-player teleportation and deny the child for the operation you want to restrict. For example, to allow staff to teleport themselves to coordinates while blocking coordinate teleports of other players, run `lp group staff permission set telehop.tp.coordinates.others false`.
+Both coordinate permissions are children of `telehop.tp`. Existing grants of the parent include both. If a group already inherits the parent, deny the specific operation you want to restrict. For example, to allow staff to teleport themselves to coordinates while blocking coordinate teleports of other players, run `lp group staff permission set telehop.tp.coordinates.others false`.
+
+## Delegated staff and destination access
+
+Use `telehop.tp.player.self` to visit a player and `telehop.tp.player.others` to move someone else. The two coordinate nodes also work independently. The existing `telehop.tp` parent grants all four forms. The separate `telehop.tphere` node controls pulling a player.
+
+The `telehop.admin` parent grants spawn management, home management, last-location management, warp management, player information, reload and permission help. Each command accepts its individual leaf. In particular, `telehop.admin.homes.list` only shows home details. Visiting and deleting require `telehop.admin.homes.visit` and `telehop.admin.homes.delete` respectively. See the [command-to-permission table](commands.md) and [LuckPerms setup for members and staff](spawns.md#member-moderator-and-administrator-examples).

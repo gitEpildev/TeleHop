@@ -135,15 +135,20 @@ public final class TeleportService {
     /**
      * Core teleport with back-location save and effect playback.
      */
-    private void doTeleport(Player player, Location target, String type) {
+    public java.util.concurrent.CompletableFuture<Boolean> teleportToNamedSpawn(Player player, Location location) {
+        return doTeleport(player, location, "spawn");
+    }
+
+    private java.util.concurrent.CompletableFuture<Boolean> doTeleport(Player player, Location target, String type) {
         Location from = player.getLocation();
         if (backManager != null && serverName != null) {
             backManager.saveLastTeleport(player.getUniqueId(), from, serverName);
         }
-        player.teleportAsync(target).thenAccept(success -> {
+        return player.teleportAsync(target).thenApply(success -> {
             if (success && effectPlayer != null) {
                 Bukkit.getScheduler().runTask(plugin, () -> effectPlayer.play(player, from, target, type));
             }
+            return success;
         });
     }
 

@@ -30,10 +30,11 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     }
 
     @Override
-    public void handle(NetworkPacket packet) {
+    public void handle(NetworkPacket packet, Player carrier) {
         switch (packet.getType()) {
             case EXECUTE_POST_JOIN_TELEPORT -> handlePostJoinTeleport(packet);
             case WARP_TELEPORT              -> handleWarpTeleport(packet);
+            case NAMED_SPAWN_ARRIVAL         -> services.spawns().arrive(carrier, packet);
             case SPAWN_REQUEST              -> handleSpawnRequest(packet);
             case TPA_CREATE                 -> handleTpaCreate(packet);
             case TPA_DENY                   -> handleTpaDeny(packet);
@@ -98,7 +99,9 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player != null) {
             services.warpService().find(warpName)
-                    .thenAccept(warp -> warp.ifPresent(w -> services.teleportService().teleportToWarp(player, w)));
+                    .thenAccept(warp -> Bukkit.getScheduler().runTask(plugin, () -> {
+                        if (player.isOnline()) warp.ifPresent(w -> services.teleportService().teleportToWarp(player, w));
+                    }));
         }
     }
 
@@ -190,13 +193,14 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
 
         String ownerUuid = packet.get("pwarpOwner");
         String pwarpName = packet.get("pwarpName");
-        services.playerWarpService().find(ownerUuid, pwarpName).thenAccept(opt -> opt.ifPresent(warp -> {
+        services.playerWarpService().find(ownerUuid, pwarpName).thenAccept(opt -> Bukkit.getScheduler().runTask(plugin, () -> opt.ifPresent(warp -> {
+            if (!player.isOnline()) return;
             World world = plugin.versionAdapter().resolveWorld(warp.world());
             if (world != null) {
                 Location loc = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
-                Bukkit.getScheduler().runTask(plugin, () -> player.teleportAsync(loc));
+                player.teleportAsync(loc);
             }
-        }));
+        })));
     }
 
     private void handleHomeTeleport(NetworkPacket packet) {
@@ -204,13 +208,18 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         if (player == null) return;
         String homeName = packet.get("homeName");
         String homeUuid = packet.get("homeUuid");
-        services.homeService().find(homeUuid, homeName).thenAccept(opt -> opt.ifPresent(home -> {
-            World world = plugin.versionAdapter().resolveWorld(home.world());
-            if (world != null) {
-                Location loc = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
-                Bukkit.getScheduler().runTask(plugin, () ->
-                        services.teleportService().teleportToHome(player, loc));
+        services.homeService().find(homeUuid, homeName).thenAccept(found -> Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline() || found.isEmpty()) return;
+            if ("true".equals(packet.get("staffVisit")) && !player.hasPermission(
+                    com.telehop.common.PermissionNodes.ADMIN_HOMES_VISIT)) {
+                player.sendMessage(plugin.msg("no-permission"));
+                return;
             }
+            var home = found.get();
+            World world = plugin.versionAdapter().resolveWorld(home.world());
+            if (world == null || !home.server().equalsIgnoreCase(plugin.settings().serverName())) return;
+            services.teleportService().teleportToHome(player,
+                    new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch()));
         }));
     }
 

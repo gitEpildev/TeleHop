@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @CommandAlias("%{cmd-playerinfo}")
-@CommandPermission(PermissionNodes.ADMIN)
+@CommandPermission(PermissionNodes.ADMIN_PLAYERINFO)
 public class PlayerInfoCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

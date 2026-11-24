@@ -25,7 +25,7 @@ Change it and run `/telehop reload` -- no restart needed.
 
 ### Fallback Behaviour
 
-If a message key is missing from the selected language file, TeleHop falls back to the English (`en.yml`) value loaded from disk. New bundled keys are not merged into existing files automatically. This means partial translations work fine -- you only need to translate the keys you care about.
+In 3.0.0, the selected language file takes precedence over its bundled translation. If both lack a key, TeleHop checks the on-disk English file and then the bundled English translation. You can keep a partial translation and override individual keys in your own file.
 
 ### Custom Languages
 
@@ -64,7 +64,9 @@ Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language
 | `<seconds>` | Cooldowns, countdowns, delays | Remaining or countdown seconds |
 | `<version>` | Version info | Plugin version string |
 
-## All Message Keys
+## Message keys by feature
+
+See the [bundled English file](../paper/src/main/resources/languages/en.yml) for every key and its default wording.
 
 ### General
 - `prefix` - Prepended to every message. Set to `""` to disable.
@@ -222,3 +224,5 @@ countdown-title: "<green><bold>Teleporting in <seconds></bold></green>"
 ```
 
 Run `/telehop reload` after editing. A positive warmup delay is also required. Completion and movement cancellation clear the title. Existing zero-second delays and delay-bypass permissions still skip the countdown.
+
+On upgrade, customised messages take precedence. Missing keys are read from the bundled translation for the selected language, then from English. The spawn messages cover invalid IDs, ownership conflicts, restricted destinations, arrivals and revision-bound deletion.

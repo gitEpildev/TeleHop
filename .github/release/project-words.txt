@@ -40,3 +40,4 @@ tpa
 warmup
 warmups
 YAML
+Minecraft

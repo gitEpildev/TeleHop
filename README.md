@@ -1,337 +1,138 @@
 # TeleHop
 
-**TeleHop 2.3.0** adds configurable Paper command names and aliases, plus separate permissions for teleporting yourself or another player to coordinates. [Changelog](CHANGELOG.md#230---2026-11-23)
+TeleHop connects spawn, homes, warps, random teleportation and player teleport requests across Paper backends on a Velocity network. Players can use the same commands whether their destination is in another world on the same backend or on another server.
 
-Cross-server teleportation suite for **Paper 1.21.x through 26.1.x** and **Velocity 3.3+** networks. A single JAR works on both Minecraft versions, detecting the server version at runtime and loading the correct API adapter. Every teleport feature works seamlessly across servers, powered by MySQL and a custom plugin messaging protocol.
+**TeleHop 3.0.0** lets you give destinations your own names in `spawns.yml` and let members use `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
 
-## Features
+[Installation](#installation) · [Commands](#commands) · [Upgrade guide](LEGACY.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Licence](LICENSE)
 
-### Teleportation
+## Installation
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Network Spawn** | `/spawn` | Teleports players to the configured hub server. Region-aware: EU players go to `lobby-eu`, US players to `lobby-usa`. |
-| **Random Teleport** | `/rtp` | Opens a GUI to pick a region and dimension, then finds a safe landing spot within the configured radius. Cooldown and warmup supported. Region items show the estimated ping the player will get on the destination server. |
-| **Admin Teleport** | `/tp`, `/tphere` | Cross-server admin TP. Supports player-to-player, coordinate-based (`/tp <x> <y> <z>`), and pull (`/tphere <player>`). |
+| Where | Install in `plugins/` | Platform and Java |
+|---|---|---|
+| Each Paper backend | `telehop-paper-3.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.2 and 26.2 on Java 25+ |
+| Each Velocity proxy | `telehop-velocity-3.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
 
-### Homes
+Velocity also supports Minecraft 1.21.2 clients connecting to a Paper 1.21.3 backend using their shared protocol. PaperMC did not publish a 1.21.2 server JAR.
 
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Named Homes** | `/home`, `/sethome <name>`, `/delhome <name>` | Up to 10 named homes per player, gated by `telehop.homes.1` through `telehop.homes.10` permissions. |
-| **Homes GUI** | `/home` (no args) | 5-row chest GUI with configurable bed colours. Click an empty bed to set a home, click an occupied bed to teleport, shift-click to delete. |
-| **Last Location** | `/lastlocation`, `/lastloc`, `/ll` | Persistent logout location tracking. Saved to MySQL on quit, survives restarts. Cross-server teleport back to where you last logged out. |
+Paper selects its Minecraft adapter at startup. Both adapters use Java 21 class files so older Paper servers can remap the entire JAR. The same Velocity JAR detects the proxy version and uses the messaging API shared by Velocity 3 and 4. Install the same **TeleHop release** across every proxy and backend.
 
-### TPA
-
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Teleport Ask** | `/tpa <player>`, `/tpahere <player>` | Request to teleport to a player or pull them to you. Works across servers. |
-| **Accept / Deny** | `/tpaaccept`, `/tpadeny`, `/tpacancel` | Clickable accept/deny buttons in chat. Configurable timeout, cooldown, and warmup. |
-| **TPA Toggle** | `/tpatoggle` | Block incoming TPA requests. Cross-server aware (sender gets notified even from a different server). |
-
-### Back
-
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Back** | `/back` | Return to your last location before any teleport. Cross-server. Session-only. |
-| **Death Back** | `/back death` | Return to your last death location. Cross-server. Session-only. |
-
-### Warps
-
-| Feature | Commands | Description |
-|---------|----------|-------------|
-| **Admin Warps** | `/warp`, `/setwarp`, `/delwarp`, `/warps` | Global warps shared across all servers via MySQL. Per-warp access permissions supported. |
-| **Player Warps** | `/pwarp set`, `/pwarp del`, `/pwarp list`, `/pwarp public` | Personal warps with per-rank limits (`telehop.warps.1` through `telehop.warps.100`), public/private toggle, cross-server teleportation. |
-
-### Server Features
-
-| Feature | Description |
-|---------|-------------|
-| **Random Respawn** | Players respawn at a random safe location on death instead of world spawn. Async HeightMap-based search. Respects beds and anchors. Configurable per-server. |
-| **Teleport Effects** | Configurable particles and sounds per teleport type (spawn, tpa, rtp, warp, home, back). |
-| **Multi-Proxy** | Opt-in Redis-based communication between multiple Velocity proxies. TPA, warps, homes, and player lists all work across proxy boundaries. Supports TLS (rediss) with optional custom CA certificates. |
-| **Feature Toggles** | Enable/disable any module per server via `features.yml`. Disabled commands still register but display "This feature is disabled." |
-| **Multi-Language** | 6 built-in languages (en, nl, de, es, zh, pl) with fallback to the on-disk English file. New keys must be added to existing customised files. |
+1. Create a shared MySQL 8.0+ or MariaDB 10.5+ database and a user with permission to create and upgrade the schema. Start the instances once to generate their configuration.
+2. On each proxy, configure the database and backend names in `plugins/telehop-velocity/config.properties`. On each Paper server, set the same database in `plugins/TeleHop/config/database.yml`.
+3. In each backend's `config/general.yml`, set its unique `server-name` to its Velocity registration and set `hub-server` to the network hub. On a multi-proxy network, register the same backends on every proxy and give each proxy its own ID and the shared Redis connection.
+4. Restart the proxies, then the backends. Join as a member and try `/spawn`, `/home` and the region and dimension menus in `/rtp`. Existing installations can follow the version-specific upgrade checks. [Setup](docs/setup.md) · [Multi-proxy configuration](docs/multi-proxy.md) · [Upgrading](LEGACY.md)
 
 ## Commands
 
-### Spawn
+These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit `config/commands.yml` and restart Paper. To change a destination name, edit `config/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](docs/configuration.md#command-names-and-aliases)
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/spawn` | Teleport to the network spawn (hub server) | `telehop.spawn` |
+### Spawn, homes and travel
 
-### Homes
-
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/home` | Open the homes GUI | `telehop.homes` |
-| `/home <name>` | Quick-teleport to a named home | `telehop.homes` |
-| `/sethome <name>` | Set a named home at your current location | `telehop.sethome` |
-| `/delhome <name>` | Delete a named home | `telehop.delhome` |
-| `/lastlocation` | Teleport to your last logout location | `telehop.lastlocation` |
-
-Aliases: `/lastloc`, `/backlast`, `/ll`
-
-Homes are blocked on servers listed in `home.yml > blocked-servers` (e.g. lobby). Players can still open the GUI and teleport to existing homes from any server.
-
-### TPA
-
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/tpa <player>` | Ask to teleport TO another player | `telehop.tpa` |
-| `/tpahere <player>` | Ask another player to teleport to YOU | `telehop.tpahere` |
-| `/tpaaccept` | Accept an incoming request | `telehop.tpa.accept` |
-| `/tpadeny` | Deny an incoming request | `telehop.tpa.deny` |
-| `/tpacancel` | Cancel your outgoing request | `telehop.tpa.cancel` |
-| `/tpatoggle` | Toggle incoming TPA requests on/off (session-only) | `telehop.tpa.toggle` |
-
-### Back
-
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/back` | Return to your last location before a teleport | `telehop.back` |
+| Command | Action | Permission |
+|---|---|---|
+| `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
+| `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
+| `/hub` | Visit the global hub's default spawn when enabled in `spawns.yml` | `telehop.hub` |
+| `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
+| `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
+| `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
+| `/delhome <name>` | Delete one of your homes | `telehop.delhome` |
+| `/lastlocation` (`/lastloc`, `/backlast`, `/ll`) | Return to your saved logout location | `telehop.lastlocation` |
+| `/back` | Return to your previous teleport location | `telehop.back` |
 | `/back death` | Return to your last death location | `telehop.back.death` |
 
-Both commands work cross-server. Locations are session-only (not persisted across restarts).
+Logout locations persist in the database. Back and death locations last for the session. Both back permissions default to operators. A restricted spawn requires `telehop.spawn.destination.<name>`. An explicit denial of that node also blocks access to a public destination.
 
-### Random Teleport
+### Teleport requests
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/rtp` | Random teleport, opens region/dimension GUI | `telehop.rtp` |
+| Command | Action | Permission |
+|---|---|---|
+| `/tpa <player>` | Ask to visit the player | `telehop.tpa` |
+| `/tpahere <player>` | Ask the player to visit you | `telehop.tpahere` |
+| `/tpaaccept` | Accept an incoming request | `telehop.tpa.accept` |
+| `/tpadeny` | Decline an incoming request | `telehop.tpa.deny` |
+| `/tpacancel` | Withdraw your outgoing request | `telehop.tpa.cancel` |
+| `/tpatoggle` | Switch incoming requests on or off | `telehop.tpa.toggle` |
 
-### Admin Warps
+### Global and player warps
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/warp <name>` | Teleport to a global warp | `telehop.warp` |
-| `/setwarp <name>` | Create or update a global warp | `telehop.admin` |
-| `/delwarp <name>` | Delete a global warp | `telehop.admin` |
-| `/warps` | List all global warps | `telehop.warp` |
+The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept the same arguments.
 
-### Player Warps
+| Command | Action | Permission |
+|---|---|---|
+| `/warps` | List global warps | `telehop.warp` |
+| `/warp <name>` | Visit a global warp | `telehop.warp` or `telehop.warp.<name>` |
+| `/setwarp <name>` | Create or update a global warp | `telehop.admin.warps.set` |
+| `/delwarp <name>` | Delete a global warp | `telehop.admin.warps.delete` |
+| `/pwarp`, `/pwarp list` | List your personal warps and your allowance | `telehop.pwarp` |
+| `/pwarp <name>` | Visit your own warp | `telehop.pwarp` |
+| `/pwarp <player> <name>` | Visit another player's public warp | `telehop.pwarp` |
+| `/pwarp set <name>` | Create a personal warp. Also accepts `create` | `telehop.pwarp` and an available warp slot |
+| `/pwarp del <name>` | Remove a personal warp. Also accepts `delete` and `remove` | `telehop.pwarp` |
+| `/pwarp public <name>` | Switch a warp between public and private. Also accepts `toggle` | `telehop.pwarp` |
+| `/pwarp admin del <player> <name>` | Remove a player's warp. Also accepts `admin delete` and `admin remove` | `telehop.admin.playerwarps.delete` |
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/pwarp set <name>` | Create a personal warp at your location | `telehop.pwarp` |
-| `/pwarp del <name>` | Delete one of your warps | `telehop.pwarp` |
-| `/pwarp list` | List your warps with count/limit | `telehop.pwarp` |
-| `/pwarp <name>` | Teleport to your own warp | `telehop.pwarp` |
-| `/pwarp <player> <name>` | Teleport to another player's public warp | `telehop.pwarp` |
-| `/pwarp public <name>` | Toggle a warp between public and private | `telehop.pwarp` |
-| `/pwarp admin del <player> <name>` | Admin: delete any player's warp | `telehop.admin` |
+### Staff teleports
 
-Aliases: `/playerwarp`, `/pwarps`
+| Command | Action | Permission |
+|---|---|---|
+| `/tp <player>` | Visit a player | `telehop.tp.player.self` |
+| `/tp <player> <target>` | Move the first player to the second | `telehop.tp.player.others` |
+| `/tp <x> <y> <z>` | Move to coordinates in your world | `telehop.tp.coordinates.self` |
+| `/tp <player> <x> <y> <z>` | Move the named player to coordinates | `telehop.tp.coordinates.others` for another player, `telehop.tp.coordinates.self` for yourself |
+| `/tphere <player>` | Bring the player to you | `telehop.tphere` |
 
-### Admin Teleport
+### Management and help
 
-| Command | Description | Permission |
-|---------|-------------|------------|
-| `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
-| `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
-| `/tp <x> <y> <z>` | Teleport yourself to coordinates | `telehop.tp` + `telehop.tp.coordinates.self` |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` + `telehop.tp.coordinates.others` |
-| `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
+| Command | Action | Permission |
+|---|---|---|
+| `/telehop`, `/telehop help` | Display command help | Everyone |
+| `/telehop version`, `/telehop ver` | Display the Paper plugin version | Everyone |
+| `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
+| `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop spawn list` | Show the network's named destinations | `telehop.admin.spawn.list` |
+| `/telehop spawn set <name> <access>` | Save your position on this backend with access set to `public` or `restricted` | `telehop.admin.spawn.set` |
+| `/telehop spawn setdefault` | Save the ordinary backend spawn at your position | `telehop.admin.spawn.set` |
+| `/telehop spawn delete <name> [revision]` | Request deletion on the owning backend, then confirm with the displayed revision | `telehop.admin.spawn.delete` |
+| `/listhomes <player>` | Inspect a player's homes | `telehop.admin.homes.list` |
+| `/listhomes visit <owner-uuid> <name>` | Visit a listed home | `telehop.admin.homes.visit` |
+| `/forcesethome <player> <name>` | Save a home for another player at your position | `telehop.admin.homes.set` |
+| `/forcedelhome <player>` | List the player's homes with deletion buttons | `telehop.admin.homes.delete` |
+| `/forcedelhome confirm <owner-uuid> <name> [confirm]`, `/forcedelhome-confirm <owner-uuid> <name> [confirm]` | Show the deletion prompt. The final `confirm` argument deletes the home | `telehop.admin.homes.delete` |
+| `/forcelastloc <player>` | Inspect a saved logout location | `telehop.admin.lastlocation.view` |
+| `/forcelastloc tp <player>` | Visit the saved logout location | `telehop.admin.lastlocation.visit` |
+| `/forcelastloc clear <player>` | Remove the saved logout location | `telehop.admin.lastlocation.clear` |
+| `/playerinfo <player>` (`/pinfo`) | Inspect a player's TeleHop data | `telehop.admin.playerinfo` |
+| `/listwarps [player]` | List personal warps across the network or for one owner | `telehop.admin.warps.list` |
+| `/forcedelwarp <name>` | Delete a global warp | `telehop.admin.warps.delete` |
+| `/forcedelwarp <player> <name>` | Delete a player's personal warp | `telehop.admin.playerwarps.delete` |
 
-Hidden from tab complete for players without the required permission.
+`/forcell` is an alias for `/forcelastloc`, including its `tp` and `clear` subcommands. Home lists only show staff actions the viewer has permission to perform.
 
-### Admin Management
+## Permissions and configuration
 
-| Command | Aliases | Description | Permission |
-|---------|---------|-------------|------------|
-| `/telehop help` | `/telehop` | Categorised command reference | Everyone |
-| `/telehop version` | `/telehop ver` | Show plugin version | Everyone |
-| `/telehop reload` | | Reload config, messages, and warp cache | `telehop.admin` |
-| `/telehop perms` | `/telehop permissions` | List all permission nodes | `telehop.admin` |
-| `/listwarps` | | List all player warps across all servers | `telehop.admin` |
-| `/listwarps <player>` | | List a specific player's warps | `telehop.admin` |
-| `/forcedelwarp <name>` | | Force-delete an admin warp | `telehop.admin` |
-| `/forcedelwarp <player> <name>` | | Force-delete a player's warp | `telehop.admin` |
-| `/forcedelhome <player>` | | List a player's homes with clickable delete buttons | `telehop.admin` |
-| `/forcesethome <player> <name>` | | Set a home for another player at your location | `telehop.admin` |
-| `/listhomes <player>` | | List a player's homes with [TP] and [DELETE] buttons | `telehop.admin` |
-| `/forcelastloc <player>` | `/forcell` | View a player's last logout location | `telehop.admin` |
-| `/forcelastloc <player> tp` | | Teleport to a player's last logout location | `telehop.admin` |
-| `/forcelastloc <player> clear` | | Clear a player's saved logout location | `telehop.admin` |
-| `/playerinfo <player>` | `/pinfo` | View a player's TeleHop data summary | `telehop.admin` |
+- Grant each staff group the individual nodes it needs. `telehop.admin` grants the management commands. `telehop.tp` grants all four `/tp` forms. `telehop.tphere` controls the pull command separately. [Permission defaults](docs/permissions.md) · [LuckPerms examples](docs/spawns.md#member-moderator-and-administrator-examples)
+- Grant `telehop.homes.1` through `telehop.homes.10` for home slots. Grant a positive limit such as `telehop.warps.3` or use `telehop.warps.unlimited` for personal warps. [Homes](docs/homes.md) · [Warps](docs/warps.md)
+- Paper uses split YAML files in `plugins/TeleHop/config/`. Set per-backend feature toggles in `features.yml`, RTP menus and region settings in `rtp.yml`, effects in `teleport.yml` and death behaviour in `respawn.yml`. The saved default spawn lives in `plugins/TeleHop/storage.yml`. Restart Paper after changing database settings, command names or optional hub command registration. [Configuration reference](docs/configuration.md)
+- Player messages support English, Dutch, German, Spanish, Chinese and Polish. Edit the files in `plugins/TeleHop/languages/` and reload. [Messages and translations](docs/messages.md)
+- MySQL stores player presence, requests, homes, logout locations and warps. It also stores the backend defaults, routes and named destinations published from Paper, including their worlds, coordinates and access settings. [SQL schema](sql/schema.sql) · [Spawn storage](docs/spawns.md#mysql-upgrades-and-backups)
 
-Admin-only subcommands are hidden from tab complete for players without `telehop.admin`.
+## Building and releases
 
-## Permissions
+Configure Maven toolchains for JDK 21 and JDK 25, then run the full build from the repository root.
 
-### Player Permissions (default: everyone)
-
-| Permission | Command |
-|------------|---------|
-| `telehop.spawn` | `/spawn` |
-| `telehop.rtp` | `/rtp` |
-| `telehop.tpa` | `/tpa` |
-| `telehop.tpahere` | `/tpahere` |
-| `telehop.tpa.accept` | `/tpaaccept` |
-| `telehop.tpa.deny` | `/tpadeny` |
-| `telehop.tpa.cancel` | `/tpacancel` |
-| `telehop.tpa.toggle` | `/tpatoggle` |
-| `telehop.warp` | `/warp`, `/warps` |
-| `telehop.pwarp` | `/pwarp` |
-| `telehop.homes` | `/home` |
-| `telehop.sethome` | `/sethome` |
-| `telehop.delhome` | `/delhome` |
-| `telehop.lastlocation` | `/lastlocation` |
-| `telehop.back` | `/back` |
-| `telehop.back.death` | `/back death` |
-
-### Limit Permissions (assign ONE per rank)
-
-| Permission | Effect |
-|------------|--------|
-| `telehop.homes.1` through `telehop.homes.10` | Number of home slots |
-| `telehop.warps.1` through `telehop.warps.100` | Number of player warp slots |
-| `telehop.warps.unlimited` | No player warp limit |
-| `telehop.warp.<name>` | Access to a specific admin warp |
-
-### Bypass Permissions (default: OP)
-
-| Permission | Effect |
-|------------|--------|
-| `telehop.rtp.bypasscooldown` | Skip RTP cooldown |
-| `telehop.rtp.bypassdelay` | Skip RTP warmup countdown |
-| `telehop.tpa.bypasscooldown` | Skip TPA cooldown |
-
-### Admin Permissions (default: OP)
-
-| Permission | Effect |
-|------------|--------|
-| `telehop.admin` | All admin commands (`/setwarp`, `/delwarp`, `/forcedelhome`, `/forcesethome`, `/listhomes`, `/forcelastloc`, `/playerinfo`, `/listwarps`, `/forcedelwarp`, `/telehop reload`, `/telehop perms`) |
-| `telehop.tp` | `/tp` (cross-server admin teleport) |
-| `telehop.tphere` | `/tphere` (pull player to you) |
-
-## Supported Versions
-
-| Minecraft | Paper API | Java |
-|-----------|-----------|------|
-| 1.21.x | 1.21.11-R0.1 | 21+ |
-| 26.1.x | 26.1.2+ | 25+ |
-
-The plugin ships a single JAR containing version adapters for both. At startup, `Bootstrap` detects the Minecraft version and loads the correct adapter via reflection. World name resolution and lookup are abstracted through `VersionAdapter`, so all features (homes, warps, RTP, back, etc.) work identically across versions.
-
-## Requirements
-
-| Software | Version |
-|----------|---------|
-| Paper | 1.21.x or 26.1.x |
-| Velocity | 3.3+ |
-| Java | 21+ (1.21.x servers) or 25+ (26.1.x servers) |
-| MySQL | 8.0+ (MariaDB 10.5+ also works) |
-| LuckPerms | 5.4+ (optional, recommended) |
-
-## Quick Start
-
-1. Create a MySQL database and user
-2. Place `telehop-velocity-2.3.0.jar` on your Velocity proxy
-3. Place `telehop-paper-2.3.0.jar` on each Paper backend
-4. Edit `plugins/TeleHop/config/database.yml` with your MySQL credentials
-5. Edit `plugins/TeleHop/config/general.yml`, set `server-name` on each server and `hub-server` to your lobby
-6. Restart Velocity first, then all Paper servers
-
-See [docs/setup.md](docs/setup.md) for the full walkthrough.
-
-## Configuration
-
-TeleHop uses modular config files in `plugins/TeleHop/config/`:
-
-```
-plugins/TeleHop/
-  config/
-    commands.yml      # primary command names and aliases (restart required)
-    general.yml       # server-name, hub-server, servers list, language, messaging, regions
-    database.yml      # MySQL connection settings
-    features.yml      # feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle, last-location, random-respawn)
-    teleport.yml      # particles and sounds per teleport type
-    tpa.yml           # timeout, cooldown, delay, cancel-on-move
-    rtp.yml           # cooldown, delay, max-radius, regions, dimensions, GUI, destination ping
-    home.yml          # max-slots (10), gui-rows (5), bed colours, blocked servers, world/server colours
-    respawn.yml       # random respawn world, radius, bed/anchor respect
-    WIKI.md           # full configuration reference (auto-extracted)
-  storage.yml         # runtime-mutable spawn location (written by /setspawn)
-  languages/          # en.yml, nl.yml, de.yml, es.yml, zh.yml, pl.yml
+```sh
+mvn clean verify
 ```
 
-Most settings reload live with `/telehop reload`. MySQL connection settings require a full server restart.
+Installable outputs are `paper/target/telehop-paper-3.0.0.jar` and `velocity/target/telehop-velocity-3.0.0.jar`. CI checks the build, command and language resources, release version, changelog and runtime compatibility. The release workflow publishes the validated JARs and release notes to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
 
-## Database
+## Further reading
 
-Tables are created automatically on first startup. See [`sql/schema.sql`](sql/schema.sql) for the full schema.
+[Legacy upgrade notes](LEGACY.md) · [Command guide](docs/commands.md) · [Network protocol](docs/protocol.md) · [Troubleshooting](docs/troubleshooting.md) · [Release history](CHANGELOG.md)
 
-| Table | Purpose |
-|-------|---------|
-| `players` | Tracks which server each player is on |
-| `warps` | Admin warps (name, location, server) |
-| `player_warps` | Player warps (owner, name, location, public/private) |
-| `tpa_requests` | Active TPA requests with sent_at timestamp |
-| `homes` | Player homes (uuid, name, server, world, coordinates) |
-| `last_locations` | Persistent logout locations (uuid, server, world, coordinates) |
+## Author and licence
 
-## Documentation
+Developed by **Epildev** at Epildevconnect Ltd, company number 17247566, registered in England and Wales. Discord handle `Epildev`. [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · [Companies House](https://find-and-update.company-information.service.gov.uk/company/17247566)
 
-| Guide | Description |
-|-------|-------------|
-| [Setup](docs/setup.md) | Installation, MySQL, Velocity + Paper configuration |
-| [Commands](docs/commands.md) | Every command with syntax, description, and permission |
-| [Permissions](docs/permissions.md) | All permission nodes, defaults, and LuckPerms examples |
-| [Configuration](docs/configuration.md) | Full config reference for Paper and Velocity |
-| [Homes](docs/homes.md) | Homes GUI, slots, blocked servers, world/server colours |
-| [Warps](docs/warps.md) | Admin warps vs player warps, limits, public/private |
-| [Messages](docs/messages.md) | Language system, all message keys, MiniMessage formatting |
-| [Protocol](docs/protocol.md) | Plugin messaging protocol, packet types, routing |
-| [Troubleshooting](docs/troubleshooting.md) | Common issues and fixes |
-
-## Upgrading to 2.3.0
-
-Replace the TeleHop JAR in each instance’s `plugins/` folder with the matching 2.3.0 Paper or Velocity JAR, then restart the instance. Paper creates `config/commands.yml` with the default command names. See [command configuration](docs/configuration.md#command-names-and-aliases) for an example.
-
-## Upgrading from 2.1.0
-
-Install the matching 2.2.0 Paper and Velocity JARs while preserving configuration and databases. Restart one instance at a time, keeping one proxy available. Add `countdown-title` to existing language files as explained in [messages](docs/messages.md). This release changes the warmup display to a centred title, without repeated countdown chat or action-bar messages. Existing zero-second delays and bypass permissions are preserved; set `rtp.delay-seconds` to `5` only if a five-second RTP warmup is wanted. No database migration or protocol change is required.
-
-## Upgrading from 2.0.0
-
-Upgrade both proxy and backend components together in a coordinated rollout, keeping one proxy available; 2.0.0 jars do not recognise the new `SERVER_PING_UPDATE` packet. On existing servers, add the `rtp.gui.ping` section to `config/rtp.yml` and the `rtp-in-progress` key to customised language files, preserving your existing customisations. Then follow the 2.1.0 upgrade steps above. No database changes.
-
-## Upgrading from 1.0.0
-
-Drop in the new 2.0.0 JARs (Paper + Velocity). The `homes` table is migrated automatically on first startup (slot-based to name-based). Existing homes are renamed "Home 1", "Home 2", etc. Grant `telehop.homes.2` through `telehop.homes.10` to ranks via LuckPerms for additional home slots. If you had a pre-split `config.yml`, the plugin auto-migrates it to the `config/` directory layout.
-
-## Building
-
-```bash
-mvn clean package
-```
-
-Produces:
-- `paper/target/telehop-paper-2.3.0.jar` (includes both version adapters)
-- `velocity/target/telehop-velocity-2.3.0.jar`
-
-Requires Java 21+ and Maven 3.8+. The 26.1.x adapter module compiles with Java 25 via Maven toolchains. Configure `~/.m2/toolchains.xml` with both JDK 21 and JDK 25 entries.
-
-## CI / CD
-
-| Workflow | Trigger | What it does |
-|----------|---------|--------------|
-| `ci.yml` | every branch push and PR | Release readiness covers changelog and version checks, the full build, compatibility, Paper and Velocity startup, MySQL upgrades and Redis recovery |
-| `pr.yml` | PR to `main` | Conventional Commits title check, artifact check, auto-labels |
-| `release.yml` | manual or version tag | Requires a green build of the exact commit and publishes the validated JARs and notes to GitHub and Modrinth |
-| `codeql.yml` | push/PR + weekly | CodeQL static security analysis |
-
-For token setup, release channels, changelog generation and retries, see the [release guide](docs/releases/publishing.md).
-
-## Author
-
-**Epildev** - [GitHub](https://github.com/GitEpildev) · [Website](https://developer.epildevconnect.uk/) · Discord: `Epildev`
-
-Developed by [Epildevconnect Ltd](https://developer.epildevconnect.uk/) (Company No. [17247566](https://find-and-update.company-information.service.gov.uk/company/17247566)), registered in England and Wales.
-
-## License
-
-MIT License with Additional Terms. Attribution to Epildevconnect Ltd is required. See [LICENSE](LICENSE) for full details.
+MIT License with Additional Terms. Attribution to Epildevconnect Ltd is required. [Licence text](LICENSE)

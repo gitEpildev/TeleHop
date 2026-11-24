@@ -16,7 +16,7 @@ import org.bukkit.entity.Player;
 import java.util.Map;
 
 @CommandAlias("%{cmd-forcedelhome}")
-@CommandPermission(PermissionNodes.ADMIN)
+@CommandPermission(PermissionNodes.ADMIN_HOMES_DELETE)
 public class ForceDelHomeCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -41,7 +41,7 @@ public class ForceDelHomeCommand extends BaseCommand {
                     Component line = plugin.messageService().deserialize(
                             "<gray>  " + home.name() + " <dark_gray>(" + home.server() + " " +
                                     (int) home.x() + "," + (int) home.y() + "," + (int) home.z() + ") ")
-                            .append(plugin.messageService().deserialize("<red><bold>[DELETE]</bold></red>")
+                            .append(plugin.messageService().raw("homes-delete-button")
                                     .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + home.name())));
                     sender.sendMessage(line);
                 }
@@ -51,7 +51,16 @@ public class ForceDelHomeCommand extends BaseCommand {
 
     @co.aikar.commands.annotation.Subcommand("confirm")
     @CommandAlias("%{cmd-forcedelhome-confirm}")
-    public void confirm(Player sender, String uuid, String name) {
+    public void confirm(Player sender, String uuid, String name, @co.aikar.commands.annotation.Optional String action) {
+        if (!sender.hasPermission(PermissionNodes.ADMIN_HOMES_DELETE)) {
+            sender.sendMessage(plugin.msg("no-permission"));
+            return;
+        }
+        if (!"confirm".equals(action)) {
+            sender.sendMessage(plugin.msg("homes-confirm", Map.of("name", name)).clickEvent(ClickEvent.runCommand("/"
+                    + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + name + " confirm")));
+            return;
+        }
         plugin.services().homeService().delete(uuid, name).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->
                         sender.sendMessage(plugin.msg("forcedelhome-deleted", Map.of("name", name)))));

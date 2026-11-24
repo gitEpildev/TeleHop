@@ -142,8 +142,8 @@ def verify_reactor(version):
 
 
 def verify_test_reports():
-    # These two modules own the Java test suites. A skipped module produces no reports after clean.
-    for module in ("common", "paper"):
+    # A skipped module produces no Surefire reports after a clean build.
+    for module in ("common", "paper", "velocity"):
         reports = list(Path(module, "target/surefire-reports").glob("TEST-*.xml"))
         total = 0
         for report in reports:
@@ -153,6 +153,18 @@ def verify_test_reports():
                 raise ValueError(f"{report}: all tests must run and pass before packaging.")
         if total == 0:
             raise ValueError(f"{module}: no executed tests in Surefire reports. Run the full clean verify build.")
+
+
+def check_paper_bytecode(jar):
+    # The original 1.21 remapper inspects even classes selected only on newer Paper versions.
+    for entry in jar.infolist():
+        if entry.filename.endswith(".class"):
+            with jar.open(entry) as stream:
+                header = stream.read(8)
+            if len(header) != 8 or header[:4] != bytes.fromhex("cafebabe"):
+                raise ValueError(f"Invalid class file in Paper JAR: {entry.filename}")
+            if int.from_bytes(header[6:8], "big") > 65:
+                raise ValueError(f"Class exceeds the Java 21 limit in the shared Paper JAR: {entry.filename}")
 
 
 def verify_jars(version, directory=None):
@@ -173,6 +185,8 @@ def verify_jars(version, directory=None):
                 matches = [json.loads(jar.read("velocity-plugin.json"))["version"]]
             if matches != [version]:
                 raise ValueError(f"Incorrect embedded version in {path}: {matches}")
+            if platform == "paper":
+                check_paper_bytecode(jar)
         print(f"Verified {path}")
 
 

@@ -104,7 +104,7 @@ public class RtpCommand extends BaseCommand {
                     .put("postAction", "RTP_" + normalizedDimension.toUpperCase(Locale.ROOT))
                     .put("dimension", normalizedDimension)
                     .put("region", normalizedRegion);
-            plugin.messaging().send(packet);
+            plugin.messaging().send(player, packet);
             return;
         }
         plugin.services().teleportService().executeLocalRtp(player, normalizedRegion, normalizedDimension);

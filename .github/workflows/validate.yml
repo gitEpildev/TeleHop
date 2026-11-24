@@ -146,13 +146,26 @@ jobs:
       # All text must use regular hyphens. Em dashes and en dashes are banned.
       - name: Check for em dashes and en dashes
         run: |
-          FOUND=$(git grep -n -e $'\u2014' -e $'\u2013' -- '*.java' '*.yml' '*.md' '*.xml' '*.properties' || [[ $? == 1 ]])
-          if [ -n "$FOUND" ]; then
-            echo "::error::Em dashes or en dashes found. Use regular hyphens (-) instead:"
-            echo "$FOUND"
-            exit 1
-          fi
-          echo "No em dashes or en dashes found."
+          python3 - <<'PYEOF'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          files = subprocess.check_output([
+              "git", "ls-files", "-co", "--exclude-standard", "-z", "--",
+              "*.java", "*.yml", "*.md", "*.xml", "*.properties",
+          ])
+          failed = False
+          for name in filter(None, files.split(b"\x00")):
+              path = Path(os.fsdecode(name))
+              if path.is_file():
+                  for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+                      if "\u2014" in line or "\u2013" in line:
+                          print(f"::error file={path},line={number}::Use a regular hyphen.")
+                          failed = True
+          sys.exit(int(failed))
+          PYEOF
 
       # ── 3e. UK English spelling ────────────────────────────────────────
       # Scans documentation (.md) and language files for common US English
@@ -196,7 +209,7 @@ jobs:
               r'|initialize|Initialize|normalize|Normalize)', re.IGNORECASE)
 
           files = (
-              glob.glob("docs/*.md") +
+              glob.glob("docs/**/*.md", recursive=True) +
               glob.glob("*.md") +
               glob.glob("paper/src/main/resources/languages/*.yml")
           )

@@ -6,6 +6,7 @@ import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import com.telehop.common.model.PlayerWarpRecord;
+import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
@@ -14,7 +15,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @CommandAlias("%{cmd-listwarps}")
-@CommandPermission("telehop.admin")
+@CommandPermission(PermissionNodes.ADMIN_WARPS_LIST)
 public class ListWarpsCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

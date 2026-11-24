@@ -5,13 +5,14 @@ import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import com.telehop.common.model.WarpRecord;
+import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
 
 @CommandAlias("%{cmd-setwarp}")
-@CommandPermission("telehop.admin")
+@CommandPermission(PermissionNodes.ADMIN_WARPS_SET)
 public class SetWarpCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 

@@ -7,7 +7,6 @@ import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.messaging.PaperMessagingManager;
 import com.telehop.paper.service.AuditLogger;
-import com.telehop.paper.service.PermissionService;
 import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -32,12 +31,22 @@ import static org.mockito.Mockito.when;
 
 class AdminTeleportCommandTest {
     @Test
+    void visitOnlyModeratorCannotMoveAnotherPlayer() {
+        var plugin = mock(NetworkPaperPlugin.class);
+        var sender = mock(Player.class);
+        when(plugin.isFeatureEnabled("admin-tp")).thenReturn(true);
+        when(sender.hasPermission(PermissionNodes.TP_PLAYER_SELF)).thenReturn(true);
+        var denied = Component.text("Denied");
+        when(plugin.msg("no-permission")).thenReturn(denied);
+        new AdminTeleportCommand(plugin).execute(sender, "Alex", "Sam", null, null);
+        verify(sender).sendMessage(denied);
+        verify(plugin, never()).messaging();
+    }
+
+    @Test
     void staffCanTeleportSelfWithOnlySelfCoordinateAccess() {
         var plugin = mock(NetworkPaperPlugin.class);
         var sender = mock(Player.class);
-        var permissions = mock(PermissionService.class);
-        when(plugin.permissionService()).thenReturn(permissions);
-        when(permissions.has(sender, PermissionNodes.TP)).thenReturn(true);
         when(plugin.isFeatureEnabled("admin-tp")).thenReturn(true);
         when(sender.hasPermission(PermissionNodes.TP_COORDINATES_SELF)).thenReturn(true);
         when(plugin.auditLogger()).thenReturn(mock(AuditLogger.class));
@@ -54,12 +63,9 @@ class AdminTeleportCommandTest {
         var sender = mock(Player.class);
         var world = mock(World.class);
         var actor = UUID.randomUUID();
-        var permissions = mock(PermissionService.class);
         var settings = mock(PaperSettings.class);
         var adapter = mock(VersionAdapter.class);
         var messaging = mock(PaperMessagingManager.class);
-        when(plugin.permissionService()).thenReturn(permissions);
-        when(permissions.has(sender, PermissionNodes.TP)).thenReturn(true);
         when(plugin.isFeatureEnabled("admin-tp")).thenReturn(true);
         when(sender.hasPermission(PermissionNodes.TP_COORDINATES_OTHERS)).thenReturn(true);
         when(sender.getName()).thenReturn("Alex");
@@ -90,10 +96,7 @@ class AdminTeleportCommandTest {
     void deniedCoordinatesCannotTeleportOrSendProxyRequests(String permission, String first) {
         var plugin = mock(NetworkPaperPlugin.class);
         var sender = mock(Player.class);
-        var permissions = mock(PermissionService.class);
         var denied = Component.text("Denied");
-        when(plugin.permissionService()).thenReturn(permissions);
-        when(permissions.has(sender, PermissionNodes.TP)).thenReturn(true);
         when(plugin.isFeatureEnabled("admin-tp")).thenReturn(true);
         when(plugin.msg("no-permission")).thenReturn(denied);
         when(sender.getName()).thenReturn("Alex");

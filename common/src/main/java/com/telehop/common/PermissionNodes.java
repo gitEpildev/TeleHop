@@ -32,6 +32,29 @@ public final class PermissionNodes {
     public static final String BACK = "telehop.back";
     public static final String BACK_DEATH = "telehop.back.death";
 
+    public static final String ADMIN_SPAWN_LIST = "telehop.admin.spawn.list";
+    public static final String ADMIN_SPAWN_SET = "telehop.admin.spawn.set";
+    public static final String ADMIN_SPAWN_DELETE = "telehop.admin.spawn.delete";
+    public static final String ADMIN_HOMES_LIST = "telehop.admin.homes.list";
+    public static final String ADMIN_HOMES_VISIT = "telehop.admin.homes.visit";
+    public static final String ADMIN_HOMES_SET = "telehop.admin.homes.set";
+    public static final String ADMIN_HOMES_DELETE = "telehop.admin.homes.delete";
+    public static final String ADMIN_LASTLOCATION_VIEW = "telehop.admin.lastlocation.view";
+    public static final String ADMIN_LASTLOCATION_VISIT = "telehop.admin.lastlocation.visit";
+    public static final String ADMIN_LASTLOCATION_CLEAR = "telehop.admin.lastlocation.clear";
+    public static final String ADMIN_WARPS_SET = "telehop.admin.warps.set";
+    public static final String ADMIN_WARPS_LIST = "telehop.admin.warps.list";
+    public static final String ADMIN_WARPS_DELETE = "telehop.admin.warps.delete";
+    public static final String ADMIN_PLAYERWARPS_DELETE = "telehop.admin.playerwarps.delete";
+    public static final String ADMIN_PLAYERINFO = "telehop.admin.playerinfo";
+    public static final String ADMIN_RELOAD = "telehop.admin.reload";
+    public static final String ADMIN_PERMISSIONS = "telehop.admin.permissions";
+    public static final String HUB = "telehop.hub";
+    public static final String SPAWN_NAMED = "telehop.spawn.named";
+    public static final String SPAWN_DESTINATION = "telehop.spawn.destination.";
+    public static final String TP_PLAYER_SELF = "telehop.tp.player.self";
+    public static final String TP_PLAYER_OTHERS = "telehop.tp.player.others";
+
     private PermissionNodes() {
     }
 

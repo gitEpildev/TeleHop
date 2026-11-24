@@ -1,92 +1,39 @@
-# Troubleshooting
+# Troubleshooting TeleHop
 
-## /spawn does nothing or says "Unknown command"
+## A command is missing
 
-- Check that `telehop-paper-2.3.0.jar` is in `plugins/` and the server loaded it (look for "TeleHop" in startup log).
-- Player needs `telehop.spawn` permission (true by default).
+Check the Paper startup log for the TeleHop version and any configuration or database errors. Confirm the command's primary name and aliases in `config/commands.yml`. Restart Paper after changing registrations. If a command visibility plugin is installed, check its allowlist using the name registered on that backend.
 
-## /spawn doesn't send me to the lobby
+`/hub` also requires `hub-command.enabled: true` in `config/spawns.yml` and a Paper restart. Other disabled features return a message when used. Check their switches in `config/features.yml` and run `/telehop reload` after editing them. [Command reference](../README.md#commands)
 
-- `hub-server` in `config.yml` must **exactly** match the server name in `velocity.toml`.
-- Names are case-sensitive: `"lobby"` is not `"Lobby"` or `"spawn-lobby"`.
+## Spawn sends a player to the wrong place
 
-## /setwarp or /delwarp says "no permission"
+For bare `/spawn`, check the current world's override and the backend default in the **source** backend's `config/spawns.yml`. If neither applies, check that backend's regional hub and `hub-server` in `config/general.yml`. Match the target name to its registration on each Velocity proxy. Use `/telehop spawn setdefault` on the target backend to change its ordinary spawn.
 
-- Requires `telehop.admin` permission (default: OP only).
-- In LuckPerms: `lp user <name> permission set telehop.admin`
+For `/spawn <name>`, use `/telehop spawn list` to check the owner and access policy. Confirm that the named world is loaded there and that the player has the required permissions in both contexts. For a rejected reload, correct the error in the backend log and reload again. [Spawn routes and permissions](spawns.md)
 
-## /pwarp set says "You don't have permission to create warps"
+## Local spawns work but remote travel fails
 
-- The player needs a `telehop.warps.<number>` permission to set a warp limit.
-- Without one, the limit is 0 (no warps allowed).
-- Fix: `lp group default permission set telehop.warps.3`
+Check that the Paper and Velocity JARs are from the same TeleHop release. Each backend needs a unique `server-name`, matching the name registered on every proxy. Check `servers.backends` on each proxy and the shared database connection. For cross-proxy player lookups, also check `proxy.id`, Redis connectivity and the channel prefix. [Multi-proxy setup and partial upgrades](multi-proxy.md)
 
-## Cross-server TPA/warps don't work
+## A player cannot set or use a warp
 
-1. All servers (Paper + Velocity) must use the **same MySQL database**.
-2. `servers.backends` in Velocity config must list every Paper server.
-3. `server-name` on each Paper server must match its `velocity.toml` name.
-4. Restart Velocity **before** the Paper servers.
+- `/setwarp` requires `telehop.admin.warps.set` and `/delwarp` requires `telehop.admin.warps.delete`.
+- `/pwarp set` requires `telehop.pwarp` and an available personal warp slot. For example, grant `telehop.warps.3` to a group that may keep three personal warps.
+- To visit another player's personal warp, the owner must mark it public. The general global-warp permission is `telehop.warp`. A specific global warp can also be granted with `telehop.warp.<name>`.
 
-## "Player not found" when using /tpa
+See the [warp guide](warps.md) and [permissions](permissions.md).
 
-- The target must be on a server listed in `servers.backends`.
-- Both servers must be running TeleHop with the same database.
+## TPA cannot find a player
 
-## RTP keeps failing
+Confirm the target is online and their backend appears in `servers.backends`. Player suggestions update periodically. Test from both entry proxies when investigating a multi-proxy network. If the target has disabled requests with `/tpatoggle`, they must enable them to receive a new request.
 
-- Check `rtp.max-radius`. Increase it if the world is small.
-- Verify the world name in `rtp.regions.*.world` matches an actual world.
-- Make sure the world has generated terrain in the radius area.
+## Random teleport fails or is cancelled
 
-## MySQL connection errors
+Check the region mapping, world name and the range of safe terrain in `config/rtp.yml`. The destination world must be loaded. When `rtp.cancel-on-move` is enabled and `rtp.delay-seconds` is positive, moving during warmup cancels the trip. The `telehop.rtp.bypassdelay` permission skips this delay.
 
-- Verify MySQL is running and reachable from each server.
-- If on different machines, the MySQL user must allow remote connections (`'user'@'%'`).
-- Test manually: `mysql -u telehop -p -h <host> telehop`
+## Database settings or legacy migration fail
 
-## Tab-completion only shows local players
+Check the database name, host, port and account on every instance. The account needs access from the Minecraft server host and privileges to create or upgrade tables. After changing credentials or pool settings, restart the affected instance so it opens a new pool. [Database setup](setup.md#step-1---create-the-mysql-database)
 
-- Normal for the first few seconds after startup.
-- Cross-server player lists sync periodically via Velocity.
-- Check that the Velocity plugin is loaded and `servers.backends` is correct.
-
-## Warps not showing in tab-complete
-
-- Warp names load asynchronously from the database on startup.
-- If the database connection is slow, completions may be empty briefly.
-- Verify the database has warps: `SELECT * FROM warps;`
-
-## Commands show "Unknown or incomplete command"
-
-- This usually means the plugin failed to load. Check the server startup log for TeleHop errors.
-- Verify the jar file is present in `plugins/` and not corrupted (re-download if needed).
-- If the plugin loaded but commands still fail, try reconnecting. The client needs to refresh its command list after a server restart.
-- Check that no other plugin is conflicting with the same command names.
-
-## Features say "This feature is disabled on this server"
-
-- A feature toggle in `config.yml` is set to `false`. Check the `features:` section.
-- Use `/telehop reload` after changing toggles. No restart needed.
-
-## `/telehop reload` didn't apply my MySQL changes
-
-`/telehop reload` reloads config values, language files, and warp caches from memory. It does **not** recreate the MySQL connection pool. If you changed `mysql.*` settings (host, port, credentials, database, pool-size), you must do a full server restart for those to take effect.
-
-## RTP cancelled / "you moved"
-
-If `rtp.delay-seconds` is greater than 0, the player must stand still during the warmup countdown. Moving cancels the teleport. Staff with `telehop.rtp.bypassdelay` permission skip the countdown entirely.
-
-## Upgrading from an older version
-
-### Config split (config.yml / storage.yml)
-
-Spawn location was moved from `config.yml` to `storage.yml`. On first startup after upgrading, the plugin automatically migrates your existing spawn values. No manual action needed.
-
-### TPA table migration (expiry -> sent_at)
-
-The `tpa_requests` table column `expiry` was renamed to `sent_at`. The plugin runs this migration automatically on startup. If you manage the schema manually, run:
-
-```sql
-ALTER TABLE tpa_requests CHANGE COLUMN expiry sent_at BIGINT NOT NULL;
-```
+When a legacy YAML migration fails, the startup log identifies the file to correct. Preserve the original config, split files, storage and database backup. Restart to resume and check migrated data before allowing travel. [Legacy upgrade guide](../LEGACY.md)

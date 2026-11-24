@@ -6,11 +6,9 @@ import re
 import subprocess
 import sys
 
+from compatibility import game_versions
 from prepare import DIST, PLATFORMS, git, release_version, verify_jars
 
-# The explicit Minecraft versions in .github/workflows/compatibility.yml.
-GAME_VERSIONS = ["1.21", "1.21.1", "1.21.3", "1.21.4", "1.21.5", "1.21.6",
-                 "1.21.7", "1.21.8", "1.21.9", "1.21.10", "1.21.11", "26.1.2"]
 CANONICAL = DIST / "github"
 
 
@@ -102,6 +100,13 @@ def project():
     return project_id
 
 
+def check_modrinth_versions(tags):
+    available = {tag["version"] for tag in tags if tag["version_type"] == "release"}
+    missing = set(game_versions("velocity")) - available
+    if missing:
+        raise ValueError("Missing Minecraft releases in Modrinth's catalogue: " + ", ".join(sorted(missing)))
+
+
 def validate_mod(metadata, record, jar_hash, name):
     for key in ("project_id", "version_number", "version_type", "name", "changelog", "loaders"):
         if record.get(key) != metadata[key]:
@@ -122,7 +127,7 @@ def modrinth(version, channel):
         digest = hashlib.sha512(jar.read_bytes()).hexdigest()
         metadata = {"project_id": project_id, "name": f"TeleHop {version} ({platform.title()})",
                     "version_number": version, "version_type": channel, "changelog": changelog,
-                    "loaders": [platform], "game_versions": GAME_VERSIONS, "dependencies": [],
+                    "loaders": [platform], "game_versions": game_versions(platform), "dependencies": [],
                     "file_parts": ["jar"], "primary_file": "jar", "featured": False}
         matches = [v for v in records if v["version_number"] == version and platform in v["loaders"]]
         if len(matches) > 1:
@@ -141,6 +146,7 @@ if __name__ == "__main__":
     if sys.argv[1] == "preflight":
         project_id = project()
         mod_api("user")
+        check_modrinth_versions(mod_api("tag/game_version"))
         if mod_api("project/" + project_id)["id"] != project_id:
             raise ValueError("MODRINTH_PROJECT_ID must be a project ID")
         # Stop before creating a GitHub release for a historical Modrinth-only version.

@@ -55,7 +55,7 @@ Paper Server A                    Velocity Proxy                    Paper Server
 
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
-| `PING` | Any | - | Health check (reserved) |
+| `PING` | Either peer | `capability`, `uuid` for spawn negotiation | Checks whether the receiving peer supports player-bound spawn transfers |
 | `RESPONSE` | Return | - | Generic response to a prior request |
 | `ERROR` | Return | - | Error response |
 
@@ -73,6 +73,8 @@ Paper Server A                    Velocity Proxy                    Paper Server
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
 | `TRANSFER_PLAYER` | Paper → Velocity | `uuid`, `targetServer`, `postAction`, plus action-specific keys | Transfers a player to another server, optionally queuing a post-transfer action |
+| `NAMED_SPAWN_TRANSFER` | Paper → Velocity | `uuid`, `targetServer`, `spawn`, `revision`, `explicit`, `hub`, `errorText` | Requests a spawn transfer through the traveller's proxy |
+| `NAMED_SPAWN_ARRIVAL` | Velocity → Paper | Same as `NAMED_SPAWN_TRANSFER` | Requests placement on the traveller's destination connection |
 
 #### Post-Transfer Actions (via `postAction` key)
 
@@ -164,6 +166,13 @@ Defined in `com.telehop.common.NetworkConstants`:
 
 ## Backward Compatibility
 
-The protocol is currently unversioned (v1 implicit). All packet types and payloads are additive - new types can be introduced without breaking older endpoints, as unknown types are silently ignored by both Paper and Velocity handlers.
+The packet envelope has no version field. New operations that depend on both ends supporting the same behaviour must negotiate their capability before use. A legacy endpoint can fail to acknowledge a newer operation. Existing regional spawn continues to use the original packet types during a rolling upgrade. [Mixed-version behaviour](multi-proxy.md)
 
-Future versions should add a `protocolVersion` field to `NetworkPacket` if breaking changes are required.
+## Named spawn transfer in 3.0.0
+
+1. Paper sends `PING` with `capability=named-spawns-v2` and the traveller's `uuid` through that player's own connection. Velocity verifies the backend name, the packet target and the player on the inbound connection. It returns the capability on that same connection. Each request accepts a reply only when its ID, reversed endpoints and live connection all match.
+2. Paper sends `NAMED_SPAWN_TRANSFER`. The `spawn` and `revision` identify the named destination. An empty pair selects the destination's saved default. The `explicit` flag identifies a player-supplied name, `hub` selects the hub permission and `errorText` supplies the translated failure message. Velocity acknowledges whether the requested backend is registered, then connects the player.
+3. After the player joins, Velocity probes the destination on the new backend connection. This works when the traveller is the first player on that backend. A matching capability enables `NAMED_SPAWN_ARRIVAL`. Paper checks the local backend and the inbound player's UUID, then acknowledges receipt on the same connection. For named spawns it checks the current directory revision, permission and loaded world before placing the player.
+4. A missing capability, an expired request or a changed connection stops the transaction. A failure after the server switch can leave the player at the destination's ordinary join location. The plugin reports placement failures to the player. Redis is unnecessary for this exchange because every leg travels through the proxy the player joined.
+
+Bare regional spawn retains the 2.x `TRANSFER_PLAYER` and `SPAWN_REQUEST` packet types. Regional RTP, warps and home GUI transfers also travel through the command player's connection. Velocity delivers their post-transfer actions through the player's destination connection. Existing Redis routing remains available for network-wide actions involving players on different proxies.

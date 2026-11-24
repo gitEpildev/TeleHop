@@ -7,6 +7,7 @@ import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.WarpRecord;
 import com.telehop.paper.NetworkPaperPlugin;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -32,7 +33,8 @@ public class WarpCommand extends BaseCommand {
             return;
         }
 
-        plugin.warpService().find(name).thenAccept(optionalWarp -> {
+        plugin.warpService().find(name).thenAccept(optionalWarp -> Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!player.isOnline()) return;
             if (optionalWarp.isEmpty()) {
                 player.sendMessage(plugin.msg("warp-not-found", Map.of("name", name)));
                 return;
@@ -47,10 +49,10 @@ public class WarpCommand extends BaseCommand {
                         .put("targetServer", warp.server())
                         .put("postAction", "WARP")
                         .put("warp", warp.name());
-                plugin.messaging().send(packet);
+                plugin.messaging().send(player, packet);
             }
             plugin.auditLogger().log("warp " + name + " by " + player.getName());
-        });
+        }));
     }
 
 }

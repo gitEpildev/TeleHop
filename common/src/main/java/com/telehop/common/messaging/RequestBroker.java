@@ -24,19 +24,34 @@ public class RequestBroker {
     }
 
     public CompletableFuture<NetworkPacket> sendRequest(NetworkPacket packet, long timeoutMs) {
-        CompletableFuture<NetworkPacket> future = tracker.track(packet, timeoutMs);
-        if (!transport.send(packet)) {
-            future.completeExceptionally(new IllegalStateException("Failed to send packet: " + packet.getType()));
+        return sendRequest(packet, timeoutMs, null, transport);
+    }
+
+    /** Select both the outbound transport and the connection allowed to answer this request. */
+    public CompletableFuture<NetworkPacket> sendRequest(NetworkPacket packet, long timeoutMs,
+                                                        Object carrier, PacketTransport delivery) {
+        CompletableFuture<NetworkPacket> future = tracker.track(packet, timeoutMs, carrier);
+        try {
+            if (!delivery.send(packet)) {
+                future.completeExceptionally(new IllegalStateException("Failed to send packet: " + packet.getType()));
+            }
+        } catch (RuntimeException failure) {
+            future.completeExceptionally(failure);
         }
         return future;
     }
 
-    public void handleIncoming(NetworkPacket packet, long dedupeWindowMs) {
+    public boolean handleIncoming(NetworkPacket packet, long dedupeWindowMs) {
+        return handleIncoming(packet, dedupeWindowMs, null);
+    }
+
+    public boolean handleIncoming(NetworkPacket packet, long dedupeWindowMs, Object carrier) {
         if (packet.isResponse()) {
-            tracker.complete(packet);
-            return;
+            tracker.complete(packet, carrier);
+            return false;
         }
-        tracker.markSeen(packet.getRequestId(), dedupeWindowMs);
+        boolean fresh = tracker.markSeen(packet.getRequestId(), dedupeWindowMs);
         tracker.cleanupSeen(dedupeWindowMs);
+        return fresh;
     }
 }

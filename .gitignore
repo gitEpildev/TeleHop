@@ -28,3 +28,4 @@ dependency-reduced-pom.xml
 # Release validation
 /.github/release/node_modules/
 __pycache__/
+/.github/tests/network/node_modules/

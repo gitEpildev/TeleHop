@@ -1,0 +1,105 @@
+{
+  "paper": {
+    "1.21": {
+      "file": "paper-1.21-130.jar",
+      "sha256": "ab9bb1afc3cea6978a0c03ce8448aa654fe8a9c4dddf341e7cbda1b0edaa73f5",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.1": {
+      "file": "paper-1.21.1-133.jar",
+      "sha256": "39bd8c00b9e18de91dcabd3cc3dcfa5328685a53b7187a2f63280c22e2d287b9",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.3": {
+      "file": "paper-1.21.3-83.jar",
+      "sha256": "87e973e1d338e869e7fdbc4b8fadc1579d7bb0246a0e0cf6e5700ace6c8bc17e",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.4": {
+      "file": "paper-1.21.4-232.jar",
+      "sha256": "5ee4f542f628a14c644410b08c94ea42e772ef4d29fe92973636b6813d4eaffc",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.5": {
+      "file": "paper-1.21.5-114.jar",
+      "sha256": "2ae6ae22adf417699746e0f89fc2ef6cb6ee050a5f6608cee58f0535d60b509e",
+      "java": 21,
+      "channel": "ALPHA"
+    },
+    "1.21.6": {
+      "file": "paper-1.21.6-48.jar",
+      "sha256": "35e2dfa66b3491b9d2f0bb033679fa5aca1e1fdf097e7a06a80ce8afeda5c214",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.7": {
+      "file": "paper-1.21.7-32.jar",
+      "sha256": "83838188699cb2837e55b890fb1a1d39ad0710285ed633fbf9fc14e9f47ce078",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.8": {
+      "file": "paper-1.21.8-60.jar",
+      "sha256": "8de7c52c3b02403503d16fac58003f1efef7dd7a0256786843927fa92ee57f1e",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.9": {
+      "file": "paper-1.21.9-59.jar",
+      "sha256": "aec002e77c7566e49494fdf05430b96078ffd1d7430e652d4f338fef951e7a10",
+      "java": 21,
+      "channel": "ALPHA"
+    },
+    "1.21.10": {
+      "file": "paper-1.21.10-130.jar",
+      "sha256": "158703f75a26f842ea656b3dc6d75bf3d1ec176b97a2c36384d0b80b3871af53",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "1.21.11": {
+      "file": "paper-1.21.11-132.jar",
+      "sha256": "5ffef465eeeb5f2a3c23a24419d97c51afd7dbb4923ff42df9a3f58bba1ccfba",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "26.1.2": {
+      "file": "paper-26.1.2-74.jar",
+      "sha256": "1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7",
+      "java": 25,
+      "channel": "STABLE"
+    },
+    "26.2": {
+      "file": "paper-26.2-135.jar",
+      "sha256": "ef3dbc68b013deafdbbee3bebf1ba351671ebcda94a8f136809b7532d5ba2fe1",
+      "java": 25,
+      "channel": "STABLE"
+    }
+  },
+  "velocity": {
+    "3.3": {
+      "file": "velocity-3.3.0-SNAPSHOT-436.jar",
+      "sha256": "06bb2a6ac16228a2f33a0336952624e6918a97535d36a3660725b18e2a6efdfb",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "3.5": {
+      "file": "velocity-3.5.0-SNAPSHOT-607.jar",
+      "sha256": "8f5bab011b9afdcb8f0efc4c0ea16cc621371678dd72c3ebb6e0245b67a0ab0f",
+      "java": 21,
+      "channel": "STABLE"
+    },
+    "4.3.1": {
+      "file": "velocity-4.3.1-45.jar",
+      "sha256": "0844bcabdcdb4f5b875906fd4c3365bc1bb76918e42bc595ed88ad195258dd75",
+      "java": 25,
+      "channel": "STABLE"
+    }
+  },
+  "velocity_client_backends": {
+    "1.21.2": "1.21.3"
+  }
+}

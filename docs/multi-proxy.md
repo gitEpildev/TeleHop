@@ -4,7 +4,7 @@ TeleHop supports multiple Velocity proxies sharing the same set of backend serve
 
 ## Prerequisites
 
-- TeleHop v1.1.0+ on all Paper backends and Velocity proxies
+- Matching TeleHop 3.0.0 builds on every Paper backend and Velocity proxy for named spawns
 - A shared MySQL database accessible from all servers
 - A Redis instance accessible from all Velocity proxies (can be shared with other plugins)
 - All Velocity proxies must have the same backend servers registered in `velocity.toml`
@@ -46,7 +46,7 @@ multi-proxy.global-player-list=true
 multi-proxy.cross-proxy-timeout-ms=15000
 
 # Redis connection (same instance for all proxies)
-redis.host=74.208.95.180
+redis.host=redis.internal
 redis.port=6379
 redis.password=your-redis-password
 redis.channel-prefix=telehop
@@ -80,7 +80,13 @@ regions:
     hub: lobby-eu
 ```
 
-This ensures `/spawn` routes players to their regional lobby.
+With the default spawn configuration, `/spawn` routes players according to the region of their current backend. A backend shared by two proxies has the same regional mapping for players entering through either proxy.
+
+### Named spawns on a shared backend
+
+Define each named spawn in `config/spawns.yml` on the Paper backend that owns its world. A player changing worlds on that backend travels locally. For a move to another backend, TeleHop checks support on the player's own proxy, connects the player and waits for the destination backend to confirm placement. Other players already on either backend can be connected through different proxies. Each proxy must register the target under the same name.
+
+Velocity 3 and 4 proxies can coexist. Install the same TeleHop version on both generations. A player still connected through a TeleHop 2.3.0 proxy can use the original regional route. A named cross-server trip through that proxy reports an unavailable destination while the player is still on the source backend. If the proxy is current but the destination Paper backend was rolled back, the connection can switch before placement times out. The player stays at their ordinary arrival location on that backend and sees the failure. See the [spawn configuration guide](spawns.md).
 
 ### 3. Home Blocking
 
@@ -97,7 +103,7 @@ This matches `lobby-usa`, `lobby-eu`, `lobby-asia`, etc.
 ### 4. Apply Changes
 
 - **Paper servers**: Run `/telehop reload` on each server (no restart needed)
-- **Velocity proxies**: Restart required (do rolling restarts , one at a time)
+- **Velocity proxies**: Restart required (restart one proxy at a time)
 
 ## How It Works
 
@@ -128,7 +134,7 @@ When `global-player-list` is true, player list requests aggregate names from all
 | `redis.password` | (empty) | Redis auth password |
 | `redis.channel-prefix` | `telehop` | Prefix for Redis pub/sub channels |
 | `redis.ssl` | `false` | Connect to Redis over TLS (rediss) |
-| `redis.ssl-verify` | `true` | Verify the server certificate and hostname. Disable only for testing |
+| `redis.ssl-verify` | `true` | Verify the server certificate and hostname. Keep enabled and supply the trusted CA when using a private certificate |
 | `redis.ssl-ca-cert` | (empty) | Path to a PEM CA certificate for self-signed setups. Empty uses the system trust store |
 
 ### Paper (`general.yml`)

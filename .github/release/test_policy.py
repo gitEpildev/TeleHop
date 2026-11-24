@@ -87,20 +87,27 @@ class BuildTests(unittest.TestCase):
 
     def test_missing_skipped_failing_and_empty_suites_fail(self):
         with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
-            for module in ["common", "paper"]:
-                Path(module, "target/surefire-reports").mkdir(parents=True)
-            with self.assertRaisesRegex(ValueError, "common"):
-                prepare.verify_test_reports()
             xml = '<testsuite tests="1" errors="0" failures="0" skipped="0"/>'
-            Path("common/target/surefire-reports/TEST-a.xml").write_text(xml)
-            report = Path("paper/target/surefire-reports/TEST-b.xml")
-            for key in ["errors", "failures", "skipped", "tests"]:
-                with self.subTest(key=key), self.assertRaises(ValueError):
-                    report.write_text(xml.replace('tests="1"', 'tests="0"') if key == "tests"
-                                      else xml.replace(f'{key}="0"', f'{key}="1"'))
+            for module in ("common", "paper", "velocity"):
+                report = Path(module, "target/surefire-reports/TEST-suite.xml")
+                report.parent.mkdir(parents=True)
+                with self.subTest(module=module), self.assertRaisesRegex(ValueError, module):
                     prepare.verify_test_reports()
-            report.write_text(xml)
+                for key in ("errors", "failures", "skipped", "tests"):
+                    with self.subTest(module=module, key=key), self.assertRaisesRegex(ValueError, module):
+                        report.write_text(xml.replace('tests="1"', 'tests="0"') if key == "tests"
+                                          else xml.replace(f'{key}="0"', f'{key}="1"'))
+                        prepare.verify_test_reports()
+                report.write_text(xml)
             prepare.verify_test_reports()
+
+    def test_older_paper_can_scan_every_class_in_the_distribution(self):
+        with tempfile.TemporaryDirectory() as tmp, ZipFile(Path(tmp, "paper.jar"), "w") as jar:
+            jar.writestr("old/Adapter.class", bytes.fromhex("cafebabe00000041"))
+            prepare.check_paper_bytecode(jar)
+            jar.writestr("new/Adapter.class", bytes.fromhex("cafebabe00000045"))
+            with self.assertRaisesRegex(ValueError, "Java 21 limit.*new/Adapter.class"):
+                prepare.check_paper_bytecode(jar)
 
     def test_missing_module_output_and_wrong_embedded_version_fail(self):
         with tempfile.TemporaryDirectory() as tmp, chdir(tmp):

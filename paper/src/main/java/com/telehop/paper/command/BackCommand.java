@@ -68,7 +68,7 @@ public class BackCommand extends BaseCommand {
             packet.put("z", String.valueOf(loc.getZ()));
             packet.put("yaw", String.valueOf(loc.getYaw()));
             packet.put("pitch", String.valueOf(loc.getPitch()));
-            plugin.messaging().send(packet);
+            plugin.messaging().send(player, packet);
             player.sendMessage(plugin.msg(messageKey));
             return;
         }

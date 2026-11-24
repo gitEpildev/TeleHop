@@ -16,7 +16,7 @@ Stand at the location and run:
 /setwarp shop
 ```
 
-This saves the warp with your exact position, rotation, server, and world. Requires `telehop.admin` permission.
+This saves the warp with your exact position, rotation, server, and world. Requires `telehop.admin.warps.set`.
 
 ### Using an Admin Warp
 
@@ -40,7 +40,7 @@ Shows all admin warps across all servers.
 /delwarp shop
 ```
 
-Requires `telehop.admin` permission.
+Requires `telehop.admin.warps.delete`.
 
 ---
 
@@ -116,8 +116,6 @@ Player warps work across servers. If your warp is on the EU server and you're on
 
 ---
 
----
-
 ## Admin Warp Management
 
 ### Listing All Player Warps
@@ -126,7 +124,7 @@ Player warps work across servers. If your warp is on the EU server and you're on
 /listwarps
 ```
 
-Shows every player warp across all servers, grouped by owner. Requires `telehop.admin`.
+Shows every player warp across all servers, grouped by owner. Requires `telehop.admin.warps.list`.
 
 ### Listing a Specific Player's Warps
 
@@ -150,7 +148,7 @@ Force-delete a specific player's warp:
 /forcedelwarp Steve home
 ```
 
-Both require `telehop.admin`.
+Deleting a global warp requires `telehop.admin.warps.delete`. Deleting a player's warp requires `telehop.admin.playerwarps.delete`.
 
 ### Admin-Deleting a Player Warp
 
@@ -158,26 +156,10 @@ Both require `telehop.admin`.
 /pwarp admin del Steve home
 ```
 
-Alternative to `/forcedelwarp Steve home`. Requires `telehop.admin`.
+This has the same permission as `/forcedelwarp Steve home`, `telehop.admin.playerwarps.delete`.
 
 ---
 
 ## Command Summary
 
-| Command | What it does | Who can use it |
-|---------|-------------|----------------|
-| `/setwarp <name>` | Create an admin warp | Staff (`telehop.admin`) |
-| `/delwarp <name>` | Delete an admin warp | Staff (`telehop.admin`) |
-| `/warp <name>` | Go to an admin warp | Everyone (`telehop.warp`) |
-| `/warps` | List admin warps | Everyone (`telehop.warp`) |
-| `/pwarp set <name>` | Create a personal warp | Everyone (`telehop.pwarp` + limit perm) |
-| `/pwarp del <name>` | Delete your warp | Everyone (`telehop.pwarp`) |
-| `/pwarp list` | List your warps | Everyone (`telehop.pwarp`) |
-| `/pwarp <name>` | Go to your warp | Everyone (`telehop.pwarp`) |
-| `/pwarp <player> <name>` | Go to a public warp | Everyone (`telehop.pwarp`) |
-| `/pwarp public <name>` | Toggle public/private | Everyone (`telehop.pwarp`) |
-| `/pwarp admin del <player> <name>` | Admin-delete any player warp | Staff (`telehop.admin`) |
-| `/listwarps` | List all player warps (all servers) | Staff (`telehop.admin`) |
-| `/listwarps <player>` | List a player's warps with details | Staff (`telehop.admin`) |
-| `/forcedelwarp <name>` | Force-delete an admin warp | Staff (`telehop.admin`) |
-| `/forcedelwarp <player> <name>` | Force-delete a player's warp | Staff (`telehop.admin`) |
+See the [full command and permission reference](../README.md#global-and-player-warps).

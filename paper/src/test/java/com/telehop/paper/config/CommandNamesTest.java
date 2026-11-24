@@ -29,6 +29,17 @@ class CommandNamesTest {
     }
 
     @Test
+    void disabledHubPreservesExistingHubAliasOnAnotherCommand() {
+        var defaults = new YamlConfiguration();
+        defaults.set("spawn", List.of("spawn"));
+        defaults.set("hub", List.of("hub"));
+        var overrides = new YamlConfiguration();
+        overrides.set("spawn", List.of("hub"));
+        assertEquals("hub", new CommandNames(defaults, overrides, false).primary("spawn"));
+        assertThrows(IllegalArgumentException.class, () -> new CommandNames(defaults, overrides, true));
+    }
+
+    @Test
     void duplicateLabelsConflictWithUnmodifiedDefaults() {
         var defaults = new YamlConfiguration();
         defaults.set("tp", List.of("tp"));

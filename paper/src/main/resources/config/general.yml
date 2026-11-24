@@ -34,7 +34,8 @@ servers:
 #  proxy). This enables region-aware spawn routing so /spawn sends players
 #  to their regional lobby instead of a single global hub.
 #
-#  When false (default), /spawn always uses hub-server above.
+#  When false (default), the fallback for /spawn is hub-server above.
+#  Local and per-world routes in spawns.yml take precedence.
 multi-proxy:
   enabled: false
 

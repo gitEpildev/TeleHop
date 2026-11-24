@@ -9,7 +9,7 @@ Running `/home` opens a large chest GUI (5 rows by default, configurable via `gu
 | Slot State | Default Material | Description |
 |------------|------------------|-------------|
 | **Occupied (set)** | Lime Bed | Shows the home name, server, world, and coordinates. Click to open the manage sub-menu. |
-| **Available (empty)** | Red Bed | Player has permission for this slot. Use `/sethome <name>` to set a home. |
+| **Available (empty)** | Red Bed | Click to save a numbered home at your current position, or use `/sethome <name>` to choose a name. |
 | **Locked** | Light Blue Bed | Player lacks the permission. Shows "Upgrade to unlock" lore. |
 
 All bed colours are configurable in `home.yml` using any Minecraft bed material name (`LIME_BED`, `RED_BED`, `LIGHT_BLUE_BED`, etc.).
@@ -22,7 +22,7 @@ The home tooltip shows the server and world dimension with configurable colours:
 - **Nether** - red-to-gold gradient by default
 - **The End** - purple-to-blue gradient by default
 
-Server names also display with per-server colours (e.g. Lobby in gray, USA in red, EU in blue). Customise all of these in `home.yml` under `world-colors` and `server-colors`.
+Server names also display with per-server colours (e.g. Lobby in grey, USA in red, EU in blue). Customise all of these in `home.yml` under `world-colors` and `server-colors`.
 
 Coordinates can be hidden by setting `show-location: false`.
 
@@ -32,10 +32,6 @@ Clicking an occupied home opens a sub-menu with:
 
 - **Teleport** (green wool) - teleports to the home, cross-server if needed
 - **Delete** (red wool) - opens a confirmation prompt
-
-### Confirmation
-
-When `confirm-set: true` in `config/home.yml`, setting a home via the GUI shows a small yes/no GUI first.
 
 ## Named Homes
 
@@ -83,7 +79,7 @@ Empty bed slots on blocked servers show "Cannot set homes on this server" in red
 | `telehop.homes.8` | - | Access 8 homes |
 | `telehop.homes.9` | - | Access 9 homes |
 | `telehop.homes.10` | - | Access 10 homes |
-| `telehop.admin` | `op` | Use `/forcedelhome` |
+| `telehop.admin.homes.delete` | Granted by `telehop.admin` | Use `/forcedelhome` |
 
 The highest matching `telehop.homes.<N>` permission determines how many homes a player can create. Use LuckPerms to assign higher counts to ranks.
 
@@ -146,7 +142,7 @@ CREATE TABLE IF NOT EXISTS homes (
 );
 ```
 
-### Migration from 1.1.0
+### Migration from a slot-based installation
 
 The `homes` table is migrated automatically on first startup:
 
@@ -155,4 +151,4 @@ The `homes` table is migrated automatically on first startup:
 3. The primary key is changed from `(uuid, slot)` to `(uuid, name)`
 4. The `slot` column is dropped
 
-No manual intervention is needed.
+Back up the database and verify an existing owner’s migrated locations. [Legacy upgrade checks](../LEGACY.md#from-1x)

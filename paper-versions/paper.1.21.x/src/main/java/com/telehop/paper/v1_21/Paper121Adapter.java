@@ -17,6 +17,9 @@ public final class Paper121Adapter implements VersionAdapter {
 
     @Override
     public World resolveWorld(String name) {
-        return Bukkit.getWorld(name);
+        World named = Bukkit.getWorld(name);
+        if (named != null) return named;
+        var key = org.bukkit.NamespacedKey.fromString(name);
+        return key == null ? null : Bukkit.getWorld(key);
     }
 }

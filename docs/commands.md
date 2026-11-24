@@ -1,18 +1,25 @@
 # Commands
 
+For every default root, alias, staff action and confirmation command, see the [complete command reference](../README.md#commands).
+
 ## Spawn
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/spawn` | Teleport to the network spawn (hub server) | `telehop.spawn` |
+| `/spawn` | Follow the current world, backend or hub route | `telehop.spawn` |
+| `/spawn <name>` | Visit a saved destination | `telehop.spawn`, `telehop.spawn.named` and destination access |
+| `/hub` | Visit the network hub when enabled | `telehop.hub` |
+| `/telehop spawn list` | Show IDs, owners and access | `telehop.admin.spawn.list` |
+| `/telehop spawn set <name> <public\|restricted>`, `/telehop spawn setdefault` | Save your location | `telehop.admin.spawn.set` |
+| `/telehop spawn delete <name> [revision]` | Request or confirm deletion | `telehop.admin.spawn.delete` |
 
 ## Admin Warps
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/warp <name>` | Teleport to a global warp | `telehop.warp` |
-| `/setwarp <name>` | Create or update a global warp | `telehop.admin` |
-| `/delwarp <name>` | Delete a global warp | `telehop.admin` |
+| `/warp <name>` | Teleport to a global warp | `telehop.warp` or `telehop.warp.<name>` |
+| `/setwarp <name>` | Create or update a global warp | `telehop.admin.warps.set` |
+| `/delwarp <name>` | Delete a global warp | `telehop.admin.warps.delete` |
 | `/warps` | List all global warps | `telehop.warp` |
 
 ## Player Warps
@@ -25,7 +32,7 @@
 | `/pwarp <name>` | Teleport to your own warp | `telehop.pwarp` |
 | `/pwarp <player> <name>` | Teleport to another player's public warp | `telehop.pwarp` |
 | `/pwarp public <name>` | Toggle a warp between public and private | `telehop.pwarp` |
-| `/pwarp admin del <player> <name>` | Admin: delete any player's warp | `telehop.admin` |
+| `/pwarp admin del <player> <name>` | Admin: delete any player's warp | `telehop.admin.playerwarps.delete` |
 
 Aliases: `/playerwarp`, `/pwarps`
 
@@ -59,7 +66,7 @@ When a player has TPA toggled off:
 | `/delhome <name>` | Delete a named home | `telehop.delhome` |
 | `/lastlocation` | Teleport to your last logout location | `telehop.lastlocation` |
 
-Homes are blocked on servers listed in `home.yml > blocked-servers` (e.g. lobby). Players can still open the GUI and teleport to existing homes from any server.
+Creating homes is blocked on backends listed in `homes.blocked-servers` or matched by `homes.blocked-server-prefixes` in `home.yml`. Players can still open the GUI and teleport to existing homes from any server.
 
 ## Back
 
@@ -82,29 +89,29 @@ Region items show the estimated ping the player will get on the destination serv
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp` |
-| `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp` |
-| `/tp <x> <y> <z>` | Teleport yourself to coordinates in your current world | `telehop.tp` + `telehop.tp.coordinates.self` |
-| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp` + `telehop.tp.coordinates.others` |
+| `/tp <player>` | Teleport yourself to a player (cross-server) | `telehop.tp.player.self` |
+| `/tp <p1> <p2>` | Teleport player p1 to player p2 (cross-server) | `telehop.tp.player.others` |
+| `/tp <x> <y> <z>` | Teleport yourself to coordinates in your current world | `telehop.tp.coordinates.self` |
+| `/tp <player> <x> <y> <z>` | Teleport a player to coordinates (cross-server) | `telehop.tp.coordinates.others` |
 | `/tphere <player>` | Pull a player to your location (cross-server) | `telehop.tphere` |
 
-These commands are **hidden from tab complete** for players who do not have the required permission.
+Each form checks the effective permission before moving a player or contacting Velocity.
 
 ## Admin Warp & Home Management
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/listwarps` | List all player warps across all servers | `telehop.admin` |
-| `/listwarps <player>` | List a specific player's warps with details | `telehop.admin` |
-| `/forcedelwarp <name>` | Force-delete an admin warp | `telehop.admin` |
-| `/forcedelwarp <player> <name>` | Force-delete a specific player's warp | `telehop.admin` |
-| `/forcedelhome <player>` | List a player's homes with clickable delete buttons | `telehop.admin` |
-| `/forcesethome <player> <name>` | Set a home for another player at your current location | `telehop.admin` |
-| `/listhomes <player>` | List a player's homes with clickable [TP] and [DELETE] buttons | `telehop.admin` |
-| `/forcelastloc <player>` | View a player's last logout location (server, world, coords) | `telehop.admin` |
-| `/forcelastloc <player> tp` | Teleport to a player's last logout location | `telehop.admin` |
-| `/forcelastloc <player> clear` | Clear a player's saved logout location | `telehop.admin` |
-| `/playerinfo <player>` | Show a summary of a player's TeleHop data (homes, warps, last loc, server) | `telehop.admin` |
+| `/listwarps` | List all player warps across all servers | `telehop.admin.warps.list` |
+| `/listwarps <player>` | List a specific player's warps with details | `telehop.admin.warps.list` |
+| `/forcedelwarp <name>` | Force-delete an admin warp | `telehop.admin.warps.delete` |
+| `/forcedelwarp <player> <name>` | Force-delete a specific player's warp | `telehop.admin.playerwarps.delete` |
+| `/forcedelhome <player>` | List a player's homes with clickable delete buttons | `telehop.admin.homes.delete` |
+| `/forcesethome <player> <name>` | Set a home for another player at your current location | `telehop.admin.homes.set` |
+| `/listhomes <player>` | List a player's homes with actions filtered by permission | `telehop.admin.homes.list` |
+| `/forcelastloc <player>` | View a player's last logout location (server, world, coords) | `telehop.admin.lastlocation.view` |
+| `/forcelastloc tp <player>` | Teleport to a player's last logout location | `telehop.admin.lastlocation.visit` |
+| `/forcelastloc clear <player>` | Clear a player's saved logout location | `telehop.admin.lastlocation.clear` |
+| `/playerinfo <player>` | Show a summary of a player's TeleHop data (homes, warps, last loc, server) | `telehop.admin.playerinfo` |
 
 Aliases: `/forcell` for `/forcelastloc`, `/pinfo` for `/playerinfo`
 
@@ -114,9 +121,9 @@ Aliases: `/forcell` for `/forcelastloc`, `/pinfo` for `/playerinfo`
 |---------|-------------|------------|
 | `/telehop` | Show all commands (help) | Everyone |
 | `/telehop version` | Show plugin version | Everyone |
-| `/telehop reload` | Reload config, messages, and warp cache | `telehop.admin` |
-| `/telehop perms` | List all permission nodes with descriptions | `telehop.admin` |
+| `/telehop reload` | Reload config, messages, and warp cache | `telehop.admin.reload` |
+| `/telehop perms` | List all permission nodes with descriptions | `telehop.admin.permissions` |
 
-Admin-only subcommands (`reload`, `perms`) are hidden from tab complete for players without `telehop.admin`.
+The legacy staff parent grants the delegated administrative nodes.
 
 Command examples use the default names. Set primary names and aliases in `config/commands.yml` and restart Paper. See [configuration](configuration.md#command-names-and-aliases).

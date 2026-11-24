@@ -6,7 +6,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,20 +66,21 @@ public class DatabaseManager {
         this.circuitBreaker = new DatabaseCircuitBreaker(5, 30_000L, logger);
     }
 
+    /** Opens a pool with the required schema, releasing it if the upgrade fails. */
+    public static DatabaseManager open(DatabaseConfig config) throws SQLException {
+        DatabaseManager manager = new DatabaseManager(config);
+        try {
+            manager.initSchema();
+            return manager;
+        } catch (SQLException | RuntimeException e) {
+            manager.shutdown();
+            throw e;
+        }
+    }
+
     public void initSchema() throws SQLException {
         try (Connection connection = dataSource.getConnection()) {
-            for (String statement : SqlSchema.statements()) {
-                try (Statement st = connection.createStatement()) {
-                    st.execute(statement);
-                }
-            }
-            for (String migration : SqlSchema.migrations()) {
-                try (Statement st = connection.createStatement()) {
-                    st.execute(migration);
-                } catch (SQLException ignored) {
-                    // migration already applied or column doesn't exist - safe to skip
-                }
-            }
+            SqlSchema.initialise(connection);
         }
     }
 

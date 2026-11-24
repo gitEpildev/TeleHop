@@ -2,7 +2,6 @@ package com.telehop.paper.command.admin;
 
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
-import co.aikar.commands.annotation.CommandPermission;
 import co.aikar.commands.annotation.Default;
 import com.telehop.common.PermissionNodes;
 import com.telehop.common.model.NetworkPacket;
@@ -13,7 +12,6 @@ import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 @CommandAlias("%{cmd-tp}")
-@CommandPermission(PermissionNodes.TP)
 public class AdminTeleportCommand extends BaseCommand {
     private final NetworkPaperPlugin plugin;
 
@@ -38,18 +36,17 @@ public class AdminTeleportCommand extends BaseCommand {
             sender.sendMessage(plugin.msg("feature-disabled"));
             return;
         }
-        if (!plugin.permissionService().has(sender, PermissionNodes.TP)) {
+        boolean coordinates = arg3 != null;
+        boolean self = coordinates ? arg4 == null || sender.getName().equalsIgnoreCase(arg1) : arg2 == null;
+        String permission;
+        if (coordinates) {
+            permission = self ? PermissionNodes.TP_COORDINATES_SELF : PermissionNodes.TP_COORDINATES_OTHERS;
+        } else {
+            permission = self ? PermissionNodes.TP_PLAYER_SELF : PermissionNodes.TP_PLAYER_OTHERS;
+        }
+        if (!sender.hasPermission(permission)) {
             sender.sendMessage(plugin.msg("no-permission"));
             return;
-        }
-
-        if (arg3 != null) {
-            boolean self = arg4 == null || sender.getName().equalsIgnoreCase(arg1);
-            String permission = self ? PermissionNodes.TP_COORDINATES_SELF : PermissionNodes.TP_COORDINATES_OTHERS;
-            if (!sender.hasPermission(permission)) {
-                sender.sendMessage(plugin.msg("no-permission"));
-                return;
-            }
         }
 
         // /tp <player> <x> <y> <z>

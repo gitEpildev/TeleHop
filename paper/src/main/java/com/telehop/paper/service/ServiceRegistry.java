@@ -15,6 +15,10 @@ import com.telehop.paper.messaging.PaperMessagingManager;
  * Avoids scattering dozens of getters across the plugin main class.
  */
 public final class ServiceRegistry {
+    private SpawnService spawns;
+    public SpawnService spawns() { return spawns; }
+    public void setSpawns(SpawnService spawns) { this.spawns = spawns; }
+
     private PaperSettings settings;
     private MessageService messageService;
     private PermissionService permissionService;

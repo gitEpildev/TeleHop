@@ -8,6 +8,7 @@ import com.telehop.velocity.model.PendingAction;
 import com.telehop.velocity.service.VelocityServiceRegistry;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
+import com.velocitypowered.api.proxy.ServerConnection;
 import com.velocitypowered.api.proxy.server.RegisteredServer;
 import org.slf4j.Logger;
 
@@ -42,6 +43,15 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
     }
 
     @Override
+    public void handle(NetworkPacket packet, ServerConnection carrier) {
+        if (packet.getType() == PacketType.NAMED_SPAWN_TRANSFER) {
+            namedTransfer(packet, carrier);
+        } else {
+            handle(packet);
+        }
+    }
+
+    /** Redis can relay network-wide actions. Session-bound spawn requests arrive on plugin messaging. */
     public void handle(NetworkPacket packet) {
         switch (packet.getType()) {
             case PLAYER_SERVER_UPDATE -> {
@@ -66,8 +76,9 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         }
     }
 
-    /** Called by the plugin on {@code ServerConnectedEvent} to fire queued post-transfer actions. */
-    public void executePendingAction(Player player, String currentServer) {
+    /** Called by the plugin on {@code ServerPostConnectEvent} to fire queued post-transfer actions. */
+    public void executePendingAction(Player player, ServerConnection joined) {
+        String currentServer = joined.getServerInfo().getName();
         PendingAction action = services.pendingActionManager().get(player.getUniqueId());
         if (action == null) return;
         if (!action.targetServer().equalsIgnoreCase(currentServer)) {
@@ -75,51 +86,46 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                     player.getUniqueId(), action.action(), action.targetServer(), currentServer);
             return;
         }
-        services.pendingActionManager().remove(player.getUniqueId());
+        if (!services.pendingActionManager().remove(action)) return;
         logger.info("Executing pending action for {}: action={}, server={}",
                 player.getUniqueId(), action.action(), currentServer);
 
         switch (action.action()) {
-            case "SPAWN" -> sendWithRetry(currentServer,
+            case "SPAWN" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.SPAWN_REQUEST, "velocity", currentServer)
-                            .put("uuid", player.getUniqueId().toString()),
-                    player.getUniqueId());
-            case "WARP" -> sendWithRetry(currentServer,
+                            .put("uuid", player.getUniqueId().toString()));
+            case "WARP" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.WARP_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
-                            .put("warp", action.payload().get("warp")),
-                    player.getUniqueId());
+                            .put("warp", action.payload().get("warp")));
             case "RTP", "RTP_OVERWORLD", "RTP_NETHER", "RTP_END" -> {
                 String dimension = action.payload().getOrDefault("dimension", "overworld");
                 if (action.action().startsWith("RTP_")) {
                     String suffix = action.action().substring("RTP_".length()).toLowerCase();
                     if (!suffix.isBlank()) dimension = suffix;
                 }
-                sendWithRetry(currentServer,
+                sendWithRetry(joined,
                         NetworkPacket.request(PacketType.RTP_REQUEST, "velocity", currentServer)
                                 .put("uuid", player.getUniqueId().toString())
                                 .put("region", action.payload().getOrDefault("region", "default"))
-                                .put("dimension", dimension),
-                        player.getUniqueId());
+                                .put("dimension", dimension));
             }
-            case "TELEPORT_TO_PLAYER" -> sendWithRetry(currentServer,
+            case "TELEPORT_TO_PLAYER" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.TELEPORT_TO_PLAYER, "velocity", currentServer)
                             .put("actorUuid", action.payload().get("actorUuid"))
-                            .put("targetUuid", action.payload().get("targetUuid")),
-                    player.getUniqueId());
-            case "PWARP" -> sendWithRetry(currentServer,
+                            .put("targetUuid", action.payload().get("targetUuid")));
+            case "PWARP" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.PWARP_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
                             .put("pwarpOwner", action.payload().get("pwarpOwner"))
-                            .put("pwarpName", action.payload().get("pwarpName")),
-                    player.getUniqueId());
-            case "HOME" -> sendWithRetry(currentServer,
+                            .put("pwarpName", action.payload().get("pwarpName")));
+            case "HOME" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.HOME_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
                             .put("homeName", action.payload().get("homeName"))
-                            .put("homeUuid", action.payload().get("homeUuid")),
-                    player.getUniqueId());
-            case "LASTLOC" -> sendWithRetry(currentServer,
+                            .put("staffVisit", action.payload().getOrDefault("staffVisit", "false"))
+                            .put("homeUuid", action.payload().get("homeUuid")));
+            case "LASTLOC" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.EXECUTE_POST_JOIN_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
                             .put("world", action.payload().get("world"))
@@ -127,9 +133,8 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                             .put("y", action.payload().get("y"))
                             .put("z", action.payload().get("z"))
                             .put("yaw", action.payload().get("yaw"))
-                            .put("pitch", action.payload().get("pitch")),
-                    player.getUniqueId());
-            case "BACK" -> sendWithRetry(currentServer,
+                            .put("pitch", action.payload().get("pitch")));
+            case "BACK" -> sendWithRetry(joined,
                     NetworkPacket.request(PacketType.BACK_TELEPORT, "velocity", currentServer)
                             .put("uuid", player.getUniqueId().toString())
                             .put("world", action.payload().get("world"))
@@ -137,8 +142,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                             .put("y", action.payload().get("y"))
                             .put("z", action.payload().get("z"))
                             .put("yaw", action.payload().get("yaw"))
-                            .put("pitch", action.payload().get("pitch")),
-                    player.getUniqueId());
+                            .put("pitch", action.payload().get("pitch")));
             default -> {}
         }
     }
@@ -233,6 +237,39 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         bridge().sendPlayerListResponse(correlationId, names);
     }
 
+    private void namedTransfer(NetworkPacket packet, ServerConnection origin) {
+        Player player = origin.getPlayer();
+        var destination = proxy.getServer(packet.get("targetServer")).orElse(null);
+        boolean acknowledged = services.messaging().send(origin, NetworkPacket.response(packet, destination != null, null));
+        if (!acknowledged || destination == null) return;
+        services.pendingActionManager().remove(player.getUniqueId());
+        var error = Component.text(packet.get("errorText"), NamedTextColor.RED);
+        player.createConnectionRequest(destination).connect().whenComplete((connection, failure) -> {
+            if (failure != null || !connection.isSuccessful()) {
+                if (player.isActive() && player.getCurrentServer().orElse(null) == origin) player.sendMessage(error);
+                return;
+            }
+            // The backend installs the player's plugin channel after the connection completes.
+            var joined = player.getCurrentServer().orElse(null);
+            proxy.getScheduler().buildTask(pluginInstance, () -> {
+                if (joined == null || player.getCurrentServer().orElse(null) != joined
+                        || !joined.getServerInfo().getName().equalsIgnoreCase(destination.getServerInfo().getName())) return;
+                String server = destination.getServerInfo().getName();
+                services.messaging().request(joined, NetworkPacket.spawnProbe("velocity", server, player.getUniqueId())).thenCompose(reply -> {
+                    if (!reply.isSuccess() || !reply.supportsSpawns() || player.getCurrentServer().orElse(null) != joined) {
+                        return java.util.concurrent.CompletableFuture.failedFuture(new IllegalStateException("Destination changed"));
+                    }
+                    var arrival = NetworkPacket.request(PacketType.NAMED_SPAWN_ARRIVAL, "velocity", server);
+                    packet.getPayload().forEach(arrival::put);
+                    return services.messaging().request(joined, arrival);
+                }).whenComplete((ack, failureToPlace) -> {
+                    if ((failureToPlace != null || !ack.isSuccess()) && player.isActive()
+                            && player.getCurrentServer().orElse(null) == joined) player.sendMessage(error);
+                });
+            }).delay(Duration.ofMillis(250)).schedule();
+        });
+    }
+
     private void routeTransfer(NetworkPacket packet) {
         UUID uuid = UUID.fromString(packet.get("uuid"));
         String targetServer = packet.get("targetServer");
@@ -247,13 +284,19 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         if (destination.isEmpty()) return;
         Player player = playerOpt.get();
 
-        if (!postAction.isBlank()) {
-            PendingAction action = new PendingAction(uuid, targetServer, postAction);
-            action.payload().putAll(packet.getPayload());
-            services.pendingActionManager().put(action);
-            logger.info("Queued pending action for {}: action={}, targetServer={}", uuid, postAction, targetServer);
+        var transfer = player.createConnectionRequest(destination.get());
+        if (postAction.isBlank()) {
+            transfer.fireAndForget();
+            return;
         }
-        player.createConnectionRequest(destination.get()).fireAndForget();
+        PendingAction action = new PendingAction(uuid, targetServer, postAction);
+        action.payload().putAll(packet.getPayload());
+        services.pendingActionManager().put(action);
+        logger.info("Queued pending action for {}: action={}, targetServer={}", uuid, postAction, targetServer);
+        transfer.connectWithIndication().whenComplete((connected, failure) -> {
+            // A rejected trip must not place the player on a later manual visit.
+            if (failure != null || !Boolean.TRUE.equals(connected)) services.pendingActionManager().remove(action);
+        });
     }
 
     private void handleTpaAccept(NetworkPacket packet) {
@@ -352,7 +395,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
                 .put("x", packet.get("x"))
                 .put("y", packet.get("y"))
                 .put("z", packet.get("z"));
-        sendWithRetry(targetServer, forward, target.getUniqueId());
+        target.getCurrentServer().ifPresent(joined -> sendWithRetry(joined, forward));
     }
 
     private void handleAdminTeleport(NetworkPacket packet) {
@@ -437,7 +480,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             NetworkPacket localTeleport = NetworkPacket.request(PacketType.TELEPORT_TO_PLAYER, "velocity", targetServer)
                     .put("actorUuid", actor.getUniqueId().toString())
                     .put("targetUuid", target.getUniqueId().toString());
-            sendWithRetry(targetServer, localTeleport, actor.getUniqueId(), 8);
+            actor.getCurrentServer().ifPresent(joined -> sendWithRetry(joined, localTeleport));
             return;
         }
         PendingAction action = new PendingAction(actor.getUniqueId(), targetServer, "TELEPORT_TO_PLAYER")
@@ -447,12 +490,15 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
         proxy.getServer(targetServer).ifPresent(server -> actor.createConnectionRequest(server).fireAndForget());
     }
 
-    private void sendWithRetry(String serverName, NetworkPacket packet, UUID playerUuid) {
-        sendWithRetry(serverName, packet, playerUuid, 8);
+    private void sendWithRetry(ServerConnection joined, NetworkPacket packet) {
+        sendWithRetry(joined, packet, 8);
     }
 
-    private void sendWithRetry(String serverName, NetworkPacket packet, UUID playerUuid, int attemptsLeft) {
-        boolean sent = services.messaging().sendToServer(serverName, packet);
+    private void sendWithRetry(ServerConnection joined, NetworkPacket packet, int attemptsLeft) {
+        if (joined.getPlayer().getCurrentServer().orElse(null) != joined) return;
+        UUID playerUuid = joined.getPlayer().getUniqueId();
+        String serverName = joined.getServerInfo().getName();
+        boolean sent = services.messaging().send(joined, packet);
         if (sent) {
             logger.info("Delivered {} packet to {} for player {} (requestId={})",
                     packet.getType(), serverName, playerUuid, packet.getRequestId());
@@ -464,7 +510,7 @@ public final class VelocityPacketHandler implements VelocityMessagingManager.Pac
             return;
         }
         proxy.getScheduler().buildTask(pluginInstance,
-                () -> sendWithRetry(serverName, packet, playerUuid, attemptsLeft - 1))
+                () -> sendWithRetry(joined, packet, attemptsLeft - 1))
                 .delay(Duration.ofMillis(500))
                 .schedule();
     }

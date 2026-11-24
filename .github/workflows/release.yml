@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Semantic version without v (for example 2.3.0)
+        description: Semantic version without v (for example 3.0.0)
         required: true
         type: string
       channel:
@@ -57,7 +57,10 @@ jobs:
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release-${{ github.run_id }}-${{ github.run_attempt }}
-          path: release-bundle/
+          path: |
+            release-bundle/telehop-paper-${{ needs.validate.outputs.version }}.jar
+            release-bundle/telehop-velocity-${{ needs.validate.outputs.version }}.jar
+            release-bundle/command-probe.jar
           if-no-files-found: error
           retention-days: 14
 
