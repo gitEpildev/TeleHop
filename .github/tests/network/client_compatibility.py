@@ -38,8 +38,9 @@ def run(args):
         assert handshake[1] == args.client_version
         client.wait("CLIENT_READY")
         backend.wait(name + " joined the game")
-        backend.command(f"minecraft:tp {name} 7.5 220 8.5", "Teleported")
-        backend.command("minecraft:setblock 7 219 8 minecraft:stone", r"(?i)changed|already|could not set")
+        # Support the starting position as well as the destination before moving the client.
+        backend.command("minecraft:forceload add 7 8", r"(?i)marked .*chunk|already|no chunks")
+        backend.command("minecraft:fill 6 219 7 9 219 11 minecraft:stone", r"(?i)filled|blocks")
         backend.command(f"minecraft:tp {name} 7.5 220 10.5", "Teleported")
         client.command("/spawn protocol-test", "Arrived at protocol-test")
         assert_entity_values(backend, "Pos", (7.5, 220, 8.5), name)
