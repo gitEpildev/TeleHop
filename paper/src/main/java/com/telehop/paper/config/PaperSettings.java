@@ -101,6 +101,7 @@ public record PaperSettings(
         }
 
         Map<String, Boolean> features = new LinkedHashMap<>();
+        features.put("hub", featuresFile.getBoolean("features.hub", false));
         features.put("spawn", featuresFile.getBoolean("features.spawn", true));
         features.put("rtp", featuresFile.getBoolean("features.rtp", true));
         features.put("tpa", featuresFile.getBoolean("features.tpa", true));
@@ -186,6 +187,7 @@ public record PaperSettings(
             }
         }
         Map<String, Boolean> features = new LinkedHashMap<>();
+        features.put("hub", cfg.getBoolean("features.hub", false));
         features.put("spawn", cfg.getBoolean("features.spawn", true));
         features.put("rtp", cfg.getBoolean("features.rtp", true));
         features.put("tpa", cfg.getBoolean("features.tpa", true));

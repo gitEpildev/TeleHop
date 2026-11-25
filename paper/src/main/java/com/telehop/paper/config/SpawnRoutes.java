@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /** Immutable routes for one backend. World keys can contain full stops. */
-public record SpawnRoutes(boolean enabled, boolean hubCommand, SpawnRoute fallback, Map<String, SpawnRoute> worlds,
+public record SpawnRoutes(boolean enabled, boolean legacyHubCommand, SpawnRoute fallback, Map<String, SpawnRoute> worlds,
                           Map<String, SpawnPoint> destinations) {
     public SpawnRoutes {
         worlds = Map.copyOf(worlds);

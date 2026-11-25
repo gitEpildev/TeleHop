@@ -1,6 +1,6 @@
 # Upgrading an existing TeleHop network
 
-Use the notes for your installed version and each later section up to your target. The headings describe when a change was introduced. A direct upgrade to 3.0.0 uses the current JARs and their built-in migrations. [Current installation requirements](README.md#installation) · [Release history](CHANGELOG.md)
+Use the notes for your installed version and each later section up to your target. The headings describe when a change was introduced. For a direct upgrade to 3.0.1, install the matching 3.0.1 JARs and follow the intervening sections for the settings that changed. [Current installation requirements](README.md#installation) · [Release history](CHANGELOG.md)
 
 ## Before the upgrade
 
@@ -45,6 +45,10 @@ Existing grants of `telehop.tp` include the coordinate permissions. To restrict 
 3. Before configuring any routes, try bare `/spawn` through each entry proxy. It should reach the existing regional or network hub. Check your normal RTP menu, an existing home and a warp. Run `/telehop version` on each backend and check each proxy's startup log.
 4. To add a custom destination, choose a name in the owning backend's YAML, use a loaded world and run `/telehop reload`. Try `/spawn <name>` from another world on that backend and from a different backend. On a multi-proxy network, repeat from each entry proxy. To change bare `/spawn`, enable routing on the **source** backend. To register `/hub`, enable it and restart Paper.
 5. Test a restricted destination with a member and with a group granted `telehop.spawn.destination.<name>`. Existing staff parents still grant their children. For limited staff roles, grant the individual action, such as `telehop.admin.homes.list` for inspection or `telehop.admin.homes.visit` for visits. [Spawn configuration and permissions](docs/spawns.md)
+
+## From 3.0.0 to 3.0.1
+
+Install matching 3.0.1 builds. Paper adds missing entries to the existing `commands.yml` and `features.yml` at startup. Review `features.hub`: it inherits your old `spawns.yml` choice unless you already set the new switch. Check your custom command names in `commands.yml`, restart Paper after changing registration, and try the command with a member account. [Hub setup](docs/spawns.md#enable-the-hub-command)
 
 ## Returning to the previous release
 

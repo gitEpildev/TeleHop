@@ -146,8 +146,13 @@ def boot(directory, platform, second):
                 time.sleep(0.5)
             else:
                 raise TimeoutError(f"Missing startup evidence {ready}: {content[-6000:]}")
-            proc.communicate("stop\n" if paper else "shutdown\n", timeout=60)
+            proc.communicate("telehop help\nstop\n" if paper else "shutdown\n", timeout=60)
             content = ANSI.sub("", log.read_text(errors="replace"))
+            if paper:
+                if "/spawn [name] selects a destination." not in content:
+                    raise AssertionError("The command help did not list named spawn travel")
+                if ("/lobby takes you to the global hub." in content) != second or "/hub takes you to the global hub." in content:
+                    raise AssertionError("The hub help does not match the registered command name")
             if proc.returncode or "Goodbye!" not in content or "Error occurred while disabling TeleHop" in content:
                 raise RuntimeError("Unclean shutdown: " + content[-4000:])
         finally:
@@ -179,8 +184,8 @@ def main():
         check_conflicting_upgrade(args.bundle, args.version)
     for second in (False, True):
         if second and platform == "paper":
-            (directory / "plugins/TeleHop/config/spawns.yml").write_text("hub-command: {enabled: true}\n")
-            (directory / "plugins/TeleHop/config/commands.yml").write_text("tp: [networktp, ntp]\n")
+            (directory / "plugins/TeleHop/config/features.yml").write_text("features: {hub: true}\n")
+            (directory / "plugins/TeleHop/config/commands.yml").write_text("tp: [networktp, ntp]\nhub: [lobby, hub]\n")
         boot(directory, platform, second)
         check_migration()
         if legacy:

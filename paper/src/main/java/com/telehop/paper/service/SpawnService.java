@@ -34,17 +34,19 @@ public final class SpawnService {
     private volatile java.util.List<SpawnEntry> suggestions = java.util.List.of();
     private final java.util.concurrent.atomic.AtomicLong refreshSequence = new java.util.concurrent.atomic.AtomicLong();
     private SpawnRoutes routes;
+    private final boolean hubCommand;
 
     public void forget(UUID player) {
         lastTravel.remove(player);
         lookups.remove(player);
     }
 
-    public SpawnService(NetworkPaperPlugin plugin, SpawnDirectory directory, SpawnRoutes routes, StorageManager storage) {
+    public SpawnService(NetworkPaperPlugin plugin, SpawnDirectory directory, SpawnRoutes routes, StorageManager storage, boolean hubCommand) {
         this.plugin = plugin;
         this.directory = directory;
         this.routes = routes;
         this.storage = storage;
+        this.hubCommand = hubCommand;
     }
 
     /** Suggestions are advisory. Every actual trip reads the current database revision. */
@@ -63,7 +65,7 @@ public final class SpawnService {
     /** Activate a configuration only after MySQL commits all of its definitions and routes. */
     public CompletableFuture<Void> apply(String server, SpawnRoutes next, SpawnEntry expected) {
         if (updating) return CompletableFuture.failedFuture(new IllegalStateException("A spawn update is already running"));
-        var backend = new BackendSpawns(server, storage.defaultPoint(), next.enabled(), next.hubCommand(),
+        var backend = new BackendSpawns(server, storage.defaultPoint(), next.enabled(), hubCommand,
                 next.destinations(), next.allRoutes());
         updating = true;
         return directory.configure(backend, expected)
@@ -77,7 +79,8 @@ public final class SpawnService {
                 }, task -> Bukkit.getScheduler().runTask(plugin, task));
     }
 
-    public boolean hubCommand() { return routes.hubCommand(); }
+    /** Registration stays fixed until Paper restarts, including when routes are republished. */
+    public boolean hubCommand() { return hubCommand; }
 
     private String local() { return plugin.settings().serverName(); }
 

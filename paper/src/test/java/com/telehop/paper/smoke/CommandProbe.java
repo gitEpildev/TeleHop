@@ -14,7 +14,7 @@ public final class CommandProbe extends JavaPlugin {
             var commands = Bukkit.getCommandMap();
             var telehop = Bukkit.getPluginManager().getPlugin("TeleHop");
             if (telehop == null || !telehop.isEnabled()) throw new AssertionError("TeleHop failed to enable");
-            for (String name : custom ? new String[]{"networktp", "ntp"} : new String[]{"tp"}) {
+            for (String name : custom ? new String[]{"networktp", "ntp", "lobby", "hub"} : new String[]{"tp"}) {
                 Command command = commands.getCommand(name);
                 if (!(command instanceof PluginIdentifiableCommand owned) || owned.getPlugin() != telehop
                         || commands.getCommand("telehop:" + name) != command) {

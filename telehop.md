@@ -4,9 +4,13 @@
 
 TeleHop supports **single-proxy and multi-proxy Velocity networks**. Use homes, warps, teleport requests, random teleportation and named spawns across your network. Players use the same commands when their destination is another Multiverse world on the same Paper server or a different backend behind Velocity.
 
-[Downloads](https://modrinth.com/plugin/telehop/versions) · [GitHub](https://github.com/gitEpildev/TeleHop) · [Documentation](https://github.com/gitEpildev/TeleHop/tree/8249e993696faaaed1645e136484adc67ebb503f/docs) · [Setup](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/setup.md) · [Commands](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/commands.md) · [Permissions](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/permissions.md) · [Configuration](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/configuration.md) · [Multi-proxy setup](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/multi-proxy.md) · [Report an issue](https://github.com/gitEpildev/TeleHop/issues) · [Support Discord](https://discord.gg/E8kpxdGbxn)
+[Downloads](https://modrinth.com/plugin/telehop/versions) · [GitHub](https://github.com/gitEpildev/TeleHop) · [Documentation](https://github.com/gitEpildev/TeleHop/tree/main/docs) · [Setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/setup.md) · [Commands](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md) · [Permissions](https://github.com/gitEpildev/TeleHop/blob/main/docs/permissions.md) · [Configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md) · [Multi-proxy setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/multi-proxy.md) · [Report an issue](https://github.com/gitEpildev/TeleHop/issues) · [Support Discord](https://discord.gg/E8kpxdGbxn)
 
-## ✨ New in 3.0.0
+## ✨ New in 3.0.1
+
+In `config/features.yml`, set `hub: true` under `features:`. Restart Paper to register the names listed under `hub` in `config/commands.yml`. Upgrades retain your previous hub setting and add missing switches and command names to existing files.
+
+## Named spawns in 3.0.0
 
 Choose your own destinations in `spawns.yml`. Stand where players should arrive, face the direction they should look and run `/telehop spawn set market public`. Players can then use `/spawn market` from any participating backend. For a staff destination, use `/telehop spawn set staff-room restricted` and grant `telehop.spawn.destination.staff-room` to the appropriate group.
 
@@ -41,11 +45,9 @@ routing:
   worlds:
     creative: {server: survival, spawn: gallery}
 
-hub-command:
-  enabled: false
 ```
 
-Save this in `plugins/TeleHop/config/spawns.yml` and run `/telehop reload` on the owning backend. Replace the backend name, world and coordinates with your own. A valid reload publishes the updated locations and access rules to the shared database. Invalid edits keep the previously accepted settings active. [Spawn configuration and examples](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/spawns.md)
+Save this in `plugins/TeleHop/config/spawns.yml` and run `/telehop reload` on the owning backend. Replace the backend name, world and coordinates with your own. A valid reload publishes the updated locations and access rules to the shared database. Invalid edits keep the previously accepted settings active. [Spawn configuration and examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/spawns.md)
 
 ## 🚀 Travel features
 
@@ -83,7 +85,7 @@ Staff can inspect player records, manage homes and warps, publish spawn destinat
 
 ## 📋 Complete command reference
 
-These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit `config/commands.yml` and restart Paper. To change a destination name, edit `config/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/configuration.md#command-names-and-aliases)
+These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit `config/commands.yml` and restart Paper. To change a destination name, edit `config/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
 
 ### Spawn, homes and travel
 
@@ -91,7 +93,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn when enabled in `spawns.yml` | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/features.yml` and Paper has restarted | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
 | `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
@@ -193,7 +195,7 @@ Granted to everyone by default.
 | `telehop.delhome` | Delete one of your own homes. |
 | `telehop.homes.1` | Allow up to 1 home. |
 | `telehop.lastlocation` | Return to your saved logout location. |
-| `telehop.hub` | Use the optional `/hub` command when enabled. |
+| `telehop.hub` | Use the global hub command when `features.hub` is enabled on this backend. |
 | `telehop.spawn.named` | Choose a named spawn with `/spawn <name>`. Requires `telehop.spawn` and destination access. |
 
 ### Operator permissions
@@ -284,14 +286,14 @@ lp group admin permission set telehop.tp true
 lp group admin permission set telehop.tphere true
 ```
 
-The moderator in this example can inspect a home list. Grant `telehop.admin.homes.visit` as well for visits, or `telehop.admin.homes.delete` for deletion. [Permission guide](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/permissions.md)
+The moderator in this example can inspect a home list. Grant `telehop.admin.homes.visit` as well for visits, or `telehop.admin.homes.delete` for deletion. [Permission guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/permissions.md)
 
 ## 📥 Requirements and compatibility
 
-| Install location | TeleHop 3.0.0 file | Supported platform |
+| Install location | TeleHop 3.0.1 file | Supported platform |
 |---|---|---|
-| Each Paper backend’s `plugins/` folder | `telehop-paper-3.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.2 and 26.2 on Java 25 |
-| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-3.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
+| Each Paper backend’s `plugins/` folder | `telehop-paper-3.0.1.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.2 and 26.2 on Java 25 |
+| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-3.0.1.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
 
 Minecraft 1.21.2 clients can connect through Velocity to Paper 1.21.3 using their shared protocol. PaperMC did not publish a standalone 1.21.2 server. TeleHop 3.0.0 was also tested with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
 
@@ -339,8 +341,8 @@ plugins/TeleHop/
 |---|---|
 | `general.yml` | Backend identity, hub, servers, regional routing and language |
 | `database.yml` | Database credentials and connection pool |
-| `features.yml` | Per-backend feature switches |
-| `spawns.yml` | Named destinations, access, default routes, per-world routes and optional hub command |
+| `features.yml` | Per-backend feature switches and optional hub command registration |
+| `spawns.yml` | Named destinations, access, default routes, per-world routes |
 | `commands.yml` | Root command names and aliases |
 | `teleport.yml` | Countdown display, particles and sounds |
 | `tpa.yml` | Request timeouts, cooldowns, warmups and movement cancellation |
@@ -348,7 +350,7 @@ plugins/TeleHop/
 | `home.yml` | Home slots, menu appearance, bed colours and blocked servers |
 | `respawn.yml` | Random respawn, target world and radius |
 
-The ordinary saved backend spawn lives in `plugins/TeleHop/storage.yml`. Restart Paper after changing database settings, command aliases or registration of the optional hub command. [Configuration guide](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/docs/configuration.md)
+The ordinary saved backend spawn lives in `plugins/TeleHop/storage.yml`. Restart Paper after changing database settings, command aliases or registration of the optional hub command. [Configuration guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md)
 
 ## 🌐 Velocity configuration
 
@@ -385,7 +387,7 @@ TeleHop includes English, Dutch, German, Spanish, Simplified Chinese and Polish 
 
 ## 🔄 Updating an existing network
 
-Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching 3.0.0 builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/CHANGELOG.md)
+Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching 3.0.1 builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/main/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md)
 
 | Upgrading from | What to check |
 |---|---|
@@ -394,6 +396,7 @@ Back up the shared database, both installed JARs and each instance's TeleHop fol
 | 2.1.x | Review `show-countdown`, your warmup duration and any custom `countdown-title` translation. |
 | 2.2.x | Review the Paper command names and aliases in `config/commands.yml`, including any command visibility rules. |
 | 2.3.x | Keep your saved spawn, homes, warps and aliases. Test ordinary `/spawn` through each entry proxy before enabling custom routes. Then test a named destination locally and from another backend. |
+| 3.0.0 | Paper imports the previous hub command setting into `features.hub`, fills in missing feature and command entries and retains custom aliases. Restart Paper after changing the switch. |
 
 ## 🧪 Building from source
 
@@ -403,7 +406,7 @@ Use Java 21 for Maven and configure the Java 25 toolchain for the newer Paper ad
 mvn clean verify
 ```
 
-Installable outputs are `paper/target/telehop-paper-3.0.0.jar` and `velocity/target/telehop-velocity-3.0.0.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-paper-3.0.1.jar` and `velocity/target/telehop-velocity-3.0.1.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
 
 ## 👤 Author and company
 
@@ -423,4 +426,4 @@ When reporting a problem, include your TeleHop, Paper, Velocity and Java version
 
 ## 📄 Licence
 
-TeleHop is distributed under the **MIT License with Additional Terms**. Public use, distribution and derivative works require attribution to **Epildevconnect Ltd**. [Read the full licence](https://github.com/gitEpildev/TeleHop/blob/8249e993696faaaed1645e136484adc67ebb503f/LICENSE)
+TeleHop is distributed under the **MIT License with Additional Terms**. Public use, distribution and derivative works require attribution to **Epildevconnect Ltd**. [Read the full licence](https://github.com/gitEpildev/TeleHop/blob/main/LICENSE)

@@ -37,7 +37,7 @@ class SpawnAccessTest {
         var lookup = new CompletableFuture<Optional<SpawnEntry>>();
         when(directory.find("orchard")).thenReturn(lookup);
         var routes = new SpawnRoutes(false, false, null, Map.of(), Map.of());
-        var service = new SpawnService(plugin, directory, routes, mock(StorageManager.class));
+        var service = new SpawnService(plugin, directory, routes, mock(StorageManager.class), false);
         var player = mock(Player.class);
         UUID id = UUID.randomUUID();
         when(player.getUniqueId()).thenReturn(id);
@@ -80,7 +80,7 @@ class SpawnAccessTest {
         when(player.getWorld()).thenReturn(world);
         when(world.getKey()).thenReturn(NamespacedKey.minecraft("overworld"));
         var routes = new SpawnRoutes(false, false, null, Map.of(), Map.of());
-        new SpawnService(plugin, null, routes, null).travel(player, null, false);
+        new SpawnService(plugin, null, routes, null, false).travel(player, null, false);
         verify(teleport).teleportToSpawn(player);
     }
 

@@ -123,11 +123,15 @@ def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=N
         f"mysql:\n  host: 127.0.0.1\n  port: {os.environ['MYSQL_PORT']}\n  database: telehop_ci\n"
         "  username: telehop\n  password: ci-password\n  pool-size: 2\n")
     (config / "general.yml").write_text(general or f"server-name: {name}\nhub-server: hub\n")
+    if spawns is None:
+        (config / "features.yml").write_text("features: {spawn: true, hub: true}\n")
+        if name == "survival":
+            (config / "commands.yml").write_text("hub: [lobby, hub]\n")
     default_spawns = (
-        "hub-command: {enabled: true}\nrouting:\n  enabled: true\n  default: {server: hub}\n"
+        "routing:\n  enabled: true\n  default: {server: hub}\n"
         '  worlds: {training: {server: survival, spawn: gardens}}\n')
     if name == "hub":
-        default_spawns = "hub-command: {enabled: true}\ndestinations: {}\n"
+        default_spawns = "destinations: {}\n"
     (config / "spawns.yml").write_text(spawns or default_spawns)
     if rtp:
         (config / "rtp.yml").write_text(rtp)
@@ -279,6 +283,15 @@ def run(args):
         client.command("/telehop spawn setdefault", "Saved the default spawn")
         client.command("/spawn", "Teleporting to spawn")
         assert mysql("SELECT default_world, routing_enabled, hub_command FROM spawn_backends WHERE server='hub'") == ["world\t0\t1"]
+        # Registration and the shared directory must still describe the running Paper instance after a reload.
+        switches = root / "hub/plugins/TeleHop/config/features.yml"
+        original_switches = switches.read_text()
+        switches.write_text("features: {spawn: true, hub: false}\n")
+        client.command("/telehop reload", "Restart Paper to apply the hub command setting")
+        assert mysql("SELECT hub_command FROM spawn_backends WHERE server='hub'") == ["1"]
+        client.command("/telehop help", "/hub takes you to the global hub")
+        switches.write_text(original_switches)
+        client.command("/telehop reload", r"(?i)reloaded")
         connected = survival.mark()
         client.send("/server survival")
         survival.wait("ReviewMember joined the game", connected)
@@ -334,7 +347,8 @@ def run(args):
         survival.command("data get entity ReviewMember Dimension", r"minecraft:overworld")
         mark = hub.mark()
         time.sleep(1.1)
-        client.send("/hub")
+        client.command("/telehop help", "/lobby takes you to the global hub")
+        client.send("/lobby")
         hub.wait("ReviewMember joined the game", mark)
         client.command("/spawn gardens", "Arrived at gardens")
         assert_entity_values(survival, "Pos", [21.5, 96, -11.5])

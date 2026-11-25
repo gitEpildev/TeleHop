@@ -8,9 +8,16 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Migrates the original Paper configuration while preserving the input and any existing split files.
@@ -19,6 +26,11 @@ public final class ConfigMigrator {
     private static final String STAGING = ".telehop-legacy-migration";
     private static final List<String> SPLIT_FILES = List.of(
             "database.yml", "features.yml", "teleport.yml", "tpa.yml", "rtp.yml", "home.yml", "general.yml");
+
+    // Only replace known bundled guides. A guide edited by an operator stays untouched.
+    private static final Set<String> PREVIOUS_GUIDES = Set.of(
+            "e96a547168b639674009857df9f6e5d8fbf6c65b7aeaad8f94d6dc2f694418dd",
+            "5fdc26662df27b460104aa19ec979edefbae71e45bb183318258934edfb060f8");
 
     private ConfigMigrator() {}
 
@@ -70,6 +82,80 @@ public final class ConfigMigrator {
         Files.move(legacy, backup);
         Files.delete(stage);
         plugin.getLogger().info("Migrated legacy configuration. Original saved as " + backup.getFileName());
+    }
+
+    /** Add missing switches and labels to older split files, retaining the owner's explicit choices. */
+    public static void completeCommandSettings(JavaPlugin plugin, boolean legacyHub)
+            throws IOException, InvalidConfigurationException {
+        for (String name : List.of("config/features.yml", "config/commands.yml")) {
+            var resource = plugin.getResource(name);
+            if (resource == null) throw new IOException("Missing bundled " + name);
+            var defaults = new YamlConfiguration();
+            try (var reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
+                defaults.load(reader);
+            }
+            boolean features = name.equals("config/features.yml");
+            if (features) defaults.set("features.hub", legacyHub);
+            Path target = plugin.getDataFolder().toPath().resolve(name);
+            completeSettings(target, defaults, features);
+        }
+    }
+
+    /** Refresh unchanged guides shipped with 2.3.0 and 3.0.0 when upgrading an existing backend. */
+    public static void refreshBundledGuide(JavaPlugin plugin) throws IOException {
+        String name = "config/WIKI.md";
+        Path guide = plugin.getDataFolder().toPath().resolve(name);
+        try {
+            var digest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(guide));
+            if (!PREVIOUS_GUIDES.contains(HexFormat.of().formatHex(digest))) return;
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException(ex);
+        }
+        try (var bundled = plugin.getResource(name)) {
+            if (bundled == null) throw new IOException("Missing bundled " + name);
+            Path temporary = Files.createTempFile(guide.getParent(), ".telehop-guide-", ".tmp");
+            try {
+                Files.copy(bundled, temporary, StandardCopyOption.REPLACE_EXISTING);
+                Files.move(temporary, guide, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+            } finally {
+                Files.deleteIfExists(temporary);
+            }
+        }
+    }
+
+    static void completeSettings(Path target, YamlConfiguration defaults, boolean features)
+            throws IOException, InvalidConfigurationException {
+        boolean exists = Files.exists(target);
+        var yaml = exists ? readYaml(target) : defaults;
+        if (features && yaml.contains("features") && !yaml.isConfigurationSection("features")) {
+            throw new InvalidConfigurationException(target + ": features must be a mapping");
+        }
+        if (features && yaml.contains("features.hub") && !yaml.isBoolean("features.hub")) {
+            throw new InvalidConfigurationException(target + ": features.hub must be true or false");
+        }
+        boolean changed = !exists;
+        for (String key : defaults.getKeys(true)) {
+            if (defaults.isConfigurationSection(key) || yaml.contains(key)) continue;
+            yaml.set(key, defaults.get(key));
+            yaml.setComments(key, defaults.getComments(key));
+            changed = true;
+        }
+        if (!features && yaml.getComments("hub").contains("Registered only when enabled in spawns.yml.")) {
+            var comments = new java.util.ArrayList<>(yaml.getComments("hub"));
+            comments.set(comments.indexOf("Registered only when enabled in spawns.yml."),
+                    "Enable features.hub in features.yml and restart Paper to register these names.");
+            yaml.setComments("hub", comments);
+            changed = true;
+        }
+        if (!changed) return;
+        // Publish the entire file in one move so an interrupted upgrade can resume safely.
+        Path temporary = Files.createTempFile(target.getParent(), ".telehop-settings-", ".tmp");
+        try {
+            yaml.save(temporary.toFile());
+            Files.move(temporary, target, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
+        } finally {
+            Files.deleteIfExists(temporary);
+        }
     }
 
     private static void publish(Path staged, Path target) throws IOException, InvalidConfigurationException {
@@ -127,15 +213,9 @@ public final class ConfigMigrator {
 
     private static void writeFeatures(FileConfiguration old, File target) throws IOException {
         YamlConfiguration cfg = new YamlConfiguration();
-        cfg.set("features.spawn", old.getBoolean("features.spawn", true));
-        cfg.set("features.rtp", old.getBoolean("features.rtp", true));
-        cfg.set("features.tpa", old.getBoolean("features.tpa", true));
-        cfg.set("features.warps", old.getBoolean("features.warps", true));
-        cfg.set("features.player-warps", old.getBoolean("features.player-warps", true));
-        cfg.set("features.admin-tp", old.getBoolean("features.admin-tp", true));
-        cfg.set("features.homes", true);
-        cfg.set("features.back", true);
-        cfg.set("features.tpa-toggle", true);
+        // Bring forward the operator's existing switches; the split template fills in missing ones.
+        ConfigurationSection features = old.getConfigurationSection("features");
+        if (features != null) cfg.set("features", features.getValues(false));
         cfg.save(target);
     }
 

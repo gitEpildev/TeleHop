@@ -2,7 +2,9 @@
 
 TeleHop connects spawn, homes, warps, random teleportation and player teleport requests across Paper backends on a Velocity network. Players can use the same commands whether their destination is in another world on the same backend or on another server.
 
-**TeleHop 3.0.0** lets you give destinations your own names in `spawns.yml` and let members use `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
+Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
+
+**3.0.1** adds the hub switch to the feature list and fills in missing settings on upgrades. [Enable the hub command](docs/spawns.md#enable-the-hub-command)
 
 [Installation](#installation) · [Commands](#commands) · [Permissions](#permissions) · [Upgrade guide](LEGACY.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Licence](LICENSE)
 
@@ -10,8 +12,8 @@ TeleHop connects spawn, homes, warps, random teleportation and player teleport r
 
 | Where | Install in `plugins/` | Platform and Java |
 |---|---|---|
-| Each Paper backend | `telehop-paper-3.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.2 and 26.2 on Java 25+ |
-| Each Velocity proxy | `telehop-velocity-3.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
+| Each Paper backend | `telehop-paper-3.0.1.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.2 and 26.2 on Java 25+ |
+| Each Velocity proxy | `telehop-velocity-3.0.1.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
 
 Velocity also supports Minecraft 1.21.2 clients connecting to a Paper 1.21.3 backend using their shared protocol. PaperMC did not publish a 1.21.2 server JAR.
 
@@ -32,7 +34,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn when enabled in `spawns.yml` | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/features.yml` and Paper has restarted | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
 | `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
@@ -134,7 +136,7 @@ Granted to everyone by default.
 | `telehop.delhome` | Delete one of your own homes. |
 | `telehop.homes.1` | Allow up to 1 home. |
 | `telehop.lastlocation` | Return to your saved logout location. |
-| `telehop.hub` | Use the optional `/hub` command when enabled. |
+| `telehop.hub` | Use the global hub command when `features.hub` is enabled on this backend. |
 | `telehop.spawn.named` | Choose a named spawn with `/spawn <name>`. Requires `telehop.spawn` and destination access. |
 
 ### Operator permissions
@@ -241,7 +243,7 @@ Configure Maven toolchains for JDK 21 and JDK 25, then run the full build from t
 mvn clean verify
 ```
 
-Installable outputs are `paper/target/telehop-paper-3.0.0.jar` and `velocity/target/telehop-velocity-3.0.0.jar`. CI checks the build, command and language resources, release version, changelog and runtime compatibility. The release workflow publishes the validated JARs and release notes to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-paper-3.0.1.jar` and `velocity/target/telehop-velocity-3.0.1.jar`. CI checks the build, command and language resources, release version, changelog and runtime compatibility. The release workflow publishes the validated JARs and release notes to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
 
 ## Further reading
 

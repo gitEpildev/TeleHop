@@ -1,4 +1,4 @@
-# TeleHop 3.0.0 configuration
+# TeleHop 3.0.1 configuration
 
 Paper reads the files in `plugins/TeleHop/config/` on startup. Run `/telehop reload` on the backend you edited to refresh its reloadable settings. Restart Paper after changing database settings, command names or whether the optional hub command is registered. Each Velocity proxy reads its own `plugins/telehop-velocity/config.properties` at startup.
 
@@ -8,8 +8,8 @@ Paper reads the files in `plugins/TeleHop/config/` on startup. Run `/telehop rel
 |---|---|
 | `general.yml` | This backend's `server-name`, global `hub-server`, server list, language, messaging and regional hubs |
 | `database.yml` | MySQL or MariaDB host, database, credentials and pool size |
-| `features.yml` | Enable player features on this backend, including homes, warps, TPA, RTP and random respawn |
-| `spawns.yml` | Named destinations owned by this backend, source world routes, backend default route and optional hub command |
+| `features.yml` | Enable player features on this backend, including hub command registration, homes, warps, TPA, RTP and random respawn |
+| `spawns.yml` | Named destinations owned by this backend, source world routes, backend default route |
 | `commands.yml` | Primary commands and aliases registered by Paper |
 | `teleport.yml` | Countdown titles, particles and sounds per teleport type |
 | `tpa.yml` | Request timeout, cooldown, delay and movement cancellation |
@@ -40,6 +40,10 @@ destinations:
 ```
 
 Load the world, run `/telehop reload`, then try `/spawn gardens`. For private access, set `access: restricted` and grant `telehop.spawn.destination.gardens` to the appropriate group. A backend or world default route is configured on the source backend. The shipped configuration leaves `/spawn` on its ordinary regional or network route. [Route examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/spawns.md)
+
+## Enable the hub command
+
+Set `hub: true` under `features:` in `config/features.yml` and keep spawn travel enabled. Set `hub: [hub]` or your preferred names in `config/commands.yml`. Restart this Paper backend. A 3.0.0 installation carries its previous `spawns.yml` choice forward automatically.
 
 ## Change a command name
 

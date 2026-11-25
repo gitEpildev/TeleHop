@@ -4,7 +4,7 @@
 
 Check the Paper startup log for the TeleHop version and any configuration or database errors. Confirm the command's primary name and aliases in `config/commands.yml`. Restart Paper after changing registrations. If a command visibility plugin is installed, check its allowlist using the name registered on that backend.
 
-`/hub` also requires `hub-command.enabled: true` in `config/spawns.yml` and a Paper restart. Other disabled features return a message when used. Check their switches in `config/features.yml` and run `/telehop reload` after editing them. [Command reference](../README.md#commands)
+On 3.0.1, set `hub: true` under `features:` in `config/features.yml`, check the `hub` labels in `config/commands.yml` and restart Paper. On 3.0.0 use `hub-command.enabled` in `config/spawns.yml`. The command uses spawn travel and the `telehop.hub` permission. [Hub setup](spawns.md#enable-the-hub-command)
 
 ## Spawn sends a player to the wrong place
 

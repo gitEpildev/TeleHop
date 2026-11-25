@@ -8,6 +8,8 @@ forcedelwarp: [forcedelwarp]
 forcelastloc: [forcelastloc, forcell]
 forcesethome: [forcesethome]
 home: [home]
+# Enable features.hub in features.yml and restart Paper to register these names.
+hub: [hub]
 lastlocation: [lastlocation, lastloc, backlast, ll]
 listhomes: [listhomes]
 listwarps: [listwarps]
@@ -28,6 +30,3 @@ tpatoggle: [tpatoggle]
 tphere: [tphere]
 warp: [warp]
 warps: [warps]
-
-# Registered only when enabled in spawns.yml.
-hub: [hub]

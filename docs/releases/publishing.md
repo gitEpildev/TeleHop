@@ -11,9 +11,9 @@
 
 ## Run a release
 
-For a stable release, open **Actions → Release → Run workflow**, select the source branch and enter the version, for example `3.0.0`. Leave **Release type** set to **release**. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. Run the workflow once.
+For a stable release, open the [Release workflow](https://github.com/gitEpildev/TeleHop/actions/workflows/release.yml) and select **Run workflow**, select the source branch and enter the version, for example `3.0.1`. Leave **Release type** set to **release**. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. Run the workflow once.
 
-You can also push a stable tag such as `v3.0.0` at the intended commit. Choose one trigger per release. Alpha and beta channels are available for explicitly requested prereleases.
+You can also push a stable tag such as `v3.0.1` at the intended commit. Choose one trigger per release. Alpha and beta channels are available for explicitly requested prereleases.
 
 Prepare the version in source control first. The requested version, newest dated entry in `CHANGELOG.md`, root POM, each module's parent and project version, Paper descriptor and Velocity annotation must agree. A tag must identify that same version. Pushing a branch commit runs CI for the exact SHA the release will use.
 
@@ -25,7 +25,7 @@ The default public notes include the reviewed changelog entry and group commits 
 
 ### Changelog requirements
 
-- Put the newest release first, using a heading such as `## [3.0.0] - 2026-11-24`. Use unique versions, valid calendar dates and descending release order. An optional leading `[Unreleased]` section can hold work for later.
+- Put the newest release first, using a heading such as `## [3.0.1] - 2026-11-25`. Use unique versions, valid calendar dates and descending release order. An optional leading `[Unreleased]` section can hold work for later.
 - Include at least one bullet describing the observable change. Replace placeholders such as `TBD` with the actual effect. Upgrade instructions may refer to older versions.
 - Changes to shipped source, resources, Maven POMs or SQL must update the visible wording of the newest release entry. CI compares a PR with its base and a branch push with its previous commit. On a new branch it uses the common ancestor with the default branch. A release also checks changes since the preceding release.
 - Use UK English in headings, paragraphs, bullets and link labels throughout the changelog and public notes. The pinned UK dictionary checks words such as *colour*, *behaviour* and *initialise*. Put exact API names and commands in backticks. Add genuine project terms to `.github/release/project-words.txt` for review. Code samples and URL destinations keep their spelling.
@@ -56,8 +56,8 @@ From the repository root, with Node.js 22.12 or later, Python 3.11 or later, Mav
 ```sh
 npm ci --prefix .github/release --ignore-scripts --no-audit --no-fund
 python3 .github/release/prepare.py check
-REQUEST_VERSION=3.0.0 REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
+REQUEST_VERSION=3.0.1 REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
 python3 -m unittest discover -v -s .github/release
 mvn -B -ntp clean verify
-bash .github/tests/bundle.sh 3.0.0
+bash .github/tests/bundle.sh 3.0.1
 ```

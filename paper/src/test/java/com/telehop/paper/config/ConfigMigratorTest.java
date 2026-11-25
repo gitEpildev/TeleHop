@@ -170,6 +170,56 @@ class ConfigMigratorTest {
         assertEquals("corrected", settings("general").getString("server-name"));
     }
 
+    @Test
+    void upgradeFillsBothListsAndRetainsOldChoicesOnRepeatedStarts() throws Exception {
+        Path config = Files.createDirectories(root.resolve("config"));
+        Path features = config.resolve("features.yml");
+        Path commands = config.resolve("commands.yml");
+        Files.writeString(features, "# Operator's settings\nfeatures: {rtp: false}\n");
+        Files.writeString(commands, "tp: [networktp, ntp]\n");
+        for (String resource : List.of("config/features.yml", "config/commands.yml")) {
+            when(plugin.getResource(resource)).thenAnswer(call -> getClass().getResourceAsStream("/" + resource));
+        }
+
+        ConfigMigrator.completeCommandSettings(plugin, true);
+        assertEquals(true, settings("features").get("features.hub"));
+        assertEquals(false, settings("features").get("features.rtp"));
+        assertEquals(List.of("networktp", "ntp"), settings("commands").getStringList("tp"));
+        assertEquals(List.of("hub"), settings("commands").getStringList("hub"));
+        assertTrue(Files.readString(features).contains("# Operator's settings"));
+
+        String acceptedFeatures = Files.readString(features);
+        String acceptedCommands = Files.readString(commands);
+        ConfigMigrator.completeCommandSettings(plugin, false);
+        assertEquals(acceptedFeatures, Files.readString(features));
+        assertEquals(acceptedCommands, Files.readString(commands));
+    }
+
+    @Test
+    void explicitDisabledHubWinsOverAnEnabledLegacySwitch() throws Exception {
+        Path config = Files.createDirectories(root.resolve("config"));
+        Files.writeString(config.resolve("features.yml"), "features: {hub: false}\n");
+        Files.writeString(config.resolve("commands.yml"), "hub: [lobby, hub]\n");
+        for (String resource : List.of("config/features.yml", "config/commands.yml")) {
+            when(plugin.getResource(resource)).thenAnswer(call -> getClass().getResourceAsStream("/" + resource));
+        }
+        ConfigMigrator.completeCommandSettings(plugin, true);
+        assertEquals(false, settings("features").get("features.hub"));
+        assertEquals(List.of("lobby", "hub"), settings("commands").getStringList("hub"));
+    }
+
+    @Test
+    void invalidHubFlagLeavesTheOriginalFileIntact() throws Exception {
+        Path features = root.resolve("features.yml");
+        String malformed = "features: {hub: 'false'}\n";
+        Files.writeString(features, malformed);
+        var defaults = new YamlConfiguration();
+        defaults.set("features.hub", false);
+        assertThrows(InvalidConfigurationException.class,
+                () -> ConfigMigrator.completeSettings(features, defaults, true));
+        assertEquals(malformed, Files.readString(features));
+    }
+
     private YamlConfiguration settings(String name) throws Exception {
         var result = new YamlConfiguration();
         result.load(root.resolve("config/" + name + ".yml").toFile());

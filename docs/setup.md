@@ -21,7 +21,7 @@ Use `'telehop'@'localhost'` instead of `'%'` if all servers are on the same mach
 
 ## Step 2 - Install on the Velocity Proxy
 
-1. Place `telehop-velocity-3.0.0.jar` in `plugins/`.
+1. Place `telehop-velocity-3.0.1.jar` in `plugins/`.
 2. Start the proxy. A config is created at `plugins/telehop-velocity/config.properties`.
 3. Edit the config with your MySQL credentials and server list:
 
@@ -45,7 +45,7 @@ Server names must exactly match your `velocity.toml` `[servers]` entries.
 
 ## Step 3 - Install on Each Paper Server
 
-1. Place `telehop-paper-3.0.0.jar` in `plugins/`.
+1. Place `telehop-paper-3.0.1.jar` in `plugins/`.
 2. Start the server once to create the split files in `plugins/TeleHop/config/`. Keep `plugins/TeleHop/storage.yml` for the backend's saved default spawn.
 3. In `config/general.yml`, set a unique backend name matching its registration on each Velocity proxy.
 
@@ -144,3 +144,7 @@ lp group staff permission set telehop.warps.unlimited
 ```
 
 Players with no `telehop.warps.*` permission cannot create warps.
+
+## Optional hub command
+
+Set `hub: true` under `features:` in `plugins/TeleHop/config/features.yml` on each Paper backend where players should use it. Keep spawn travel enabled and set the desired command names under `hub` in `config/commands.yml`. Restart Paper and check `/telehop help` for the registered name. The global destination comes from `hub-server` in `general.yml`. [Configuration and upgrade example](spawns.md#enable-the-hub-command)

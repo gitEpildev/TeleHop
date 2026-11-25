@@ -4,7 +4,7 @@ TeleHop supports multiple Velocity proxies sharing the same set of backend serve
 
 ## Prerequisites
 
-- Matching TeleHop 3.0.0 builds on every Paper backend and Velocity proxy for named spawns
+- Matching TeleHop 3.0.1 builds on every Paper backend and Velocity proxy for named spawns
 - A shared MySQL database accessible from all servers
 - A Redis instance accessible from all Velocity proxies (can be shared with other plugins)
 - All Velocity proxies must have the same backend servers registered in `velocity.toml`

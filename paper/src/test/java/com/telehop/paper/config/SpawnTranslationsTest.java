@@ -18,7 +18,7 @@ class SpawnTranslationsTest {
         var translated = language(language);
         for (String key : english.getKeys(false)) {
             if (!(key.startsWith("spawn-") || key.startsWith("homes-") || key.endsWith("spawn-routes")
-                    || key.equals("reload-invalid"))) continue;
+                    || key.equals("help-named-spawn") || key.equals("help-hub") || key.equals("reload-invalid"))) continue;
             assertTrue(translated.isString(key), language + ": " + key);
             for (String token : List.of("<name>", "<count>", "<server>", "<revision>")) {
                 assertEquals(english.getString(key).contains(token), translated.getString(key).contains(token), key);

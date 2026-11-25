@@ -24,6 +24,9 @@ public class TeleHopCommand extends BaseCommand {
             plugin.reload().whenComplete((ignored, error) -> {
                 if (error != null) plugin.getLogger().warning("Reload rejected: " + error.getMessage());
                 sender.sendMessage(plugin.msg(error == null ? "reload-success" : "reload-invalid"));
+                if (error == null && plugin.settings().isFeatureEnabled("hub") != plugin.services().spawns().hubCommand()) {
+                    sender.sendMessage(plugin.msg("hub-restart-required"));
+                }
             });
         } catch (IllegalArgumentException ex) {
             plugin.getLogger().warning(ex.getMessage());
@@ -76,7 +79,7 @@ public class TeleHopCommand extends BaseCommand {
     public void help(CommandSender sender) {
         String[] keys = {
             "help-header",
-            "help-general", "help-spawn-routes", "help-rtp",
+            "help-general", "help-named-spawn", "help-hub", "help-rtp",
             "help-tpa-header", "help-tpa", "help-tpahere", "help-tpaaccept", "help-tpadeny", "help-tpacancel",
             "help-tpatoggle",
             "help-homes-header", "help-home", "help-sethome", "help-delhome", "help-lastloc",
@@ -91,6 +94,7 @@ public class TeleHopCommand extends BaseCommand {
             "help-telehop-reload", "help-telehop-version", "help-telehop-perms"
         };
         for (String key : keys) {
+            if (key.equals("help-hub") && !plugin.services().spawns().hubCommand()) continue;
             sender.sendMessage(plugin.messageService().raw(key));
         }
     }

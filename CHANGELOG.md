@@ -5,6 +5,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [3.0.1] - 2026-11-25
+
+### Fixed
+
+- The optional hub command now appears in the Paper feature list. Set `features.hub` in `config/features.yml` and restart Paper to register the command and its aliases.
+- Upgrades add missing command names and feature switches to existing files. They retain configured aliases, disabled features and the previous hub setting. The help menu shows the hub command by its configured name when it is registered.
+- Reloading routes keeps the shared spawn directory in step with the command registered on each backend.
+
+### Upgrade
+
+Replace both plugin builds with 3.0.1 and restart the network. On each Paper backend, check `features.hub` in `config/features.yml` and the names under `hub` in `config/commands.yml`. New installations leave the command disabled by default. Players with `telehop.hub` can use the configured name after the next Paper start. [Hub setup](https://github.com/gitEpildev/TeleHop/blob/v3.0.1/docs/spawns.md#enable-the-hub-command)
+
 ## [3.0.0] - 2026-11-24
 
 ### Added

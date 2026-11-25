@@ -25,7 +25,7 @@ Granted to everyone by default.
 | `telehop.delhome` | Delete one of your own homes. |
 | `telehop.homes.1` | Allow up to 1 home. |
 | `telehop.lastlocation` | Return to your saved logout location. |
-| `telehop.hub` | Use the optional `/hub` command when enabled. |
+| `telehop.hub` | Use the global hub command when `features.hub` is enabled on this backend. |
 | `telehop.spawn.named` | Choose a named spawn with `/spawn <name>`. Requires `telehop.spawn` and destination access. |
 
 ## Operator permissions

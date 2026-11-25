@@ -9,10 +9,10 @@ The paths below are relative to the Paper plugin folder, `plugins/TeleHop/`.
 | File | Purpose |
 |------|---------|
 | `config/general.yml` | Server identity, regional hubs, language, messaging and audit |
-| `config/spawns.yml` | Named destinations, world routes, backend defaults and optional hub command |
+| `config/spawns.yml` | Named destinations, world routes, backend defaults |
 | `config/commands.yml` | Command names and aliases. Restart Paper after editing |
 | `config/database.yml` | MySQL connection settings |
-| `config/features.yml` | Feature on/off toggles |
+| `config/features.yml` | Feature switches and optional hub command registration |
 | `config/teleport.yml` | Show-countdown, particles and sounds per teleport type |
 | `config/tpa.yml` | TPA timeout, cooldown, delay, cancel-on-move |
 | `config/rtp.yml` | RTP cooldown, delay, regions, dimensions, GUI |
@@ -60,6 +60,7 @@ Where an old `config.yml` exists and `config/general.yml` has yet to be created,
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
+| `features.hub` | boolean | `false` | Register the hub command and its configured aliases on this backend after a Paper restart |
 | `features.spawn` | boolean | `true` | Enable/disable `/spawn` |
 | `features.rtp` | boolean | `true` | Enable/disable `/rtp` |
 | `features.tpa` | boolean | `true` | Enable/disable TPA commands |
@@ -72,7 +73,7 @@ Where an old `config.yml` exists and `config/general.yml` has yet to be created,
 | `features.random-respawn` | boolean | `true` | Enable random death respawn on this backend |
 | `features.last-location` | boolean | `true` | Enable/disable `/lastlocation` |
 
-When a feature is `false`, its commands still exist but display "This feature is disabled on this server."
+The hub switch controls command registration at startup. Upgrades inherit `hub-command.enabled` from the old `spawns.yml` when the new switch is missing. For the other switches, when a feature is `false`, its commands still exist but display "This feature is disabled on this server."
 
 ## `config/teleport.yml`
 

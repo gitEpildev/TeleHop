@@ -89,10 +89,11 @@ Config lives in `plugins/TeleHop/config/` as split YAML files:
 
 | File | Content |
 | :--- | :--- |
-| `spawns.yml` | Backend and world spawn routes, optional hub command |
+| `spawns.yml` | Named destinations and backend and world spawn routes |
+| `commands.yml` | Primary command labels and aliases, including the optional hub command |
 | `general.yml` | Server name, hub server, servers list, language, messaging, audit |
 | `database.yml` | MySQL connection details and pool size |
-| `features.yml` | Feature toggles (spawn, rtp, tpa, warps, homes, back, tpa-toggle) |
+| `features.yml` | Per-backend feature switches and startup registration of the optional hub command |
 | `teleport.yml` | Show-countdown, particle/sound effects per teleport type |
 | `tpa.yml` | TPA timeout, cooldown, delay, cancel-on-move |
 | `rtp.yml` | RTP cooldown, delay, max-radius, regions, dimensions, GUI |

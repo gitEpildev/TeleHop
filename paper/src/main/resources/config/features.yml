@@ -3,17 +3,20 @@
 # ═══════════════════════════════════════════════════════════════════════
 #  Enable or disable entire modules on this server.
 #
-#  When a feature is set to false, its commands still exist in-game but
-#  they display a "feature disabled" message instead of working. This
-#  avoids confusing "unknown command" errors for players.
+#  Most disabled features keep their commands and display a "feature disabled" message.
+#  Turning off hub leaves its names available for other plugins after the next restart.
 #
 #  Example: set "rtp: false" on the lobby server if you only want RTP
 #  available on survival servers.
 #
-#  Reloadable with /telehop reload (no restart needed).
+#  Most switches reload with /telehop reload. Changing hub registration requires a Paper restart.
 
 features:
-  # /spawn - teleport to the network hub
+  # /hub - register direct travel to the global hub. Restart Paper after changing this switch.
+  # Set the label and aliases under hub in commands.yml. Spawn travel must also be enabled.
+  hub: false
+
+  # /spawn and /spawn <name> - enable spawn travel
   spawn: true
 
   # /rtp - random teleport with region/dimension picker

@@ -8,7 +8,7 @@ For every default root, alias, staff action and confirmation command, see the [c
 |---------|-------------|------------|
 | `/spawn` | Follow the current world, backend or hub route | `telehop.spawn` |
 | `/spawn <name>` | Visit a saved destination | `telehop.spawn`, `telehop.spawn.named` and destination access |
-| `/hub` | Visit the network hub when enabled | `telehop.hub` |
+| `/hub` | Visit the global hub when `features.hub` is enabled in `config/features.yml` and Paper has restarted | `telehop.hub` |
 | `/telehop spawn list` | Show IDs, owners and access | `telehop.admin.spawn.list` |
 | `/telehop spawn set <name> <public\|restricted>`, `/telehop spawn setdefault` | Save your location | `telehop.admin.spawn.set` |
 | `/telehop spawn delete <name> [revision]` | Request or confirm deletion | `telehop.admin.spawn.delete` |

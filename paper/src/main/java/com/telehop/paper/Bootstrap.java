@@ -108,9 +108,9 @@ public final class Bootstrap {
      * @return a fully wired {@link ServiceRegistry}, or {@code null} if startup fails
      */
     private static final String[] CONFIG_TEMPLATES = {
-            "config/general.yml", "config/database.yml", "config/features.yml",
+            "config/general.yml", "config/database.yml",
             "config/teleport.yml", "config/tpa.yml", "config/rtp.yml",
-            "config/spawns.yml", "config/commands.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
+            "config/spawns.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
     };
 
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
@@ -135,10 +135,16 @@ public final class Bootstrap {
         }
         initConfigFiles(plugin);
         SpawnRoutes routes = SpawnRoutes.load(plugin.getDataFolder());
-        plugin.setCommandNames(CommandNames.load(plugin, routes.hubCommand()));
-        ServiceRegistry reg = new ServiceRegistry();
-
+        try {
+            ConfigMigrator.completeCommandSettings(plugin, routes.legacyHubCommand());
+            ConfigMigrator.refreshBundledGuide(plugin);
+        } catch (IOException | InvalidConfigurationException ex) {
+            throw new IllegalStateException("Cannot upgrade command or feature configuration", ex);
+        }
         PaperSettings settings = PaperSettings.load(plugin);
+        boolean hubCommand = settings.isFeatureEnabled("hub");
+        plugin.setCommandNames(CommandNames.load(plugin, hubCommand));
+        ServiceRegistry reg = new ServiceRegistry();
         reg.setSettings(settings);
 
         initLanguageFiles(plugin);
@@ -167,7 +173,7 @@ public final class Bootstrap {
             return null;
         }
         reg.setDatabaseManager(db);
-        reg.setSpawns(new SpawnService(plugin, new SpawnDirectory(db, new SpawnRepository(db.dataSource())), routes, storage));
+        reg.setSpawns(new SpawnService(plugin, new SpawnDirectory(db, new SpawnRepository(db.dataSource())), routes, storage, hubCommand));
         reg.spawns().apply(settings.serverName(), routes, null).exceptionally(error -> {
             plugin.getLogger().severe("Could not publish spawns.yml: " + error.getMessage());
             return null;

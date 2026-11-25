@@ -1,5 +1,5 @@
 name: TeleHop
-version: 3.0.0
+version: 3.0.1
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]

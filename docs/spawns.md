@@ -30,8 +30,6 @@ routing:
   default: {}
   worlds: {}
 
-hub-command:
-  enabled: false
 ```
 
 Run `/telehop reload` on the backend you edited. Members can now run `/spawn gardens` from any participating backend. Grant `telehop.spawn.destination.workshop` to people who should have access to `/spawn workshop`. Changing a YAML key renames the destination on the next successful reload. Removing a key withdraws the destination. Update any routes and LuckPerms grants that use an old name. Tab suggestions refresh across backends within ten seconds. Travel reads the current database record.
@@ -48,13 +46,25 @@ routing:
   default: {server: hub}
   worlds:
     training: {server: survival, spawn: gardens}
-hub-command:
-  enabled: true
 ```
 
 TeleHop checks the exact namespaced world key, then the world name, then the backend default. If none matches, it uses the existing regional or network hub. A route with only a server name selects that server's saved default directly. World names are local to their owning backend. A missing named destination or unloaded destination world returns an error. A local trip uses Paper directly. A remote trip uses the player's current Velocity connection and checks the destination again after arrival. For multiple proxies sharing these backends, see the [multi-proxy setup guide](multi-proxy.md).
 
-Reload after editing routes. Restart Paper after changing registration of the optional `/hub` command or its aliases in `config/commands.yml`. When enabled, `/hub` takes players to the global hub's saved default. Login and death settings are independent.
+Reload after editing routes.
+
+## Enable the hub command
+
+On each Paper backend where players should use the command, edit `plugins/TeleHop/config/features.yml`. Set these entries under the existing `features` mapping.
+
+```yaml
+features:
+  spawn: true
+  hub: true
+```
+
+In `config/commands.yml`, keep `hub: [hub]` for `/hub`, or set your own labels, for example `hub: [lobby, hub]`. Restart Paper. The command takes players to the saved default on the global `hub-server` in `config/general.yml`. Keep spawn travel enabled on the receiving backend. Players need `telehop.hub`, granted by default. If you use a command visibility plugin, allow the labels you chose.
+
+On 3.0.0 the switch is `hub-command.enabled` in `config/spawns.yml`. On the first 3.0.1 start, Paper copies that choice into `features.hub` if the new switch is missing. Later changes belong in `features.yml`.
 
 ## Manage destinations in game
 
@@ -69,7 +79,7 @@ If you have edited the YAML outside the game, reload it before using the managem
 
 ## MySQL, upgrades and backups
 
-Install the matching 3.0.0 Paper and Velocity JARs together. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. Paper creates `config/spawns.yml` on first start.
+Install the matching 3.0.1 Paper and Velocity JARs together. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. Paper creates `config/spawns.yml` on first start.
 
 | MySQL table | Stored data |
 |---|---|
