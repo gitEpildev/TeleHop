@@ -103,6 +103,7 @@ def entity_values_match(server, field, expected, player="ReviewMember"):
 
 
 def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=None, rtp=None,
+          features=None, commands=None,
           folder_name=None, plugin_jar=None, extra_plugins=PLUGINS):
     folder = root / (folder_name or name)
     folder.mkdir()
@@ -123,18 +124,11 @@ def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=N
         f"mysql:\n  host: 127.0.0.1\n  port: {os.environ['MYSQL_PORT']}\n  database: telehop_ci\n"
         "  username: telehop\n  password: ci-password\n  pool-size: 2\n")
     (config / "general.yml").write_text(general or f"server-name: {name}\nhub-server: hub\n")
-    if spawns is None:
-        (config / "features.yml").write_text("features: {spawn: true, hub: true}\n")
-        if name == "survival":
-            (config / "commands.yml").write_text("hub: [lobby, hub]\n")
-    default_spawns = (
-        "routing:\n  enabled: true\n  default: {server: hub}\n"
-        '  worlds: {training: {server: survival, spawn: gardens}}\n')
-    if name == "hub":
-        default_spawns = "destinations: {}\n"
-    (config / "spawns.yml").write_text(spawns or default_spawns)
-    if rtp:
-        (config / "rtp.yml").write_text(rtp)
+    # An omitted file comes from the installed JAR, including on a rolled-back backend.
+    for filename, content in (("features.yml", features), ("commands.yml", commands),
+                              ("spawns.yml", spawns), ("rtp.yml", rtp)):
+        if content is not None:
+            (config / filename).write_text(content)
     if storage:
         (config.parent / "storage.yml").write_text(storage)
     shutil.copy(plugin_jar or args.bundle / f"telehop-paper-{args.version}.jar", folder / "plugins")
@@ -270,8 +264,12 @@ def run(args):
             sock.bind(("127.0.0.1", 0))
         ports = [sock.getsockname()[1] for sock in sockets]
     with ExitStack() as stack:
-        hub = paper(stack, args, "hub", ports[1], root)
-        survival = paper(stack, args, "survival", ports[2], root)
+        features = "features: {spawn: true, hub: true}\n"
+        routes = ("routing:\n  enabled: true\n  default: {server: hub}\n"
+                  "  worlds: {training: {server: survival, spawn: gardens}}\n")
+        hub = paper(stack, args, "hub", ports[1], root, features=features, spawns="destinations: {}\n")
+        survival = paper(stack, args, "survival", ports[2], root, features=features,
+                         commands="hub: [lobby, hub]\n", spawns=routes)
         bridge = proxy(stack, args, root, ports)
         for server in (hub, survival, bridge):
             server.wait(r"Done \(", seconds=180)

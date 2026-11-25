@@ -53,3 +53,5 @@ Install matching 3.0.1 builds. Paper adds missing entries to the existing `comma
 ## Returning to the previous release
 
 Stop the upgraded instances and keep a copy of their logs. Restore the previous JARs, configuration folders and matching database backup together, then start the proxies and backends. A database restore returns player data to the backup time. Check a saved home and the normal spawn route before reopening the network.
+
+TeleHop 2.3.0 rejects unknown entries in `config/commands.yml`, including the newer `hub` entry. When restoring 2.3.0, use its saved command file and check the Paper log for TeleHop's `Startup complete!` message before testing `/spawn`.

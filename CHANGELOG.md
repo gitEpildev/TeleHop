@@ -12,6 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - The optional hub command now appears in the Paper feature list. Set `features.hub` in `config/features.yml` and restart Paper to register the command and its aliases.
 - Upgrades add missing command names and feature switches to existing files. They retain configured aliases, disabled features and the previous hub setting. The help menu shows the hub command by its configured name when it is registered.
 - Reloading routes keeps the shared spawn directory in step with the command registered on each backend.
+- The rollback check now starts the published 2.3.0 backend with its own command settings and verifies that players can return using `/spawn`.
 
 ### Upgrade
 

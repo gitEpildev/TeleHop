@@ -43,7 +43,9 @@ Every Paper version in the platform table runs the server smoke test. Each boot 
 
 Velocity 3.3, 3.5 and 4.3.1 each run two proxy boots. Two Minecraft clients exercise configurable destinations, delegated staff actions and LuckPerms on Velocity 3.5 and 4.3.1 using two Paper backends and Multiverse. Players also select a saved home and a region and dimension through the inventory menus. A mixed-network check connects both proxy generations to the same backends, puts observers on the other proxy and repeats regional and named spawn travel in each direction. Separate checks use the published TeleHop 2.3.0 proxy and backend JARs to exercise rolling-upgrade behaviour. Two bridge instances exchange player updates and teleport packets across a real Redis restart. The Actions summary reports local Redis packet-forwarding latency. Live player transfer time includes additional client and server work.
 
-The publishing job requires every runtime check to pass. Failed server jobs attach both available boot logs for diagnosis.
+The rollback test starts the published 2.3.0 Paper JAR with its own command file. It checks that TeleHop starts, that a named arrival reports the unavailable destination and that the player can return to the regional hub with `/spawn`.
+
+The publishing job requires every runtime check to pass. Failed server jobs attach the available boot, proxy and client logs for diagnosis.
 
 ## Retry an interrupted release
 

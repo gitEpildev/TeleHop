@@ -174,6 +174,7 @@ def legacy_destination(stack, args, root, hub, target_port, entry_port, old_jar)
     assert mysql("SELECT server FROM named_spawns WHERE id='orchard'") == ["survival"]
     old = paper(stack, args, "survival", target_port, root, folder_name="legacy-paper", plugin_jar=old_jar)
     old.wait(r"Done \(", seconds=180)
+    old.wait(r"\[TeleHop\] Startup complete! Server: survival\b", seconds=2)
     name = "LegacyBackend"
     bot = client(stack, root, entry_port, name)
     move(bot, name, "/server survival", old)
