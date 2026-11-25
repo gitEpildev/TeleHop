@@ -193,4 +193,36 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>github-actions</id>
+            <activation>
+                <property>
+                    <name>env.GITHUB_ACTIONS</name>
+                    <value>true</value>
+                </property>
+            </activation>
+            <properties>
+                <central.mirror.url>https://maven-central.storage-download.googleapis.com/maven2/</central.mirror.url>
+            </properties>
+            <!-- Hosted runners share download limits. Keep Central available alongside the mirror. -->
+            <repositories>
+                <repository>
+                    <id>central-mirror</id>
+                    <url>${central.mirror.url}</url>
+                    <releases><checksumPolicy>fail</checksumPolicy></releases>
+                    <snapshots><enabled>false</enabled></snapshots>
+                </repository>
+            </repositories>
+            <pluginRepositories>
+                <pluginRepository>
+                    <id>central-mirror</id>
+                    <url>${central.mirror.url}</url>
+                    <releases><checksumPolicy>fail</checksumPolicy></releases>
+                    <snapshots><enabled>false</enabled></snapshots>
+                </pluginRepository>
+            </pluginRepositories>
+        </profile>
+    </profiles>
 </project>

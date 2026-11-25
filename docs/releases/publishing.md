@@ -45,6 +45,8 @@ Velocity 3.3, 3.5 and 4.3.1 each run two proxy boots. Two Minecraft clients exer
 
 The rollback test starts the published 2.3.0 Paper JAR with its own command file. It checks that TeleHop starts, that a named arrival reports the unavailable destination and that the player can return to the regional hub with `/spawn`.
 
+On GitHub Actions, Maven also checks a Google-hosted mirror of Maven Central for released plugins and libraries. Checksums are required for downloads from the mirror. Snapshot dependencies still come from their configured repositories. [Maven Central mirror](https://storage-download.googleapis.com/maven-central/index.html)
+
 The publishing job requires every runtime check to pass. Failed server jobs attach the available boot, proxy and client logs for diagnosis.
 
 ## Retry an interrupted release
