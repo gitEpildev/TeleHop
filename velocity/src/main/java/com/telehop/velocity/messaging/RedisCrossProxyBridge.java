@@ -5,6 +5,9 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.telehop.common.db.RedisConfig;
+import com.telehop.common.messaging.PacketCodec;
+import com.telehop.common.messaging.RecentRequests;
+import com.telehop.common.messaging.TravelFields;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import org.slf4j.Logger;
@@ -34,23 +37,38 @@ public final class RedisCrossProxyBridge {
 
     private static final Gson GSON = new GsonBuilder().create();
 
-    private final RedisConfig config;
+    private final long dedupeWindowMs;
+    private final RecentRequests forwarded = new RecentRequests(32768);
     private final Logger logger;
     private final JedisPool pool;
     private final String channel;
     private final String proxyId;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
 
+    // Only the subscriber thread changes ownership. Discard a delayed departure from a former proxy.
+    private final Map<UUID, String> playerOwners = new java.util.HashMap<>();
     private final Map<UUID, String> globalPlayerMap = new ConcurrentHashMap<>();
     private final Map<String, UUID> globalPlayerNameMap = new ConcurrentHashMap<>();
-    private final Map<String, CompletableFuture<String>> pendingResponses = new ConcurrentHashMap<>();
+    private record ListQuery(java.util.Set<String> names, CompletableFuture<String> result) {
+        ListQuery() {
+            this(new java.util.concurrent.ConcurrentSkipListSet<>(String.CASE_INSENSITIVE_ORDER), new CompletableFuture<>());
+        }
+    }
+
+    private final Map<String, ListQuery> pendingResponses = new ConcurrentHashMap<>();
+    private final java.util.concurrent.Semaphore listSlots = new java.util.concurrent.Semaphore(2048);
+    private volatile Jedis subscriberConnection;
 
     private volatile Consumer<NetworkPacket> packetHandler;
     private volatile boolean running;
     private Thread subscriberThread;
 
     public RedisCrossProxyBridge(RedisConfig config, Logger logger) {
-        this.config = config;
+        this(config, logger, 30000);
+    }
+
+    public RedisCrossProxyBridge(RedisConfig config, Logger logger, long dedupeWindowMs) {
+        this.dedupeWindowMs = dedupeWindowMs;
         this.logger = logger;
         this.channel = config.crossProxyChannel();
         this.proxyId = config.proxyId();
@@ -68,6 +86,11 @@ public final class RedisCrossProxyBridge {
             RedisSslContext sslContext = RedisSslContext.create(config);
             clientConfig.ssl(true)
                     .sslSocketFactory(sslContext.socketFactory());
+            if (config.sslVerify()) {
+                var parameters = new javax.net.ssl.SSLParameters();
+                parameters.setEndpointIdentificationAlgorithm("HTTPS");
+                clientConfig.sslParameters(parameters);
+            }
             if (sslContext.hostnameVerifier() != null) {
                 clientConfig.hostnameVerifier(sslContext.hostnameVerifier());
             }
@@ -97,8 +120,6 @@ public final class RedisCrossProxyBridge {
         subscriberThread.setDaemon(true);
         subscriberThread.start();
 
-        scheduler.scheduleAtFixedRate(this::cleanStaleResponses, 30, 30, TimeUnit.SECONDS);
-
         logger.info("RedisCrossProxyBridge started (proxyId={}, channel={})", proxyId, channel);
     }
 
@@ -107,6 +128,9 @@ public final class RedisCrossProxyBridge {
         if (subscriberThread != null) {
             subscriberThread.interrupt();
         }
+        Jedis connection = subscriberConnection;
+        if (connection != null) connection.disconnect();
+        pendingResponses.values().forEach(query -> query.result().cancel(false));
         scheduler.shutdownNow();
         pool.close();
         logger.info("RedisCrossProxyBridge shut down.");
@@ -144,23 +168,25 @@ public final class RedisCrossProxyBridge {
      */
     public CompletableFuture<String> requestRemotePlayerList(long timeoutMs) {
         String correlationId = UUID.randomUUID().toString();
-        CompletableFuture<String> future = new CompletableFuture<>();
-        pendingResponses.put(correlationId, future);
+        if (!running || !listSlots.tryAcquire()) return CompletableFuture.completedFuture("");
+        var query = new ListQuery();
+        pendingResponses.put(correlationId, query);
+        query.result().whenComplete((names, failure) -> {
+            if (pendingResponses.remove(correlationId, query)) listSlots.release();
+        });
 
         JsonObject msg = new JsonObject();
         msg.addProperty("proxyId", proxyId);
         msg.addProperty("action", "PLAYER_LIST_REQUEST");
         msg.addProperty("correlationId", correlationId);
-        publish(msg);
-
-        scheduler.schedule(() -> {
-            CompletableFuture<String> pending = pendingResponses.remove(correlationId);
-            if (pending != null && !pending.isDone()) {
-                pending.complete("");
-            }
-        }, timeoutMs, TimeUnit.MILLISECONDS);
-
-        return future;
+        try {
+            publish(msg);
+            // Redis pub/sub has no global membership view. Collect every proxy's reply in the response window.
+            scheduler.schedule(() -> query.result().complete(String.join(",", query.names())), timeoutMs, TimeUnit.MILLISECONDS);
+        } catch (java.util.concurrent.RejectedExecutionException closed) {
+            query.result().cancel(false);
+        }
+        return query.result();
     }
 
     // ── private ─────────────────────────────────────────────────────
@@ -170,7 +196,7 @@ public final class RedisCrossProxyBridge {
             try (Jedis jedis = pool.getResource()) {
                 jedis.publish(channel, msg.toString());
             } catch (Exception e) {
-                logger.warn("Failed to publish Redis message: {}", e.getMessage());
+                logger.warn("Failed to publish Redis message: {}", e.getClass().getSimpleName());
             }
         });
     }
@@ -178,6 +204,8 @@ public final class RedisCrossProxyBridge {
     private void subscribe() {
         while (running) {
             try (Jedis jedis = pool.getResource()) {
+                subscriberConnection = jedis;
+                if (!running) return;
                 jedis.subscribe(new JedisPubSub() {
                     @Override
                     public void onMessage(String ch, String message) {
@@ -185,13 +213,13 @@ public final class RedisCrossProxyBridge {
                         try {
                             handleMessage(message);
                         } catch (Exception e) {
-                            logger.warn("Error handling Redis message: {}", e.getMessage());
+                            logger.debug("Discarded invalid Redis message ({})", e.getClass().getSimpleName());
                         }
                     }
                 }, channel);
             } catch (Exception e) {
                 if (!running) return;
-                logger.warn("Redis subscriber disconnected, reconnecting in 3s: {}", e.getMessage());
+                logger.warn("Redis subscriber disconnected, reconnecting in 3s: {}", e.getClass().getSimpleName());
                 try {
                     Thread.sleep(3000);
                 } catch (InterruptedException ie) {
@@ -203,19 +231,22 @@ public final class RedisCrossProxyBridge {
     }
 
     private void handleMessage(String raw) {
+        if (raw == null || raw.length() > 2 * PacketCodec.MAX_BYTES + 1024) return;
         JsonObject msg = JsonParser.parseString(raw).getAsJsonObject();
         String sourceProxy = msg.get("proxyId").getAsString();
 
-        if (sourceProxy.equals(proxyId)) return;
+        if (sourceProxy.isBlank() || sourceProxy.length() > 128 || sourceProxy.equals(proxyId)) return;
 
         String action = msg.get("action").getAsString();
 
         switch (action) {
             case "FORWARD_PACKET" -> {
                 String packetJson = msg.get("packet").getAsString();
-                NetworkPacket packet = GSON.fromJson(packetJson, NetworkPacket.class);
+                NetworkPacket packet = PacketCodec.decode(packetJson);
+                long now = System.currentTimeMillis();
                 Consumer<NetworkPacket> handler = this.packetHandler;
-                if (handler != null) {
+                if (handler != null && packet != null && TravelFields.valid(packet, true) && packet.getTimestamp() >= now - dedupeWindowMs
+                        && packet.getTimestamp() <= now + dedupeWindowMs && forwarded.accept(packet.getRequestId(), now, dedupeWindowMs + Math.max(0, packet.getTimestamp() - now))) {
                     handler.accept(packet);
                 }
             }
@@ -226,12 +257,14 @@ public final class RedisCrossProxyBridge {
                 String name = msg.has("name") ? msg.get("name").getAsString() : "";
                 UUID uuid = UUID.fromString(uuidStr);
 
-                if ("LEAVE".equals(updateAction) || server.isBlank()) {
+                if ("LEAVE".equals(updateAction)) {
+                    if (!playerOwners.remove(uuid, sourceProxy)) return;
                     globalPlayerMap.remove(uuid);
-                    if (!name.isBlank()) globalPlayerNameMap.remove(name.toLowerCase());
-                } else {
+                    if (!name.isBlank()) globalPlayerNameMap.remove(name.toLowerCase(java.util.Locale.ROOT), uuid);
+                } else if ("JOIN".equals(updateAction) && !server.isBlank()) {
+                    playerOwners.put(uuid, sourceProxy);
                     globalPlayerMap.put(uuid, server);
-                    if (!name.isBlank()) globalPlayerNameMap.put(name.toLowerCase(), uuid);
+                    if (!name.isBlank()) globalPlayerNameMap.put(name.toLowerCase(java.util.Locale.ROOT), uuid);
                 }
             }
             case "PLAYER_LIST_REQUEST" -> {
@@ -247,9 +280,11 @@ public final class RedisCrossProxyBridge {
             case "PLAYER_LIST_RESPONSE" -> {
                 String correlationId = msg.get("correlationId").getAsString();
                 String names = msg.has("names") ? msg.get("names").getAsString() : "";
-                CompletableFuture<String> future = pendingResponses.remove(correlationId);
-                if (future != null) {
-                    future.complete(names);
+                ListQuery query = pendingResponses.get(correlationId);
+                if (query != null) {
+                    for (String name : names.split(",")) {
+                        if (!name.isBlank() && name.length() <= 64) query.names().add(name);
+                    }
                 }
             }
             default -> logger.debug("Unknown cross-proxy action: {}", action);
@@ -268,7 +303,4 @@ public final class RedisCrossProxyBridge {
         publish(msg);
     }
 
-    private void cleanStaleResponses() {
-        pendingResponses.entrySet().removeIf(e -> e.getValue().isDone());
-    }
 }

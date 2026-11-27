@@ -9,6 +9,8 @@ public final class NetworkConstants {
 
     public static final String SPAWN_CAPABILITY = "named-spawns-v2";
 
+    public static final String VARIANT_CAPABILITY = "command-variants-v1";
+
     private NetworkConstants() {
     }
 }

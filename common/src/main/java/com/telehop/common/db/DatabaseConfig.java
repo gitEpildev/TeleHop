@@ -31,6 +31,12 @@ public record DatabaseConfig(
             throw new IllegalArgumentException("Database pool size must be >= 1, got " + poolSize);
     }
 
+    /** Keep credentials out of diagnostic messages that include this record. */
+    @Override
+    public String toString() {
+        return "DatabaseConfig[host=" + host + ", port=" + port + ", database=" + database + ", poolSize=" + poolSize + "]";
+    }
+
     public String jdbcUrl() {
         return "jdbc:mysql://" + host + ":" + port + "/" + database +
                 "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC" +

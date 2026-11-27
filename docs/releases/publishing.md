@@ -11,13 +11,13 @@
 
 ## Run a release
 
-For a stable release, open the [Release workflow](https://github.com/gitEpildev/TeleHop/actions/workflows/release.yml) and select **Run workflow**, select the source branch and enter the version, for example `3.0.1`. Leave **Release type** set to **release**. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. Run the workflow once.
+For a stable release, open the [Release workflow](https://github.com/gitEpildev/TeleHop/actions/workflows/release.yml) and select **Run workflow**, select the source branch and enter the version, for example `4.0.0`. Leave **Release type** set to **release**. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. Run the workflow once.
 
-You can also push a stable tag such as `v3.0.1` at the intended commit. Choose one trigger per release. Alpha and beta channels are available for explicitly requested prereleases.
+You can also push a stable tag such as `v4.0.0` at the intended commit. Choose one trigger per release. Alpha and beta channels are available for explicitly requested prereleases.
 
 Prepare the version in source control first. The requested version, newest dated entry in `CHANGELOG.md`, root POM, each module's parent and project version, Paper descriptor and Velocity annotation must agree. A tag must identify that same version. Pushing a branch commit runs CI for the exact SHA the release will use.
 
-GitHub receives a release with separate Paper and Velocity JARs. Modrinth receives one entry per loader, using the files downloaded from GitHub and the GitHub release body. The Paper entry lists published Paper server versions. The Velocity entry lists client versions, including Minecraft 1.21.2, which shares the 1.21.3 protocol. [Platform table](../../README.md#installation)
+GitHub receives the backend and proxy JARs and their SHA-256 manifest. Modrinth receives one entry per JAR using the verified GitHub assets and release notes. One Modrinth entry applies each loader tag to every version listed on it. The backend entry includes an additional loader only when the corresponding runtime checks cover the entire advertised range. The Paper entry lists published Paper server versions. The Velocity entry covers 17 Minecraft releases. Its two additional client versions share a protocol with a published Paper server. The live login and placement tests pair client 1.21.2 with Paper 1.21.3 and client 26.1 with Paper 26.1.2. [Platform table](../../README.md#installation)
 
 The default public notes include the reviewed changelog entry and group commits since the nearest reachable previous version tag. Push and pull request CI checks the spelling and formatting of these generated notes before the release is started. For the first release, history starts after the standalone 2.2.0 reconciliation. Use conventional commit subjects such as `fix(paper): respect the self-coordinate permission`. A `!` or `BREAKING CHANGE:` footer places the change in the breaking changes section.
 
@@ -25,7 +25,7 @@ The default public notes include the reviewed changelog entry and group commits 
 
 ### Changelog requirements
 
-- Put the newest release first, using a heading such as `## [3.0.1] - 2026-11-25`. Use unique versions, valid calendar dates and descending release order. An optional leading `[Unreleased]` section can hold work for later.
+- Put the newest release first, using a heading such as `## [4.0.0] - 2026-11-27`. Use unique versions, valid calendar dates and descending release order. An optional leading `[Unreleased]` section can hold work for later.
 - Include at least one bullet describing the observable change. Replace placeholders such as `TBD` with the actual effect. Upgrade instructions may refer to older versions.
 - Changes to shipped source, resources, Maven POMs or SQL must update the visible wording of the newest release entry. CI compares a PR with its base and a branch push with its previous commit. On a new branch it uses the common ancestor with the default branch. A release also checks changes since the preceding release.
 - Use UK English in headings, paragraphs, bullets and link labels throughout the changelog and public notes. The pinned UK dictionary checks words such as *colour*, *behaviour* and *initialise*. Put exact API names and commands in backticks. Add genuine project terms to `.github/release/project-words.txt` for review. Code samples and URL destinations keep their spelling.
@@ -37,11 +37,13 @@ For example, a request for `3.0.0` with `2.2.0` as the newest dated entry stops 
 
 Every branch push and PR runs the full Maven reactor, Checkstyle, repository validation, release regression tests, compatibility matrix and runtime tests. The **Release readiness** job requires every one of those jobs to succeed. The release workflow also performs a fresh clean build and runtime tests. Before publishing, it reads the latest push CI run on the exact commit and checks both its conclusion and **Release readiness**. A failed, cancelled, missing or skipped required check blocks publication. A pending run has up to 15 minutes to finish.
 
-Packaging requires all six Maven modules, their JARs, passing Surefire reports from common, Paper and Velocity and matching versions in the Paper and Velocity distributions. Missing reports, zero tests in any of those modules, test failures, errors or skips stop the build. The Paper compatibility check verifies that every plugin class uses Java 21-compatible bytecode, including the newer adapter. Maven compiles that adapter against the newer Paper API with JDK 25. This lets early Paper 1.21 releases remap the complete JAR on Java 21. Paper 26.1.2 and 26.2 still require Java 25 to run.
+Packaging requires all six Maven modules, their JARs, passing Surefire reports from common, Paper and Velocity and matching versions in the Paper and Velocity distributions. Missing reports, zero tests in any of those modules, test failures, errors or skips stop the build. The Paper compatibility check verifies that every plugin class uses Java 21-compatible bytecode, including the newer adapter. Maven compiles that adapter against the newer Paper API with JDK 25. This lets early Paper 1.21 releases remap the complete JAR on Java 21. The pinned 26.x servers run on Java 25.
 
-Every Paper version in the platform table runs the server smoke test. Each boot checks command ownership with the default configuration, then restarts with renamed teleport commands. The Minecraft 1.21.2 client check uses Paper 1.21.3 through Velocity. PaperMC published only alpha-channel server builds for Minecraft 1.21.5 and 1.21.9. The runtime matrix uses those upstream builds for those two cases. [PaperMC download service](https://docs.papermc.io/misc/downloads-service/)
+Every Paper version in the platform table runs the server smoke test. Each boot checks command ownership with the default configuration, then restarts with renamed teleport commands. The shared-protocol login jobs use the client schema, backend and proxy from the compatibility inventory. PaperMC published only alpha-channel server builds for Minecraft 1.21.5, 1.21.9 and 26.1.1. The runtime matrix uses those upstream builds for these cases. [PaperMC download service](https://docs.papermc.io/misc/downloads-service/)
 
-Velocity 3.3, 3.5 and 4.3.1 each run two proxy boots. Two Minecraft clients exercise configurable destinations, delegated staff actions and LuckPerms on Velocity 3.5 and 4.3.1 using two Paper backends and Multiverse. Players also select a saved home and a region and dimension through the inventory menus. A mixed-network check connects both proxy generations to the same backends, puts observers on the other proxy and repeats regional and named spawn travel in each direction. Separate checks use the published TeleHop 2.3.0 proxy and backend JARs to exercise rolling-upgrade behaviour. Two bridge instances exchange player updates and teleport packets across a real Redis restart. The Actions summary reports local Redis packet-forwarding latency. Live player transfer time includes additional client and server work.
+Velocity 3.3, 3.5 and 4.3.1 each run two proxy boots. Two Minecraft clients exercise configurable destinations, delegated staff actions and LuckPerms on Velocity 3.5 and 4.3.1 using two Paper backends and Multiverse. Players also select a saved home and a region and dimension through the inventory menus. A mixed-network check connects both proxy generations to the same backends, puts observers on the other proxy and repeats regional and named spawn travel in each direction. Separate checks use the published TeleHop 2.3.0 proxy and backend JARs to exercise rolling-upgrade behaviour. Three bridge instances exchange player updates and teleport packets across a real Redis restart. The Actions summary reports local Redis packet-forwarding latency. Live player transfer time includes additional client and server work.
+
+The upgrade workflow boots the released 3.0.1 plugins, then checks the V4 migration and a second restart against MySQL 8.4 and MariaDB 11.4. The backend compatibility workflow builds Bukkit implementations, exercises the same backend JAR and runs a mixed server journey. It also checks the explicit Folia startup refusal. Build readiness and publication depend on both workflows.
 
 The rollback test starts the published 2.3.0 Paper JAR with its own command file. It checks that TeleHop starts, that a named arrival reports the unavailable destination and that the player can return to the regional hub with `/spawn`.
 
@@ -51,7 +53,7 @@ The publishing job requires every runtime check to pass. Failed server jobs atta
 
 ## Retry an interrupted release
 
-Open the original run and select **Re-run failed jobs**. A retry checks the tag's commit and resumes any incomplete draft. A resumed draft must contain the verified build bytes. The GitHub release body must match the validated notes on every attempt. After GitHub publication its existing JARs are used for Modrinth. Modrinth entries with a matching version, loader, changelog, compatibility and SHA-512 are skipped. A conflict stops the workflow and identifies the affected file or field. Fix a missing or expired credential in repository settings and retry. If the build artifact has expired, re-run all jobs on the original run.
+Open the original run and select **Re-run failed jobs**. A retry checks the tag's commit and resumes any incomplete draft. The packager preserves shaded class and resource bytes and normalises ZIP ordering and timestamps. Rebuilding the same inputs produces the same release files. A resumed draft must contain the verified build bytes. The GitHub release body must match the validated notes on every attempt. After GitHub publication its existing JARs are used for Modrinth. Modrinth entries with a matching version, loader, changelog, compatibility and SHA-512 are skipped. A conflict stops the workflow and identifies the affected file or field. Fix a missing or expired credential in repository settings and retry. If the build artifact has expired, re-run all jobs on the original run.
 
 ## Reproduce validation locally
 
@@ -60,8 +62,19 @@ From the repository root, with Node.js 22.12 or later, Python 3.11 or later, Mav
 ```sh
 npm ci --prefix .github/release --ignore-scripts --no-audit --no-fund
 python3 .github/release/prepare.py check
-REQUEST_VERSION=3.0.1 REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
+REQUEST_VERSION=4.0.0 REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
 python3 -m unittest discover -v -s .github/release
 mvn -B -ntp clean verify
-bash .github/tests/bundle.sh 3.0.1
+bash .github/tests/bundle.sh 4.0.0
+```
+
+
+With Docker running, install the network test client and PyYAML into a local virtual environment. Supply the absolute paths to both Java executables and a new output directory. This starts temporary servers and databases on loopback, collects their logs and removes successful test worlds. To keep the worlds, add `--keep-worlds`.
+
+```sh
+npm ci --prefix .github/tests/network --ignore-scripts
+python3 -m venv .venv
+.venv/bin/pip install PyYAML==6.0.3
+.venv/bin/python scripts/test-network.py matrix network-v3 network-v4 network-mixed client upgrade-mysql upgrade-mariadb \
+  --java21 "$JAVA21_HOME/bin/java" --java25 "$JAVA25_HOME/bin/java" --output /tmp/telehop-v4-tests
 ```

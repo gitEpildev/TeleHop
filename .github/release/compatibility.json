@@ -66,6 +66,12 @@
       "java": 21,
       "channel": "STABLE"
     },
+    "26.1.1": {
+      "file": "paper-26.1.1-29.jar",
+      "sha256": "43d08ed52c7af4e9f72769122501a5c15f99c7ace0c428a3eef040fd3f6fdbc5",
+      "java": 25,
+      "channel": "ALPHA"
+    },
     "26.1.2": {
       "file": "paper-26.1.2-74.jar",
       "sha256": "1d70b1dab9cf4a6de615209a536f3a45a2186240253c428213ce2188ab95e5f7",
@@ -75,6 +81,12 @@
     "26.2": {
       "file": "paper-26.2-135.jar",
       "sha256": "ef3dbc68b013deafdbbee3bebf1ba351671ebcda94a8f136809b7532d5ba2fe1",
+      "java": 25,
+      "channel": "STABLE"
+    },
+    "26.3": {
+      "file": "paper-26.3-263.jar",
+      "sha256": "949a1b05063d5bfd9ca324509d1d4726f2051e5bc81bc5f6f5d96f56f3a6e392",
       "java": 25,
       "channel": "STABLE"
     }
@@ -100,6 +112,160 @@
     }
   },
   "velocity_client_backends": {
-    "1.21.2": "1.21.3"
+    "1.21.2": {
+      "backend": "1.21.3",
+      "schema": "1.21.3",
+      "proxy": "3.5"
+    },
+    "26.1": {
+      "backend": "26.1.2",
+      "schema": "26.1",
+      "proxy": "4.3.1"
+    }
+  },
+  "additional_backend_tests": {
+    "bukkit": [
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11",
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2",
+      "26.3"
+    ],
+    "spigot": [
+      "1.21",
+      "1.21.1",
+      "1.21.2",
+      "1.21.3",
+      "1.21.4",
+      "1.21.5",
+      "1.21.6",
+      "1.21.7",
+      "1.21.8",
+      "1.21.9",
+      "1.21.10",
+      "1.21.11",
+      "26.1",
+      "26.1.1",
+      "26.1.2",
+      "26.2",
+      "26.3"
+    ],
+    "purpur": [
+      "1.21.11"
+    ]
+  },
+  "buildtools": {
+    "1.21": {
+      "revision": "4289",
+      "java": 21,
+      "build_data": "ae1e7b1e31cd3a3892bb05a6ccdcecc48c73c455",
+      "client_schema": "1.21.1"
+    },
+    "1.21.1": {
+      "revision": "4344",
+      "java": 21,
+      "build_data": "533b02cd6ba8dbf8c8607250b02bf2d8c36421e8",
+      "client_schema": "1.21.1"
+    },
+    "1.21.2": {
+      "revision": "4349",
+      "java": 21,
+      "build_data": "0ea6fcc9bc8ad9e7c729f5031123bcc69ce2b033",
+      "client_schema": "1.21.3"
+    },
+    "1.21.3": {
+      "revision": "4398",
+      "java": 21,
+      "build_data": "0c5ebabcb4ce41f69a7d2319b468b6faee434038",
+      "client_schema": "1.21.3"
+    },
+    "1.21.4": {
+      "revision": "4458",
+      "java": 21,
+      "build_data": "686446e5669a9aab7d35179fd989032560f289fc",
+      "client_schema": "1.21.4"
+    },
+    "1.21.5": {
+      "revision": "4504",
+      "java": 21,
+      "build_data": "9b48cd40193ae9f0cebbadce39052a242485eb4c",
+      "client_schema": "1.21.5"
+    },
+    "1.21.6": {
+      "revision": "4518",
+      "java": 21,
+      "build_data": "281ac0de7a76d808753ede97d11b034bc801b63d",
+      "client_schema": "1.21.6"
+    },
+    "1.21.7": {
+      "revision": "4522",
+      "java": 21,
+      "build_data": "436eac9815c211be1a2a6ca0702615f995e81c44",
+      "client_schema": "1.21.8"
+    },
+    "1.21.8": {
+      "revision": "4534",
+      "java": 21,
+      "build_data": "851ec26f86db9951c78dd8868e0b474c2290ecd2",
+      "client_schema": "1.21.8"
+    },
+    "1.21.9": {
+      "revision": "4540",
+      "java": 21,
+      "build_data": "42d18d4c4653ffc549778dbe223f6994a031d69e",
+      "client_schema": "1.21.9"
+    },
+    "1.21.10": {
+      "revision": "4570",
+      "java": 21,
+      "build_data": "6cf716da198f9d94f9c36e36d9be6417c5c24824",
+      "client_schema": "1.21.9"
+    },
+    "1.21.11": {
+      "revision": "4598",
+      "java": 21,
+      "build_data": "beeae81d9ac5521b767517cee44d0c345a8be3fb",
+      "client_schema": "1.21.11"
+    },
+    "26.1": {
+      "revision": "4611",
+      "java": 25,
+      "build_data": "5bf19beb9fa500f822c35eb5634fcefe27f60bec",
+      "client_schema": "26.1"
+    },
+    "26.1.1": {
+      "revision": "4617",
+      "java": 25,
+      "build_data": "71cd3e74d4a679366ccd4b6fff5e5595362832e3",
+      "client_schema": "26.1"
+    },
+    "26.1.2": {
+      "revision": "4632",
+      "java": 25,
+      "build_data": "1766f29a5430bb246f77e2fe24debb93a26a587d",
+      "client_schema": "26.1"
+    },
+    "26.2": {
+      "revision": "4648",
+      "java": 25,
+      "build_data": "41bd187bd86ec1444d2dc9e0188e53559cf870b3"
+    },
+    "26.3": {
+      "revision": "4665",
+      "java": 25,
+      "build_data": "39e62795554dcf6b62e922bc061705b3dc228f88"
+    }
   }
 }

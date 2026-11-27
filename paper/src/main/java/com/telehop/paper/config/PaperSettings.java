@@ -1,13 +1,13 @@
 package com.telehop.paper.config;
 
+import com.telehop.common.config.DeploymentConfig;
 import com.telehop.common.db.DatabaseConfig;
 import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.plugin.java.JavaPlugin;
+import java.nio.file.Path;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -57,7 +57,8 @@ public record PaperSettings(
         boolean respawnRespectAnchor,
         List<String> respawnExcludedWorlds,
         boolean multiProxyEnabled,
-        Map<String, RegionConfig> regions
+        Map<String, RegionConfig> regions,
+        boolean networkMessagingEnabled
 ) {
 
     public record RegionConfig(List<String> servers, String hub) {}
@@ -68,14 +69,14 @@ public record PaperSettings(
             boolean soundEnabled, Sound soundType, float soundVolume, float soundPitch
     ) {}
 
-    /**
-     * Loads settings from split config files in {@code plugins/TeleHop/config/}.
-     * Falls back to defaults if a file is missing.
-     */
-    public static PaperSettings load(JavaPlugin plugin) {
-        File configDir = new File(plugin.getDataFolder(), "config");
+    /** Load and validate the active profile before replacing any live services. */
+    public static PaperSettings load(Path root, DeploymentConfig configuration) {
+        File configDir = configuration.profileDirectory(root).toFile();
         FileConfiguration general = loadYaml(configDir, "general.yml");
-        FileConfiguration database = loadYaml(configDir, "database.yml");
+        FileConfiguration database = PaperProfiles.yaml(root.resolve("config/database.yml"));
+        boolean single = configuration.mode() == DeploymentConfig.Mode.SINGLE;
+        FileConfiguration messaging = single ? general : loadYaml(configDir, "messaging.yml");
+        FileConfiguration regions = single ? general : loadYaml(configDir, "regions.yml");
         FileConfiguration featuresFile = loadYaml(configDir, "features.yml");
         FileConfiguration teleportFile = loadYaml(configDir, "teleport.yml");
         FileConfiguration tpaFile = loadYaml(configDir, "tpa.yml");
@@ -119,16 +120,18 @@ public record PaperSettings(
         List<String> blockedPrefixes = homeFile.getStringList("homes.blocked-server-prefixes").stream()
                 .map(String::toLowerCase).toList();
 
-        boolean multiProxy = general.getBoolean("multi-proxy.enabled", false);
-        Map<String, RegionConfig> regionMap = loadRegions(general);
+        boolean multiProxy = configuration.mode() == DeploymentConfig.Mode.MULTI
+                || configuration.mode() == DeploymentConfig.Mode.CUSTOM && general.getBoolean("multi-proxy.enabled", false);
+        Map<String, RegionConfig> regionMap = loadRegions(regions);
+        validate(general, database, featuresFile, messaging, homeFile, tpaFile, rtpFile, respawnFile);
 
         return new PaperSettings(
-                general.getString("server-name", "lobby"),
-                general.getString("hub-server", "lobby"),
+                general.getString("server-name"),
+                general.getString("hub-server"),
                 Collections.unmodifiableMap(servers),
                 db,
-                general.getLong("messaging.dedupe-window-ms", 30_000L),
-                general.getLong("messaging.request-timeout-ms", 10_000L),
+                messaging.getLong("messaging.dedupe-window-ms", 30_000L),
+                messaging.getLong("messaging.request-timeout-ms", 10_000L),
                 tpaFile.getInt("tpa.timeout-seconds", 60),
                 tpaFile.getInt("tpa.cooldown-seconds", 10),
                 tpaFile.getInt("tpa.delay-seconds", 0),
@@ -140,7 +143,7 @@ public record PaperSettings(
                 general.getBoolean("audit.enabled", false),
                 Collections.unmodifiableMap(features),
                 general.getString("language", "en"),
-                homeFile.getInt("homes.max-slots", 10),
+                Math.clamp(homeFile.getInt("homes.max-slots", 10), 1, 10),
                 homeFile.getBoolean("homes.confirm-set", true),
                 homeFile.getString("homes.gui-title", "<gradient:red:gold>Your Homes</gradient>"),
                 parseMaterial(homeFile.getString("homes.bed-set", "LIME_BED"), Material.LIME_BED),
@@ -156,14 +159,15 @@ public record PaperSettings(
                         .map(String::toLowerCase).collect(Collectors.toUnmodifiableSet()),
                 Collections.unmodifiableList(blockedPrefixes),
                 Collections.unmodifiableMap(effects),
-                respawnFile.getString("random-respawn.world", "world"),
+                respawnFile.getString("random-respawn.world", ""),
                 respawnFile.getInt("random-respawn.radius", 5000),
                 respawnFile.getBoolean("random-respawn.respect-bed-spawn", true),
                 respawnFile.getBoolean("random-respawn.respect-anchor-spawn", true),
                 Collections.unmodifiableList(new ArrayList<>(
                         respawnFile.getStringList("random-respawn.excluded-worlds"))),
                 multiProxy,
-                Collections.unmodifiableMap(regionMap)
+                Collections.unmodifiableMap(regionMap),
+                messaging.getBoolean("messaging.network-enabled", true)
         );
     }
 
@@ -231,7 +235,7 @@ public record PaperSettings(
                 true,
                 List.of(),
                 false,
-                Map.of()
+                Map.of(), true
         );
     }
 
@@ -313,11 +317,44 @@ public record PaperSettings(
     }
 
     private static FileConfiguration loadYaml(File dir, String name) {
-        File file = new File(dir, name);
-        if (file.exists()) {
-            return YamlConfiguration.loadConfiguration(file);
+        return PaperProfiles.yaml(dir.toPath().resolve(name));
+    }
+
+    private static void validate(FileConfiguration general, FileConfiguration database, FileConfiguration features,
+                                 FileConfiguration messaging, FileConfiguration homes, FileConfiguration tpa,
+                                 FileConfiguration rtp, FileConfiguration respawn) {
+        for (String field : List.of("server-name", "hub-server")) {
+            if (!general.isString(field) || general.getString(field, "").isBlank())
+                throw new IllegalArgumentException("general.yml: " + field + " must be a non-empty name");
         }
-        return new YamlConfiguration();
+        if (!general.getString("language", "en").matches("[a-zA-Z0-9_-]{1,40}"))
+            throw new IllegalArgumentException("general.yml: invalid language identifier");
+        if (features.contains("features") && !features.isConfigurationSection("features"))
+            throw new IllegalArgumentException("features.yml: features must be a mapping");
+        for (String key : features.getKeys(true)) {
+            if (!key.equals("features") && key.startsWith("features.") && !features.isBoolean(key))
+                throw new IllegalArgumentException("features.yml: " + key + " must be true or false");
+        }
+        for (String key : List.of("mysql.port", "mysql.pool-size")) range(database, key, 1, 65535);
+        for (String key : List.of("messaging.dedupe-window-ms", "messaging.request-timeout-ms")) range(messaging, key, 1, 86400000);
+        if (messaging.contains("messaging.network-enabled") && !messaging.isBoolean("messaging.network-enabled"))
+            throw new IllegalArgumentException("messaging.network-enabled must be true or false");
+        range(homes, "homes.gui-rows", 1, 6);
+        range(homes, "homes.max-slots", 1, 54);
+        range(tpa, "tpa.timeout-seconds", 1, 86400);
+        range(tpa, "tpa.cooldown-seconds", 0, 86400);
+        range(tpa, "tpa.delay-seconds", 0, 86400);
+        range(rtp, "rtp.cooldown-seconds", 0, 86400);
+        range(rtp, "rtp.delay-seconds", 0, 86400);
+        range(rtp, "rtp.max-radius", 1, 30000000);
+        range(respawn, "random-respawn.radius", 1, 30000000);
+    }
+
+    private static void range(FileConfiguration config, String key, int min, int max) {
+        if (!config.contains(key)) return;
+        Object raw = config.get(key);
+        if (!(raw instanceof Integer || raw instanceof Long) || ((Number) raw).longValue() < min
+                || ((Number) raw).longValue() > max) throw new IllegalArgumentException(key + " outside " + min + ".." + max);
     }
 
     private static Map<String, TeleportEffect> loadEffects(FileConfiguration cfg) {
@@ -356,8 +393,8 @@ public record PaperSettings(
 
     private static Material parseMaterial(String name, Material fallback) {
         try {
-            Material m = Material.matchMaterial(name.toUpperCase());
-            return m != null ? m : fallback;
+            Material material = Material.matchMaterial(name);
+            return material == null || !material.isItem() || material.isAir() ? fallback : material;
         } catch (Exception e) { return fallback; }
     }
 

@@ -64,6 +64,11 @@ jobs:
         with:
           name: ${{ inputs.bundle }}
           path: bundle
+      - name: Install the configuration test reader
+        run: |
+          python3 -m venv "$RUNNER_TEMP/telehop-python"
+          "$RUNNER_TEMP/telehop-python/bin/pip" install PyYAML==6.0.3
+          echo "$RUNNER_TEMP/telehop-python/bin" >> "$GITHUB_PATH"
       - name: Boot, upgrade legacy data, restart and verify
         env:
           VERSION: ${{ inputs.version }}
@@ -136,10 +141,14 @@ jobs:
         run: |
           sudo apt-get update -qq
           sudo apt-get install -y redis-server redis-tools
-      - name: Exercise two production Redis bridges
+      - name: Exercise production Redis bridges and recovery
         env:
           VERSION: ${{ inputs.version }}
         run: |
           set -o pipefail
           java -cp "bundle/telehop-velocity-$VERSION.jar" .github/tests/RedisBridgeCheck.java | tee redis.log
           grep '^Redis forwarding:' redis.log >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify authenticated Redis over TLS with a private CA
+        env:
+          VERSION: ${{ inputs.version }}
+        run: python3 .github/tests/redis_tls.py "bundle/telehop-velocity-$VERSION.jar"

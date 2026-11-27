@@ -4,6 +4,11 @@ import com.telehop.common.PermissionNodes;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.paper.NetworkPaperPlugin;
+import com.telehop.paper.platform.PlatformText;
+import com.telehop.paper.platform.BackendPlatform;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
+import org.mockito.MockedStatic;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.messaging.PaperMessagingManager;
 import com.telehop.paper.service.AuditLogger;
@@ -22,7 +27,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -30,6 +34,14 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class AdminTeleportCommandTest {
+    private MockedStatic<PlatformText> messages;
+
+    @BeforeEach
+    void captureMessages() { messages = mockStatic(PlatformText.class); }
+
+    @AfterEach
+    void closeMessages() { messages.close(); }
+
     @Test
     void visitOnlyModeratorCannotMoveAnotherPlayer() {
         var plugin = mock(NetworkPaperPlugin.class);
@@ -39,7 +51,7 @@ class AdminTeleportCommandTest {
         var denied = Component.text("Denied");
         when(plugin.msg("no-permission")).thenReturn(denied);
         new AdminTeleportCommand(plugin).execute(sender, "Alex", "Sam", null, null);
-        verify(sender).sendMessage(denied);
+        messages.verify(() -> PlatformText.send(sender, denied));
         verify(plugin, never()).messaging();
     }
 
@@ -50,10 +62,12 @@ class AdminTeleportCommandTest {
         when(plugin.isFeatureEnabled("admin-tp")).thenReturn(true);
         when(sender.hasPermission(PermissionNodes.TP_COORDINATES_SELF)).thenReturn(true);
         when(plugin.auditLogger()).thenReturn(mock(AuditLogger.class));
+        var platform = mock(BackendPlatform.class);
+        when(plugin.platform()).thenReturn(platform);
 
         new AdminTeleportCommand(plugin).execute(sender, "10", "64", "-3", null);
 
-        verify(sender).teleportAsync(new Location(null, 10, 64, -3));
+        verify(platform).teleport(sender, new Location(null, 10, 64, -3));
         verify(plugin, never()).messaging();
     }
 
@@ -104,8 +118,8 @@ class AdminTeleportCommandTest {
         new AdminTeleportCommand(plugin).execute(sender, first, "2", "3", first.equals("1") ? null : "4");
 
         verify(sender).hasPermission(permission.equals("self") ? PermissionNodes.TP_COORDINATES_SELF : PermissionNodes.TP_COORDINATES_OTHERS);
-        verify(sender).sendMessage(denied);
-        verify(sender, never()).teleportAsync(any(Location.class));
+        messages.verify(() -> PlatformText.send(sender, denied));
+        verify(plugin, never()).platform();
         verify(plugin, never()).messaging();
     }
 }

@@ -11,12 +11,26 @@ PERMISSION_PATTERNS = {
     "telehop.spawn.destination.<name>",
     "telehop.warp.<name>",
     "telehop.warps.<number>",
+    "telehop.command.<id>",
+    "telehop.rtp.region.<id>",
+    "telehop.rtp.server.<id>",
+    "telehop.rtp.world.<id>",
+    "telehop.rtp.dimension.<id>",
 }
 
 
 def main():
     permissions = yaml.safe_load((RESOURCES / "plugin.yml").read_text())["permissions"]
     commands = yaml.safe_load((RESOURCES / "config/commands.yml").read_text())
+    grouped = {}
+    for category in sorted((RESOURCES / "commands").glob("*.yml")):
+        for root, settings in yaml.safe_load(category.read_text()).items():
+            if root in grouped:
+                raise SystemExit(f"Duplicate command root {root} in {category}")
+            primary = settings["custom-name"]
+            grouped[root] = [primary["name"], *primary.get("aliases", [])]
+    if grouped != commands:
+        raise SystemExit("The packaged command groups disagree with the legacy default labels")
     labels = {label for names in commands.values() for label in names}
     missing = []
 

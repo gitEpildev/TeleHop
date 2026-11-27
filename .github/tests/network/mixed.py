@@ -7,7 +7,7 @@ import socket
 import subprocess
 import time
 
-from run import PLUGINS, Process, assert_entity_values, download, mysql, paper, proxy, regional_rtp
+from run import PLUGINS, Process, assert_entity_values, download, mysql, paper, proxy, regional_rtp, regional_settings
 
 
 # Names and coordinates deliberately differ from the regional and global defaults.
@@ -31,12 +31,12 @@ def point_yaml(point):
 
 def backend(stack, args, root, name, port):
     identifier, coords, default = BACKENDS[name]
-    general = (f"server-name: {name}\nhub-server: survival\nservers: {{eu: hub, usa: survival}}\n"
+    general = (f"server-name: {name}\nhub-server: survival\nservers: {{port: hub, mines: survival}}\n"
                "multi-proxy: {enabled: true}\nregions: {review: {servers: [hub, survival], hub: hub}}\n"
                f"messaging: {{request-timeout-ms: {TIMEOUT_MS}}}\n")
     spawns = ("hub-command: {enabled: true}\nrouting: {enabled: false}\n"
               f"destinations:\n  {identifier}: {{{point_yaml(coords)}, access: public}}\n")
-    rtp = "rtp:\n  max-radius: 8\n  regions: {usa: {radius: 8}}\n" if name == "survival" else None
+    rtp = regional_settings(8, dimension="overworld")
     return paper(stack, args, name, port, root, general=general, spawns=spawns, rtp=rtp,
                  storage="spawn: {" + point_yaml(default) + "}\n")
 
@@ -57,7 +57,7 @@ def client(stack, root, port, name):
     directory.mkdir()
     bot = Process(stack, directory, ["node", str(Path(__file__).with_name("client.cjs").resolve()),
                                       str(port), name], None)
-    bot.wait("CLIENT_READY", seconds=45)
+    bot.wait("CLIENT_READY", seconds=150)
     return bot
 
 
@@ -148,6 +148,15 @@ def exercise(root, servers, request_port, observer_port, label, *, legacy=False)
             assert_entity_values(server, "Pos", OBSERVER_POS, guest)
             if "Arrived at " in witness.log.read_text(errors="replace"):
                 raise AssertionError(f"{guest} received another player's arrival")
+        if not legacy:
+            # The requesting moderator and moving player are connected through different proxies.
+            move(bot, name, "/server hub", hub)
+            survival.command("minecraft:op " + away_guest, "(?i)made .* operator|already")
+            arrival = survival.mark()
+            away.send("/tphere " + name)
+            survival.wait(name + " joined the game", arrival)
+            assert_entity_values(survival, "Pos", OBSERVER_POS, name)
+            survival.command("minecraft:deop " + away_guest, "(?i)no longer|removed|not an operator")
         departing = [server.mark() for server in servers]
     hub.wait(home_guest + " left the game", departing[0])
     survival.wait(away_guest + " left the game", departing[1])

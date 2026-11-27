@@ -1,5 +1,6 @@
 package com.telehop.paper.gui;
 
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.common.PermissionNodes;
 import com.telehop.common.model.HomeRecord;
 import com.telehop.common.service.HomeService;
@@ -7,6 +8,8 @@ import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.config.PaperSettings;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,19 +41,20 @@ public class HomeGui {
 
         homeService.listByPlayer(uuid).thenAccept(homes -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                int rows = Math.max(1, Math.min(6, cfg.homeGuiRows()));
+                int totalDisplaySlots = cfg.homeMaxSlots();
+                int rows = Math.clamp(cfg.homeGuiRows(), totalDisplaySlots > 9 ? 2 : 1, 6);
                 Gui gui = Gui.gui()
                         .title(plugin.messageService().deserialize(cfg.homeGuiTitle()))
                         .rows(rows)
                         .disableAllInteractions()
                         .create();
 
-                int totalDisplaySlots = cfg.homeMaxSlots();
-                int slotsPerRow = Math.min(5, totalDisplaySlots);
+                int slotsPerRow = rows == 1 ? totalDisplaySlots : Math.min(5, totalDisplaySlots);
                 int secondRowCount = Math.max(0, totalDisplaySlots - slotsPerRow);
 
-                int row1Start = 1 * 9 + centerOffset(slotsPerRow);
-                int row2Start = 3 * 9 + centerOffset(secondRowCount);
+                int firstRow = rows >= 4 ? 1 : 0;
+                int row1Start = 9 * firstRow + centerOffset(slotsPerRow);
+                int row2Start = 9 * Math.min(firstRow + 2, rows - 1) + centerOffset(secondRowCount);
 
                 HomeRecord[] slotMap = mapHomesToSlots(homes, totalDisplaySlots);
 
@@ -64,15 +68,17 @@ public class HomeGui {
                     HomeRecord existing = slotMap[i];
 
                     if (existing != null) {
-                        List<String> lore = new ArrayList<>();
-                        lore.add("<gray>Server: " + prettyServer(existing.server(), cfg));
-                        lore.add("<gray>World: " + prettyWorld(existing.world(), cfg));
+                        List<Component> lore = new ArrayList<>();
+                        lore.add(Component.text("Server: ", NamedTextColor.GRAY).append(prettyServer(existing.server(), cfg)));
+                        lore.add(Component.text("World: ", NamedTextColor.GRAY)
+                                .append(plugin.messageService().deserialize(prettyWorld(existing.world(), cfg))));
                         if (cfg.homeShowLocation()) {
-                            lore.add("<gray>Location: <white>" + (int) existing.x() + ", " + (int) existing.y() + ", " + (int) existing.z());
+                            lore.add(Component.text("Location: ", NamedTextColor.GRAY).append(Component.text(
+                                    (int) existing.x() + ", " + (int) existing.y() + ", " + (int) existing.z(), NamedTextColor.WHITE)));
                         }
-                        lore.add("");
-                        lore.add("<yellow>Click to manage");
-                        ItemStack item = buildItem(cfg.homeSetBed(), "<green>" + existing.name(), lore);
+                        lore.add(Component.empty());
+                        lore.add(Component.text("Click to manage", NamedTextColor.YELLOW));
+                        ItemStack item = buildItem(cfg.homeSetBed(), Component.text(existing.name(), NamedTextColor.GREEN), lore);
                         final HomeRecord home = existing;
                         gui.setItem(guiIndex, ItemBuilder.from(item).asGuiItem(click -> openManageMenu(player, home)));
                     } else if (hasPermission) {
@@ -92,7 +98,7 @@ public class HomeGui {
                             player.closeInventory();
                             homeService.upsert(newHome).thenRun(() ->
                                     Bukkit.getScheduler().runTask(plugin, () -> {
-                                        player.sendMessage(plugin.msg("home-set", Map.of("name", autoName)));
+                                        PlatformText.send(player, plugin.msg("home-set", Map.of("name", autoName)));
                                         open(player);
                                     }));
                         }));
@@ -110,19 +116,19 @@ public class HomeGui {
 
     private void openManageMenu(Player player, HomeRecord home) {
         Gui gui = Gui.gui()
-                .title(plugin.messageService().deserialize("<gold>" + home.name()))
+                .title(Component.text(home.name(), NamedTextColor.GOLD))
                 .rows(3)
                 .disableAllInteractions()
                 .create();
 
-        gui.setItem(12, ItemBuilder.from(buildItem(Material.LIME_WOOL, "<green>Teleport",
-                List.of("<gray>Go to " + home.name()))).asGuiItem(click -> {
+        gui.setItem(12, ItemBuilder.from(buildItem(Material.LIME_WOOL, Component.text("Teleport", NamedTextColor.GREEN),
+                List.of(Component.text("Go to " + home.name(), NamedTextColor.GRAY)))).asGuiItem(click -> {
             player.closeInventory();
             teleportToHome(player, home);
         }));
 
-        gui.setItem(14, ItemBuilder.from(buildItem(Material.RED_WOOL, "<red>Delete",
-                List.of("<gray>Remove " + home.name()))).asGuiItem(click -> openConfirmDelete(player, home)));
+        gui.setItem(14, ItemBuilder.from(buildItem(Material.RED_WOOL, Component.text("Delete", NamedTextColor.RED),
+                List.of(Component.text("Remove " + home.name(), NamedTextColor.GRAY)))).asGuiItem(click -> openConfirmDelete(player, home)));
 
         gui.setItem(18, ItemBuilder.from(buildItem(Material.SPECTRAL_ARROW, "<gold>Back",
                 List.of("<gray>Return to homes"))).asGuiItem(click -> open(player)));
@@ -132,7 +138,7 @@ public class HomeGui {
 
     private void openConfirmDelete(Player player, HomeRecord home) {
         Gui gui = Gui.gui()
-                .title(plugin.messageService().deserialize("<red>Delete " + home.name() + "?"))
+                .title(Component.text("Delete " + home.name() + "?", NamedTextColor.RED))
                 .rows(3)
                 .disableAllInteractions()
                 .create();
@@ -142,7 +148,7 @@ public class HomeGui {
                     player.closeInventory();
                     homeService.delete(home.uuid(), home.name()).thenRun(() ->
                             Bukkit.getScheduler().runTask(plugin, () -> {
-                                player.sendMessage(plugin.msg("home-deleted", Map.of("name", home.name())));
+                                PlatformText.send(player, plugin.msg("home-deleted", Map.of("name", home.name())));
                                 open(player);
                             }));
                 }));
@@ -165,16 +171,16 @@ public class HomeGui {
             packet.put("homeName", home.name());
             packet.put("homeUuid", home.uuid());
             plugin.messaging().send(player, packet);
-            player.sendMessage(plugin.msg("home-teleporting", Map.of("name", home.name())));
+            PlatformText.send(player, plugin.msg("home-teleporting", Map.of("name", home.name())));
             return;
         }
         org.bukkit.World world = plugin.versionAdapter().resolveWorld(home.world());
         if (world == null) {
-            player.sendMessage(plugin.msg("home-not-found"));
+            PlatformText.send(player, plugin.msg("home-not-found"));
             return;
         }
         Location target = new Location(world, home.x(), home.y(), home.z(), home.yaw(), home.pitch());
-        player.sendMessage(plugin.msg("home-teleporting", Map.of("name", home.name())));
+        PlatformText.send(player, plugin.msg("home-teleporting", Map.of("name", home.name())));
         plugin.services().teleportService().teleportToHome(player, target);
     }
 
@@ -187,7 +193,7 @@ public class HomeGui {
         return 1;
     }
 
-    private static final java.util.regex.Pattern HOME_NUM = java.util.regex.Pattern.compile("^Home (\\d+)$", java.util.regex.Pattern.CASE_INSENSITIVE);
+    private static final java.util.regex.Pattern HOME_NUM = java.util.regex.Pattern.compile("^Home (\\d{1,2})$", java.util.regex.Pattern.CASE_INSENSITIVE);
 
     private static HomeRecord[] mapHomesToSlots(List<HomeRecord> homes, int totalSlots) {
         HomeRecord[] slots = new HomeRecord[totalSlots];
@@ -229,24 +235,23 @@ public class HomeGui {
         return cfg.homeWorldOverworld();
     }
 
-    private static String prettyServer(String serverName, PaperSettings cfg) {
-        if (serverName == null) return "<white>Unknown";
+    private Component prettyServer(String serverName, PaperSettings cfg) {
+        if (serverName == null) return Component.text("Unknown", NamedTextColor.WHITE);
         String color = cfg.homeServerColors().get(serverName.toLowerCase());
-        return color != null ? color : "<white>" + serverName;
+        return color != null ? plugin.messageService().deserialize(color) : Component.text(serverName, NamedTextColor.WHITE);
     }
 
     private ItemStack buildItem(Material material, String name, List<String> loreRaw) {
+        return buildItem(material, plugin.messageService().deserialize(name),
+                loreRaw.stream().map(plugin.messageService()::deserialize).toList());
+    }
+
+    private ItemStack buildItem(Material material, Component name, List<Component> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(plugin.messageService().deserialize(name));
-            if (!loreRaw.isEmpty()) {
-                List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
-                for (String line : loreRaw) {
-                    lore.add(plugin.messageService().deserialize(line));
-                }
-                meta.lore(lore);
-            }
+            meta.setDisplayName(PlatformText.legacy(name));
+            if (!lore.isEmpty()) meta.setLore(lore.stream().map(PlatformText::legacy).toList());
             item.setItemMeta(meta);
         }
         return item;

@@ -168,16 +168,23 @@ def check_paper_bytecode(jar):
 
 
 def verify_jars(version, directory=None):
-    required = {"paper": ["com/telehop/paper/NetworkPaperPlugin.class",
-                          "com/telehop/paper/version/VersionAdapter.class",
-                          "com/telehop/paper/v1_21/Paper121Adapter.class",
-                          "com/telehop/paper/v26_1/Paper261Adapter.class"],
-                "velocity": ["com/telehop/velocity/NetworkVelocityPlugin.class",
-                             "com/telehop/velocity/lib/redis/jedis/Jedis.class"]}
+    shared = {"com/telehop/common/db/DatabaseManager.class", "com/telehop/common/config/ConfigurationUpgrade.class",
+              "com/telehop/common/messaging/TravelFields.class"}
+    required = {
+        "paper": shared | {"com/telehop/paper/NetworkPaperPlugin.class", "com/telehop/paper/version/VersionAdapter.class",
+                           "com/telehop/paper/v1_21/Paper121Adapter.class", "com/telehop/paper/v26_1/Paper261Adapter.class",
+                           "com/telehop/paper/platform/BackendPlatform.class", "com/telehop/paper/config/PaperProfiles.class",
+                           "config/spawns.yml", "config/regions.yml", "config/messaging.yml"}
+                 | {f"commands/{group}.yml" for group in ("spawn", "hub", "rtp", "tpa", "homes", "teleport", "warps",
+                                                          "player-warps", "playerinfo", "back", "lastlocation", "admin")}
+                 | {f"languages/{language}.yml" for language in ("en", "de", "es", "nl", "zh", "pl")},
+        "velocity": shared | {"com/telehop/velocity/NetworkVelocityPlugin.class", "com/telehop/velocity/config/VelocityProfiles.class",
+                              "com/telehop/velocity/lib/redis/jedis/Jedis.class", "com/telehop/velocity/lib/yaml/Yaml.class"}
+    }
     for platform in PLATFORMS:
         path = (directory or Path(platform, "target")) / f"telehop-{platform}-{version}.jar"
         with ZipFile(path) as jar:
-            if jar.testzip() or any(entry not in jar.namelist() for entry in required[platform]):
+            if jar.testzip():
                 raise ValueError(f"Invalid production JAR: {path}")
             if platform == "paper":
                 matches = re.findall(r"(?m)^version: (.+)$", jar.read("plugin.yml").decode())
@@ -185,6 +192,13 @@ def verify_jars(version, directory=None):
                 matches = [json.loads(jar.read("velocity-plugin.json"))["version"]]
             if matches != [version]:
                 raise ValueError(f"Incorrect embedded version in {path}: {matches}")
+            entries = set(jar.namelist())
+            if missing := sorted(required[platform] - entries):
+                raise ValueError(f"{path} lacks required runtime files: {', '.join(missing)}")
+            forbidden = ("org/bukkit/", "net/luckperms/api/", "com/velocitypowered/api/",
+                         "io/papermc/paper/", "com/telehop/" + ("paper/" if platform == "velocity" else "velocity/"))
+            if any(name.startswith(forbidden) and name.endswith(".class") for name in entries):
+                raise ValueError(f"{path} bundles an external platform API or the other plugin")
             if platform == "paper":
                 check_paper_bytecode(jar)
         print(f"Verified {path}")

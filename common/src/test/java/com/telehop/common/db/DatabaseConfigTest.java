@@ -61,4 +61,14 @@ class DatabaseConfigTest {
         assertDoesNotThrow(() -> new DatabaseConfig("h", 1, "d", "u", "p", 1));
         assertDoesNotThrow(() -> new DatabaseConfig("h", 65535, "d", "u", "p", 1));
     }
+
+    @Test
+    void configurationDiagnosticsOmitBothServicePasswords() {
+        String secret = "private-value-in-test";
+        var mysql = new DatabaseConfig("db.internal", 3306, "travel", "operator", secret, 2);
+        var redis = new RedisConfig(true, "cache.internal", 6379, secret, "travel", "proxy-a", true, true, "");
+        org.junit.jupiter.api.Assertions.assertFalse(mysql.toString().contains(secret));
+        org.junit.jupiter.api.Assertions.assertFalse(redis.toString().contains(secret));
+    }
+
 }

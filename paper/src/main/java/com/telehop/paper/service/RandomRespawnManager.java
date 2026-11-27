@@ -28,12 +28,17 @@ public final class RandomRespawnManager {
     }
 
     /**
-     * Retrieves and removes the staged future for the given player.
+     * Retrieves the current death's search, including a pending result.
      *
      * @return the staged future, or {@code null} if none exists
      */
-    public CompletableFuture<Location> consume(UUID playerId) {
-        return staged.remove(playerId);
+    public CompletableFuture<Location> pending(UUID playerId) {
+        return staged.get(playerId);
+    }
+
+    /** A late result may place the player only while it still belongs to this death. */
+    public boolean claim(UUID playerId, CompletableFuture<Location> future) {
+        return staged.remove(playerId, future);
     }
 
     /**

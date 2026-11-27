@@ -1,11 +1,13 @@
 package com.telehop.paper.service;
 
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.common.PermissionNodes;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.SpawnEntry;
 import com.telehop.common.service.SpawnDirectory;
 import com.telehop.paper.NetworkPaperPlugin;
+import com.telehop.paper.config.TravelVariant;
 import com.telehop.paper.config.SpawnConfigFile;
 import com.telehop.paper.config.StorageManager;
 import com.telehop.common.model.BackendSpawns;
@@ -52,14 +54,26 @@ public final class SpawnService {
     /** Suggestions are advisory. Every actual trip reads the current database revision. */
     public void refreshSuggestions() {
         long sequence = refreshSequence.incrementAndGet();
-        directory.list().whenComplete((entries, failure) -> {
-            if (sequence == refreshSequence.get()) suggestions = failure == null ? java.util.List.copyOf(entries) : java.util.List.of();
-        });
+        directory.list().whenCompleteAsync((entries, failure) -> {
+            if (sequence != refreshSequence.get()) return;
+            var next = failure == null ? java.util.List.copyOf(entries) : java.util.List.<SpawnEntry>of();
+            if (next.equals(suggestions)) return;
+            suggestions = next;
+            if (plugin.commandNames().variants().values().stream().anyMatch(variant -> variant.kind().equals("spawn"))) {
+                plugin.getServer().getOnlinePlayers().forEach(Player::updateCommands);
+            }
+        }, task -> Bukkit.getScheduler().runTask(plugin, task));
     }
 
     public java.util.List<String> suggestions(Player player) {
         if (player == null || !player.hasPermission(PermissionNodes.SPAWN_NAMED)) return java.util.List.of();
         return suggestions.stream().filter(entry -> allowed(player, entry, true)).map(SpawnEntry::id).toList();
+    }
+
+    public boolean visible(Player player, TravelVariant variant) {
+        return suggestions.stream().filter(entry -> entry.id().equals(variant.spawn()) && allowed(player, entry, true))
+                .anyMatch(entry -> !local().equalsIgnoreCase(entry.server())
+                        || variantWorld(player, variant, plugin.versionAdapter().resolveWorld(entry.point().world()).getName()));
     }
 
     /** Activate a configuration only after MySQL commits all of its definitions and routes. */
@@ -100,7 +114,7 @@ public final class SpawnService {
             if (!current.getAsBoolean()) return;
             if (error != null) {
                 plugin.getLogger().warning("Spawn operation failed: " + error.getMessage());
-                sender.sendMessage(plugin.msg("spawn-unavailable"));
+                PlatformText.send(sender, plugin.msg("spawn-unavailable"));
             } else {
                 accept.accept(value);
             }
@@ -109,12 +123,20 @@ public final class SpawnService {
 
     private String id(CommandSender sender, String text) {
         try { return SpawnEntry.normalise(text); }
-        catch (IllegalArgumentException ex) { sender.sendMessage(plugin.msg("spawn-invalid")); return null; }
+        catch (IllegalArgumentException ex) { PlatformText.send(sender, plugin.msg("spawn-invalid")); return null; }
     }
 
     public void travel(Player player, String requested, boolean hub) {
+        travel(player, requested, hub, null);
+    }
+
+    public void travel(Player player, String requested, boolean hub, TravelVariant variant) {
+        if (variant != null && !VariantTravel.permitted(plugin, player, variant)) {
+            PlatformText.send(player, plugin.msg("no-permission"));
+            return;
+        }
         if (!plugin.isFeatureEnabled("spawn")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
         long now = System.currentTimeMillis();
@@ -124,7 +146,7 @@ public final class SpawnService {
         lookups.remove(player.getUniqueId());
         if (!player.hasPermission(hub ? PermissionNodes.HUB : PermissionNodes.SPAWN)
                 || requested != null && !player.hasPermission(PermissionNodes.SPAWN_NAMED)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
         var world = player.getWorld();
@@ -134,16 +156,21 @@ public final class SpawnService {
         String named = requested != null ? requested : route == null ? null : route.id();
         // Regional spawn predates the directory and can run while its first publication is pending.
         if (!ready && (named != null || route != null || hub)) {
-            player.sendMessage(plugin.msg("spawn-unavailable"));
+            PlatformText.send(player, plugin.msg("spawn-unavailable"));
             return;
         }
         if (named == null) {
             if (route != null || hub) {
-                if (target.equalsIgnoreCase(local())) placeDefault(player);
+                if (target.equalsIgnoreCase(local())) {
+                    var point = storage.spawn(false);
+                    if (variant == null || point != null && variantWorld(player, variant, point.getWorld().getName())) placeDefault(player);
+                    else PlatformText.send(player, plugin.msg("no-permission"));
+                }
+                else if (variant != null) VariantTravel.transfer(plugin, player, variant, target, Map.of());
                 else remote(player, target, "", "", false, hub);
                 return;
             }
-            player.sendMessage(plugin.msg("spawn-sent"));
+            PlatformText.send(player, plugin.msg("spawn-sent"));
             if (target.equalsIgnoreCase(local())) {
                 plugin.services().teleportService().teleportToSpawn(player);
             } else {
@@ -158,13 +185,17 @@ public final class SpawnService {
             if (!world.equals(player.getWorld())) return;
             var entry = found.orElse(null);
             if (entry == null || route != null && !entry.server().equalsIgnoreCase(target)) {
-                player.sendMessage(plugin.msg("spawn-unavailable"));
-            } else if (!allowed(player, entry, explicit)) {
-                player.sendMessage(plugin.msg("no-permission"));
+                PlatformText.send(player, plugin.msg("spawn-unavailable"));
+            } else if (!allowed(player, entry, explicit) || variant != null && !VariantTravel.permitted(plugin, player, variant)) {
+                PlatformText.send(player, plugin.msg("no-permission"));
             } else if (entry.server().equalsIgnoreCase(local())) {
-                place(player, entry);
+                var targetWorld = plugin.versionAdapter().resolveWorld(entry.point().world());
+                if (variant == null || targetWorld != null && variantWorld(player, variant, targetWorld.getName())) place(player, entry);
+                else PlatformText.send(player, plugin.msg("no-permission"));
             } else {
-                remote(player, entry.server(), entry.id(), entry.revision().toString(), explicit, false);
+                if (variant == null) remote(player, entry.server(), entry.id(), entry.revision().toString(), explicit, false);
+                else VariantTravel.transfer(plugin, player, variant, entry.server(),
+                        Map.of("spawn", entry.id(), "revision", entry.revision().toString()));
             }
         });
     }
@@ -181,20 +212,20 @@ public final class SpawnService {
         lookup(player, plugin.messaging().sendRequest(player, probe), capability -> {
             if (!world.equals(player.getWorld())) return;
             if (!capability.isSuccess() || !capability.supportsSpawns()) {
-                player.sendMessage(plugin.msg("spawn-unavailable"));
+                PlatformText.send(player, plugin.msg("spawn-unavailable"));
                 return;
             }
             lookup(player, plugin.messaging().sendRequest(player, packet), reply -> {
-                if (!reply.isSuccess()) player.sendMessage(plugin.msg("spawn-unavailable"));
+                if (!reply.isSuccess()) PlatformText.send(player, plugin.msg("spawn-unavailable"));
             });
         });
     }
 
     private void placeDefault(Player player) {
         var location = plugin.services().storageManager().spawn(false);
-        if (location == null) { player.sendMessage(plugin.msg("spawn-unavailable")); return; }
+        if (location == null) { PlatformText.send(player, plugin.msg("spawn-unavailable")); return; }
         lookup(player, plugin.services().teleportService().teleportToNamedSpawn(player, location), success -> {
-            if (!success) player.sendMessage(plugin.msg("spawn-unavailable"));
+            if (!success) PlatformText.send(player, plugin.msg("spawn-unavailable"));
         });
     }
 
@@ -204,63 +235,99 @@ public final class SpawnService {
     }
 
     private boolean allowed(Player player, SpawnEntry entry, boolean explicit) {
-        return plugin.isFeatureEnabled("spawn") && player.hasPermission(PermissionNodes.SPAWN)
-                && (!explicit || player.hasPermission(PermissionNodes.SPAWN_NAMED))
-                && plugin.permissionService().destination(player, PermissionNodes.SPAWN_DESTINATION + entry.id(), entry.restricted());
+        var perms = plugin.permissionService();
+        String node = PermissionNodes.SPAWN_DESTINATION + entry.id();
+        if (!plugin.isFeatureEnabled("spawn") || !player.hasPermission(PermissionNodes.SPAWN)
+                || explicit && !player.hasPermission(PermissionNodes.SPAWN_NAMED) || !perms.destination(player, node, entry.restricted())) return false;
+        if (!local().equalsIgnoreCase(entry.server())) return true;
+        var world = plugin.versionAdapter().resolveWorld(entry.point().world());
+        return world != null && perms.inWorld(player, world.getName(), PermissionNodes.SPAWN, true)
+                && (!explicit || perms.inWorld(player, world.getName(), PermissionNodes.SPAWN_NAMED, true))
+                && perms.inWorld(player, world.getName(), node, !entry.restricted());
+    }
+
+    private boolean variantWorld(Player player, TravelVariant variant, String world) {
+        var perms = plugin.permissionService();
+        return perms.inWorld(player, world, variant.kind().equals("hub") ? PermissionNodes.HUB : PermissionNodes.SPAWN, true)
+                && perms.inWorld(player, world, PermissionNodes.COMMAND_PREFIX + variant.id(), !variant.required().contains("command"))
+                && (variant.spawn() == null || perms.inWorld(player, world, PermissionNodes.SPAWN_DESTINATION + variant.spawn(),
+                !variant.required().contains("destination")));
     }
 
     public void arrive(Player player, NetworkPacket packet) {
         if (!ready || !local().equalsIgnoreCase(packet.getTargetServer())) {
-            player.sendMessage(plugin.msg("spawn-unavailable"));
+            PlatformText.send(player, plugin.msg("spawn-unavailable"));
             return;
         }
         if (packet.get("spawn").isEmpty()) {
             String permission = Boolean.parseBoolean(packet.get("hub")) ? PermissionNodes.HUB : PermissionNodes.SPAWN;
             if (plugin.isFeatureEnabled("spawn") && player.hasPermission(permission)) placeDefault(player);
-            else player.sendMessage(plugin.msg("no-permission"));
+            else PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
         lookup(player, directory.find(packet.get("spawn")), found -> {
             var entry = found.orElse(null);
             if (entry == null || !local().equalsIgnoreCase(entry.server())
                     || !entry.revision().toString().equals(packet.get("revision"))) {
-                player.sendMessage(plugin.msg("spawn-unavailable"));
+                PlatformText.send(player, plugin.msg("spawn-unavailable"));
             } else if (!allowed(player, entry, Boolean.parseBoolean(packet.get("explicit")))) {
-                player.sendMessage(plugin.msg("no-permission"));
+                PlatformText.send(player, plugin.msg("no-permission"));
             } else {
                 place(player, entry);
             }
         });
     }
 
-    private void place(Player player, SpawnEntry entry) {
-        var point = entry.point();
-        if (!point.equals(routes.destinations().get(entry.id()))) {
-            player.sendMessage(plugin.msg("spawn-unavailable"));
-            return;
+    /** Verify the actual destination after login, including its stored revision and live per-world permissions. */
+    public CompletableFuture<Boolean> arriveVariant(Player player, TravelVariant variant, NetworkPacket packet) {
+        if (!ready || !VariantTravel.permitted(plugin, player, variant)) return CompletableFuture.completedFuture(false);
+        if (variant.kind().equals("hub")) {
+            if (!local().equalsIgnoreCase(plugin.settings().hubServer())) return CompletableFuture.completedFuture(false);
+            var point = storage.spawn(false);
+            return point == null || !variantWorld(player, variant, point.getWorld().getName()) ? CompletableFuture.completedFuture(false) : plugin.services().teleportService().teleportToNamedSpawn(player, point);
         }
+        if (!variant.spawn().equals(packet.get("spawn"))) return CompletableFuture.completedFuture(false);
+        return directory.find(variant.spawn()).thenComposeAsync(found -> {
+            var entry = found.orElse(null);
+            if (entry == null || !entry.revision().toString().equals(packet.get("revision")) || !local().equalsIgnoreCase(entry.server())
+                    || !VariantTravel.permitted(plugin, player, variant) || !allowed(player, entry, true))
+                return CompletableFuture.completedFuture(false);
+            var world = plugin.versionAdapter().resolveWorld(entry.point().world());
+            if (world == null || !variantWorld(player, variant, world.getName())) return CompletableFuture.completedFuture(false);
+            return placeEntry(player, entry).thenApplyAsync(success -> {
+                if (success && player.isOnline()) PlatformText.send(player, plugin.msg("spawn-arrived", Map.of("name", entry.id())));
+                return success;
+            }, task -> Bukkit.getScheduler().runTask(plugin, task));
+        }, task -> Bukkit.getScheduler().runTask(plugin, task));
+    }
+
+    private CompletableFuture<Boolean> placeEntry(Player player, SpawnEntry entry) {
+        var point = entry.point();
+        if (!point.equals(routes.destinations().get(entry.id()))) return CompletableFuture.completedFuture(false);
         var world = plugin.versionAdapter().resolveWorld(point.world());
-        var location = world == null ? null : new org.bukkit.Location(world, point.x(), point.y(), point.z(), point.yaw(), point.pitch());
-        if (location == null) { player.sendMessage(plugin.msg("spawn-unavailable")); return; }
-        lookup(player, plugin.services().teleportService().teleportToNamedSpawn(player, location), success -> {
-            player.sendMessage(plugin.msg(success ? "spawn-arrived" : "spawn-unavailable",
-                    Map.of("name", entry.id())));
-        });
+        if (world == null) return CompletableFuture.completedFuture(false);
+        var location = new org.bukkit.Location(world, point.x(), point.y(), point.z(), point.yaw(), point.pitch());
+        return plugin.services().teleportService().teleportToNamedSpawn(player, location);
+    }
+
+    private void place(Player player, SpawnEntry entry) {
+        lookup(player, placeEntry(player, entry), success ->
+                PlatformText.send(player, plugin.msg(success ? "spawn-arrived" : "spawn-unavailable", Map.of("name", entry.id()))));
     }
 
     public void saveDefault(Player player) {
-        if (updating) { player.sendMessage(plugin.msg("spawn-conflict")); return; }
+        if (updating) { PlatformText.send(player, plugin.msg("spawn-conflict")); return; }
         var previous = storage.defaultPoint();
         try { storage.setSpawnLocation(player.getLocation()); }
         catch (IllegalStateException ex) {
             plugin.getLogger().warning(ex.getMessage());
-            player.sendMessage(plugin.msg("spawn-unavailable"));
+            PlatformText.send(player, plugin.msg("spawn-unavailable"));
             return;
         }
         apply(local(), routes, null).whenComplete((ignored, failure) -> {
-            if (failure == null) player.sendMessage(plugin.msg("spawn-default-saved"));
+            if (failure == null) PlatformText.send(player, plugin.msg("spawn-default-saved"));
             else {
-                player.sendMessage(plugin.msg("spawn-unavailable"));
+                PlatformText.send(player, plugin.msg("spawn-unavailable"));
                 plugin.getLogger().warning("Could not publish the default spawn: " + failure.getMessage());
                 storage.setDefaultPoint(previous);
             }
@@ -271,7 +338,7 @@ public final class SpawnService {
         String canonical = id(player, text);
         if (canonical == null) return;
         if (!"public".equalsIgnoreCase(access) && !"restricted".equalsIgnoreCase(access)) {
-            player.sendMessage(plugin.msg("spawn-access"));
+            PlatformText.send(player, plugin.msg("spawn-access"));
             return;
         }
         var location = player.getLocation();
@@ -280,7 +347,7 @@ public final class SpawnService {
         result(player, directory.find(canonical), found -> {
             if (!player.isOnline() || !player.hasPermission(PermissionNodes.ADMIN_SPAWN_SET)) return;
             if (found.isPresent() && !local().equalsIgnoreCase(found.get().server())) {
-                player.sendMessage(plugin.msg("spawn-conflict"));
+                PlatformText.send(player, plugin.msg("spawn-conflict"));
                 return;
             }
             edit(player, canonical, point, found.orElse(null));
@@ -288,29 +355,29 @@ public final class SpawnService {
     }
 
     private void edit(CommandSender sender, String name, SpawnPoint point, SpawnEntry expected) {
-        if (updating) { sender.sendMessage(plugin.msg("spawn-conflict")); return; }
+        if (updating) { PlatformText.send(sender, plugin.msg("spawn-conflict")); return; }
         final SpawnConfigFile change;
         try {
-            change = SpawnConfigFile.edit(plugin.getDataFolder(), name, point);
+            change = SpawnConfigFile.edit(plugin.profileDirectory().resolve("spawns.yml"), name, point);
             if (!change.original().equals(routes)) {
-                sender.sendMessage(plugin.msg("spawn-reload-first"));
+                PlatformText.send(sender, plugin.msg("spawn-reload-first"));
                 return;
             }
             change.write(false);
         } catch (Exception ex) {
             plugin.getLogger().warning("Cannot edit spawns.yml: " + ex.getMessage());
-            sender.sendMessage(plugin.msg("spawn-unavailable"));
+            PlatformText.send(sender, plugin.msg("spawn-unavailable"));
             return;
         }
         apply(local(), change.configuration(), expected).whenComplete((ignored, error) -> {
             if (error == null) {
-                sender.sendMessage(plugin.msg(point == null ? "spawn-deleted" : "spawn-saved", Map.of("name", name)));
+                PlatformText.send(sender, plugin.msg(point == null ? "spawn-deleted" : "spawn-saved", Map.of("name", name)));
             } else {
                 // Preserve an operator edit made while the database transaction was running.
                 try { change.write(true); }
                 catch (IOException ex) { plugin.getLogger().warning("Reload spawns.yml after resolving: " + ex.getMessage()); }
                 plugin.getLogger().warning("Spawn update rejected: " + error.getMessage());
-                sender.sendMessage(plugin.msg("spawn-conflict"));
+                PlatformText.send(sender, plugin.msg("spawn-conflict"));
             }
         });
     }
@@ -320,12 +387,12 @@ public final class SpawnService {
         if (canonical == null) return;
         result(sender, directory.find(canonical), found -> {
             if (found.isEmpty() || !local().equalsIgnoreCase(found.get().server())) {
-                sender.sendMessage(plugin.msg("spawn-conflict"));
+                PlatformText.send(sender, plugin.msg("spawn-conflict"));
                 return;
             }
             var entry = found.get();
             if (!entry.revision().toString().equals(confirmation)) {
-                sender.sendMessage(plugin.msg("spawn-confirm", Map.of("name", canonical, "revision", entry.revision().toString())));
+                PlatformText.send(sender, plugin.msg("spawn-confirm", Map.of("name", canonical, "revision", entry.revision().toString())));
                 return;
             }
             if (sender.hasPermission(PermissionNodes.ADMIN_SPAWN_DELETE)) edit(sender, canonical, null, entry);
@@ -334,8 +401,8 @@ public final class SpawnService {
 
     public void list(CommandSender sender) {
         result(sender, directory.list(), entries -> {
-            sender.sendMessage(plugin.msg("spawn-count", Map.of("count", String.valueOf(entries.size()))));
-            for (var entry : entries) sender.sendMessage(plugin.msg(entry.restricted() ? "spawn-list-restricted" : "spawn-list-public",
+            PlatformText.send(sender, plugin.msg("spawn-count", Map.of("count", String.valueOf(entries.size()))));
+            for (var entry : entries) PlatformText.send(sender, plugin.msg(entry.restricted() ? "spawn-list-restricted" : "spawn-list-public",
                     Map.of("name", entry.id(), "server", entry.server())));
         });
     }

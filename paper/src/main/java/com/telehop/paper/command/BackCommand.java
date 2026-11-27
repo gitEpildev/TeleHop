@@ -1,5 +1,6 @@
 package com.telehop.paper.command;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -23,7 +24,7 @@ public class BackCommand extends BaseCommand {
     @Default
     public void execute(Player player, @Optional String subcommand) {
         if (!plugin.isFeatureEnabled("back")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
 
@@ -31,23 +32,23 @@ public class BackCommand extends BaseCommand {
 
         if ("death".equalsIgnoreCase(subcommand)) {
             if (!plugin.permissionService().has(player, PermissionNodes.BACK_DEATH)) {
-                player.sendMessage(plugin.msg("no-permission"));
+                PlatformText.send(player, plugin.msg("no-permission"));
                 return;
             }
             BackLocationManager.BackEntry entry = backManager.getLastDeath(player.getUniqueId());
             if (entry == null) {
-                player.sendMessage(plugin.msg("back-death-no-location"));
+                PlatformText.send(player, plugin.msg("back-death-no-location"));
                 return;
             }
             teleportBack(player, entry, "back-death-teleporting");
         } else {
             if (!plugin.permissionService().has(player, PermissionNodes.BACK)) {
-                player.sendMessage(plugin.msg("no-permission"));
+                PlatformText.send(player, plugin.msg("no-permission"));
                 return;
             }
             BackLocationManager.BackEntry entry = backManager.getLastTeleport(player.getUniqueId());
             if (entry == null) {
-                player.sendMessage(plugin.msg("back-no-location"));
+                PlatformText.send(player, plugin.msg("back-no-location"));
                 return;
             }
             teleportBack(player, entry, "back-teleporting");
@@ -69,10 +70,10 @@ public class BackCommand extends BaseCommand {
             packet.put("yaw", String.valueOf(loc.getYaw()));
             packet.put("pitch", String.valueOf(loc.getPitch()));
             plugin.messaging().send(player, packet);
-            player.sendMessage(plugin.msg(messageKey));
+            PlatformText.send(player, plugin.msg(messageKey));
             return;
         }
-        player.sendMessage(plugin.msg(messageKey));
+        PlatformText.send(player, plugin.msg(messageKey));
         plugin.services().teleportService().teleportBack(player, entry.location());
     }
 }

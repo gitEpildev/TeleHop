@@ -55,10 +55,27 @@ public final class PermissionNodes {
     public static final String TP_PLAYER_SELF = "telehop.tp.player.self";
     public static final String TP_PLAYER_OTHERS = "telehop.tp.player.others";
 
+    public static final String COMMAND_PREFIX = "telehop.command.";
+    public static final String ADMIN_COMMANDS_LIST = "telehop.admin.commands.list";
+    public static final String ADMIN_COMMANDS_VALIDATE = "telehop.admin.commands.validate";
+    public static final String ADMIN_COMMANDS_RELOAD = "telehop.admin.commands.reload";
+
+    public static String rtpDestination(String scope, String id) {
+        // Encode administrators' real world and backend names into a single, printable permission suffix.
+        String suffix = java.net.URLEncoder.encode(id.toLowerCase(java.util.Locale.ROOT), java.nio.charset.StandardCharsets.UTF_8)
+                .replace("+", "%20").replace("*", "%2a").replace(".", "%2e").toLowerCase(java.util.Locale.ROOT);
+        return "telehop.rtp." + scope + "." + suffix;
+    }
+
+    public static final String ADMIN_CONFIG_VALIDATE = "telehop.admin.config.validate";
+    public static final String ADMIN_PLATFORM_INFO = "telehop.admin.platform.info";
+    public static final String ADMIN_MIGRATION_STATUS = "telehop.admin.migration.status";
+    public static final String ADMIN_DIAGNOSTICS = "telehop.admin.diagnostics";
+
     private PermissionNodes() {
     }
 
     public static String warpNode(String warpName) {
-        return "telehop.warp." + warpName.toLowerCase();
+        return "telehop.warp." + warpName.toLowerCase(java.util.Locale.ROOT);
     }
 }

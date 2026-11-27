@@ -4,7 +4,7 @@ On a fresh installation, `/spawn` follows the existing regional or network hub s
 
 ## Define your own names in YAML
 
-On the Paper backend that owns the location, edit `plugins/TeleHop/config/spawns.yml`. The following example defines two destinations. Replace the names, worlds and coordinates with values from your server.
+On the Paper backend that owns the location, edit `plugins/TeleHop/config/<profile>/spawns.yml`, replacing `<profile>` with `single`, `multi` or `custom`. The following example defines two destinations. Replace the names, worlds and coordinates with values from your server.
 
 ```yaml
 destinations:
@@ -54,7 +54,7 @@ Reload after editing routes.
 
 ## Enable the hub command
 
-On each Paper backend where players should use the command, edit `plugins/TeleHop/config/features.yml`. Set these entries under the existing `features` mapping.
+On each Paper backend where players should use the command, edit `plugins/TeleHop/config/<profile>/features.yml`. Set these entries under the existing `features` mapping.
 
 ```yaml
 features:
@@ -62,9 +62,9 @@ features:
   hub: true
 ```
 
-In `config/commands.yml`, keep `hub: [hub]` for `/hub`, or set your own labels, for example `hub: [lobby, hub]`. Restart Paper. The command takes players to the saved default on the global `hub-server` in `config/general.yml`. Keep spawn travel enabled on the receiving backend. Players need `telehop.hub`, granted by default. If you use a command visibility plugin, allow the labels you chose.
+Restart the backend to register `/hub`. To change its label, enable `commands.custom-names.enabled` in the root `config.yml` and edit `commands/hub.yml`. For example, `hub: {custom-name: {enabled: true, name: lobby, aliases: [hub]}}` registers both labels. The command uses the global `hub-server` in the active `general.yml`. Enable spawn travel on the receiving backend. Players need `telehop.hub`, granted by default. If a command visibility plugin is installed, allow the labels you registered.
 
-On 3.0.0 the switch is `hub-command.enabled` in `config/spawns.yml`. On the first 3.0.1 start, Paper copies that choice into `features.hub` if the new switch is missing. Later changes belong in `features.yml`.
+An upgrade from 3.0.0 inherits `hub-command.enabled` from the old `config/spawns.yml` when `features.hub` is absent. V4 removes the obsolete switch from the active spawn configuration. [Migration and recovery](migration.md)
 
 ## Manage destinations in game
 
@@ -79,7 +79,7 @@ If you have edited the YAML outside the game, reload it before using the managem
 
 ## MySQL, upgrades and backups
 
-Install the matching 3.0.1 Paper and Velocity JARs together. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. Paper creates `config/spawns.yml` on first start.
+Install the matching 4.0.0 backend and Velocity JARs together. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. The backend creates a `spawns.yml` in each profile directory on first start.
 
 | MySQL table | Stored data |
 |---|---|

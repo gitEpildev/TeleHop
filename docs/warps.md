@@ -6,7 +6,7 @@ TeleHop has two warp systems: **Admin Warps** and **Player Warps**.
 
 ## Admin Warps
 
-Server-managed warps for important locations (shop, arena, spawn points). Created by staff, usable by everyone.
+Server-managed warps for important locations (shop, arena, spawn points). Staff create them. Members have general travel access by default.
 
 ### Creating an Admin Warp
 
@@ -32,7 +32,7 @@ If the warp is on a different server, you are automatically transferred via Velo
 /warps
 ```
 
-Shows all admin warps across all servers.
+Shows the global warps that the member can visit. Withhold `telehop.warp` and grant `telehop.warp.arena` to give a member access only to the existing arena warp. An explicit denial of an individual warp takes precedence over the general grant. The same access checks apply to `/warp`, suggestions and arrival on another backend. Administrative inspection of personal warps uses the separate `/listwarps` command.
 
 ### Deleting a Warp
 

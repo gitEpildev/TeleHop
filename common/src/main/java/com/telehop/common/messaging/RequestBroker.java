@@ -30,7 +30,13 @@ public class RequestBroker {
     /** Select both the outbound transport and the connection allowed to answer this request. */
     public CompletableFuture<NetworkPacket> sendRequest(NetworkPacket packet, long timeoutMs,
                                                         Object carrier, PacketTransport delivery) {
-        CompletableFuture<NetworkPacket> future = tracker.track(packet, timeoutMs, carrier);
+        CompletableFuture<NetworkPacket> future;
+        try {
+            future = tracker.track(packet, timeoutMs, carrier);
+        } catch (java.util.concurrent.RejectedExecutionException full) {
+            return CompletableFuture.failedFuture(full);
+        }
+        if (future.isDone()) return future;
         try {
             if (!delivery.send(packet)) {
                 future.completeExceptionally(new IllegalStateException("Failed to send packet: " + packet.getType()));
@@ -50,8 +56,8 @@ public class RequestBroker {
             tracker.complete(packet, carrier);
             return false;
         }
-        boolean fresh = tracker.markSeen(packet.getRequestId(), dedupeWindowMs);
-        tracker.cleanupSeen(dedupeWindowMs);
-        return fresh;
+        long now = System.currentTimeMillis();
+        return packet.getTimestamp() >= now - dedupeWindowMs && packet.getTimestamp() <= now + dedupeWindowMs
+                && tracker.markSeen(packet.getRequestId(), dedupeWindowMs + Math.max(0, packet.getTimestamp() - now));
     }
 }

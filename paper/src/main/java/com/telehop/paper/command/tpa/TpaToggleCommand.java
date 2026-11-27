@@ -1,5 +1,6 @@
 package com.telehop.paper.command.tpa;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -18,19 +19,19 @@ public class TpaToggleCommand extends BaseCommand {
     @Default
     public void execute(Player player) {
         if (!plugin.isFeatureEnabled("tpa-toggle")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(player, PermissionNodes.TPA_TOGGLE)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         boolean nowDisabled = plugin.tpaRuntimeManager().toggleTpa(player.getUniqueId());
         if (nowDisabled) {
-            player.sendMessage(plugin.msg("tpa-toggle-off"));
+            PlatformText.send(player, plugin.msg("tpa-toggle-off"));
         } else {
-            player.sendMessage(plugin.msg("tpa-toggle-on"));
+            PlatformText.send(player, plugin.msg("tpa-toggle-on"));
         }
     }
 }

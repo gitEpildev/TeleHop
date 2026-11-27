@@ -28,12 +28,17 @@ public class DatabaseManager {
     private final HikariDataSource dataSource;
     private final ExecutorService dbExecutor;
     private final DatabaseCircuitBreaker circuitBreaker;
+    private final CompletableFuture<Void> schemaReady;
 
     public DatabaseManager(DatabaseConfig config) {
         this(config, null);
     }
 
     public DatabaseManager(DatabaseConfig config, java.util.logging.Logger logger) {
+        this(config, logger, false);
+    }
+
+    private DatabaseManager(DatabaseConfig config, java.util.logging.Logger logger, boolean backgroundSchema) {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
         } catch (ClassNotFoundException e) {
@@ -57,6 +62,8 @@ public class DatabaseManager {
         hikariConfig.setConnectionTestQuery("SELECT 1");
         hikariConfig.setLeakDetectionThreshold(60_000);
 
+        // The game thread may construct this pool. Its first JDBC connection belongs to the worker.
+        if (backgroundSchema) hikariConfig.setInitializationFailTimeout(-1);
         this.dataSource = new HikariDataSource(hikariConfig);
         this.dbExecutor = Executors.newFixedThreadPool(config.poolSize(), r -> {
             Thread t = new Thread(r, "TeleHop-DB-" + THREAD_ID.getAndIncrement());
@@ -64,6 +71,22 @@ public class DatabaseManager {
             return t;
         });
         this.circuitBreaker = new DatabaseCircuitBreaker(5, 30_000L, logger);
+        schemaReady = backgroundSchema ? circuitBreaker.executeRun(() -> CompletableFuture.runAsync(() -> {
+            try {
+                initSchema();
+            } catch (SQLException failure) {
+                throw new java.util.concurrent.CompletionException(failure);
+            }
+        }, dbExecutor)) : CompletableFuture.completedFuture(null);
+    }
+
+    /** Start the pool and schema off the game thread. Repository work waits for the same schema result. */
+    public static DatabaseManager start(DatabaseConfig config, java.util.logging.Logger logger) {
+        return new DatabaseManager(config, logger, true);
+    }
+
+    public CompletableFuture<Void> schemaReady() {
+        return schemaReady.copy();
     }
 
     /** Opens a pool with the required schema, releasing it if the upgrade fails. */
@@ -94,14 +117,14 @@ public class DatabaseManager {
      * with {@link DatabaseCircuitBreaker.CircuitOpenException}.
      */
     public <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier) {
-        return circuitBreaker.execute(() -> CompletableFuture.supplyAsync(supplier, dbExecutor));
+        return schemaReady.thenCompose(ready -> circuitBreaker.execute(() -> CompletableFuture.supplyAsync(supplier, dbExecutor)));
     }
 
     /**
      * Submits an async fire-and-forget database operation through the circuit breaker.
      */
     public CompletableFuture<Void> runAsync(Runnable runnable) {
-        return circuitBreaker.executeRun(() -> CompletableFuture.runAsync(runnable, dbExecutor));
+        return schemaReady.thenCompose(ready -> circuitBreaker.executeRun(() -> CompletableFuture.runAsync(runnable, dbExecutor)));
     }
 
     /** Returns the circuit breaker for monitoring or testing. */

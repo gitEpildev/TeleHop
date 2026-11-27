@@ -2,6 +2,8 @@ package com.telehop.paper;
 
 import com.telehop.paper.config.CommandNames;
 import com.telehop.paper.config.PaperSettings;
+import com.telehop.paper.platform.BackendPlatform;
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.paper.service.ServiceRegistry;
 import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.Component;
@@ -14,22 +16,35 @@ import java.util.Map;
  * all services in {@link ServiceRegistry}.
  */
 public class NetworkPaperPlugin extends JavaPlugin {
+    private BackendPlatform platform;
     private ServiceRegistry services;
     private VersionAdapter versionAdapter;
     private CommandNames commandNames;
+    private com.telehop.common.config.DeploymentConfig configuration;
+
+    public com.telehop.common.config.DeploymentConfig configuration() { return configuration; }
+    void setConfiguration(com.telehop.common.config.DeploymentConfig value) { configuration = value; }
+    public java.nio.file.Path profileDirectory() { return configuration.profileDirectory(getDataFolder().toPath()); }
 
     @Override
     public void onEnable() {
+        platform = BackendPlatform.detect(this);
+        PlatformText.initialise(this);
         services = Bootstrap.init(this);
     }
 
     @Override
     public void onDisable() {
-        Bootstrap.shutdown(this, services);
+        try {
+            Bootstrap.shutdown(this, services);
+        } finally {
+            PlatformText.shutdown();
+        }
     }
 
     // ── public API used by commands, listeners, and the packet handler ──
 
+    public BackendPlatform platform() { return platform; }
     public ServiceRegistry services() { return services; }
     public VersionAdapter versionAdapter() { return versionAdapter; }
     void setVersionAdapter(VersionAdapter adapter) { this.versionAdapter = adapter; }
@@ -49,6 +64,11 @@ public class NetworkPaperPlugin extends JavaPlugin {
     public com.telehop.paper.service.TpaRuntimeManager tpaRuntimeManager()   { return services.tpaRuntimeManager(); }
     public com.telehop.paper.messaging.PaperMessagingManager messaging()     { return services.messaging(); }
 
+    /** Bukkit executor for completing player-facing work after an asynchronous storage operation. */
+    public void onMainThread(Runnable task) {
+        getServer().getScheduler().runTask(this, task);
+    }
+
     public Component msg(String key) {
         return services.messageService().format(key);
     }
@@ -61,7 +81,12 @@ public class NetworkPaperPlugin extends JavaPlugin {
         return services.settings().isFeatureEnabled(feature);
     }
 
+    private final java.util.concurrent.atomic.AtomicBoolean reloading = new java.util.concurrent.atomic.AtomicBoolean();
+    public boolean reloadInProgress() { return reloading.get(); }
+
     public java.util.concurrent.CompletableFuture<Void> reload() {
-        return Bootstrap.reload(this, services);
+        if (!reloading.compareAndSet(false, true)) throw new IllegalArgumentException("A configuration reload is already running");
+        try { return Bootstrap.reload(this, services).whenComplete((ok, error) -> reloading.set(false)); }
+        catch (RuntimeException error) { reloading.set(false); throw error; }
     }
 }

@@ -1,5 +1,6 @@
 package com.telehop.paper.command.tpa;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -26,31 +27,31 @@ public class TpaAcceptCommand extends BaseCommand {
     @Default
     public void execute(Player target) {
         if (!plugin.isFeatureEnabled("tpa")) {
-            target.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(target, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(target, PermissionNodes.TPA_ACCEPT)) {
-            target.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(target, plugin.msg("no-permission"));
             return;
         }
         var requestOpt = plugin.tpaRuntimeManager().getIncoming(target.getUniqueId());
         if (requestOpt.isEmpty()) {
-            target.sendMessage(plugin.msg("request-none-pending"));
+            PlatformText.send(target, plugin.msg("request-none-pending"));
             return;
         }
         var request = requestOpt.get();
         plugin.tpaRuntimeManager().removeIncoming(target.getUniqueId());
         plugin.tpaService().delete(request.senderUuid(), request.targetUuid());
-        target.sendMessage(plugin.msg("request-accepted"));
+        PlatformText.send(target, plugin.msg("request-accepted"));
 
         int delay = plugin.settings().tpaDelaySeconds();
         if (delay > 0) {
-            target.sendMessage(plugin.msg("tpa-warmup", Map.of("seconds", String.valueOf(delay))));
+            PlatformText.send(target, plugin.msg("tpa-warmup", Map.of("seconds", String.valueOf(delay))));
             new WarmupTask(plugin, target, delay,
                     plugin.settings().tpaCancelOnMove(),
                     plugin.settings().showCountdown(),
                     () -> executeTeleport(target, request),
-                    () -> target.sendMessage(plugin.msg("tpa-warmup-cancelled"))
+                    () -> PlatformText.send(target, plugin.msg("tpa-warmup-cancelled"))
             ).start();
         } else {
             executeTeleport(target, request);
@@ -61,9 +62,9 @@ public class TpaAcceptCommand extends BaseCommand {
         Player sender = Bukkit.getPlayer(request.senderUuid());
         if (sender != null) {
             if (request.type() == TpaType.TPA) {
-                sender.teleportAsync(target.getLocation());
+                plugin.platform().teleport(sender, target.getLocation());
             } else {
-                target.teleportAsync(sender.getLocation());
+                plugin.platform().teleport(target, sender.getLocation());
             }
         } else {
             NetworkPacket packet = NetworkPacket.request(PacketType.TPA_ACCEPT, plugin.settings().serverName(), "velocity")

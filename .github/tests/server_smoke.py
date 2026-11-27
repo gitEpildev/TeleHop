@@ -1,6 +1,5 @@
 """Boot unmodified distribution JARs twice against a disposable MySQL service."""
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -10,6 +9,9 @@ import shutil
 import subprocess
 import time
 import zipfile
+import socket
+
+from runtime_download import prepare_server
 
 COMPATIBILITY = json.loads((Path(__file__).resolve().parents[1] / "release/compatibility.json").read_text())
 # The release job and the runtime checks use the same PaperMC download pins.
@@ -27,8 +29,10 @@ ROWS = [
 
 def mysql(sql):
     # The runner grants this test user access only to the ephemeral test schema.
-    return subprocess.check_output(["mysql", "-h", "127.0.0.1", "-P", os.environ["MYSQL_PORT"],
-                                    "-u", "telehop", "--batch", "--skip-column-names", "telehop_ci"],
+    args = ["mysql", "-h", "127.0.0.1", "-P", os.environ["MYSQL_PORT"]]
+    if container := os.environ.get("TELEHOP_TEST_DB_CONTAINER"):
+        args = ["docker", "exec", "-i", "-e", "MYSQL_PWD", container, os.getenv("TELEHOP_TEST_DB_CLIENT", "mysql")]
+    return subprocess.check_output(args + ["-u", "telehop", "--batch", "--skip-column-names", "telehop_ci"],
                                    input=sql, text=True).splitlines()
 
 
@@ -77,11 +81,14 @@ def configure(directory, platform, bundle, version):
     plugins.mkdir()
     shutil.copy(bundle / f"telehop-{platform}-{version}.jar", plugins)
     port = int(os.environ["MYSQL_PORT"])
+    with socket.socket() as reservation:
+        reservation.bind(("127.0.0.1", 0))
+        game_port = reservation.getsockname()[1]
     if platform == "paper":
         shutil.copy(bundle / "command-probe.jar", plugins)
         (directory / "eula.txt").write_text("eula=true\n")
         (directory / "server.properties").write_text(
-            "server-ip=127.0.0.1\nserver-port=25575\nonline-mode=false\nview-distance=2\nsimulation-distance=2\n")
+            f"server-ip=127.0.0.1\nserver-port={game_port}\nonline-mode=false\nview-distance=2\nsimulation-distance=2\n")
         config = plugins / "TeleHop/config"
         config.mkdir(parents=True)
         (config / "database.yml").write_text(
@@ -90,7 +97,7 @@ def configure(directory, platform, bundle, version):
     else:
         with zipfile.ZipFile(directory / "server.jar") as jar:
             toml = jar.read("default-velocity.toml").decode()
-        (directory / "velocity.toml").write_text(toml.replace('bind = "0.0.0.0:25565"', 'bind = "127.0.0.1:25575"'))
+        (directory / "velocity.toml").write_text(toml.replace('bind = "0.0.0.0:25565"', f'bind = "127.0.0.1:{game_port}"' ))
         (directory / "forwarding.secret").write_text(secrets.token_hex(32))
         config = plugins / "telehop-velocity"
         config.mkdir()
@@ -112,7 +119,7 @@ def use_legacy_paper_config(directory):
 def check_legacy_paper_config(directory, original):
     plugin = directory / "plugins/TeleHop"
     assert (plugin / "config.yml.old").read_text() == original
-    assert not (plugin / "config.yml").exists()
+    assert "mode: SINGLE" in (plugin / "config.yml").read_text()
     assert (plugin / "config/database.yml").is_file() and (plugin / "storage.yml").is_file()
     assert mysql("SELECT default_world,default_x,default_y,default_z,default_yaw,default_pitch "
                  "FROM spawn_backends WHERE server='legacy-review'") == ["world\t14.5\t86\t-9.5\t67\t-12"]
@@ -153,7 +160,8 @@ def boot(directory, platform, second):
                     raise AssertionError("The command help did not list named spawn travel")
                 if ("/lobby takes you to the global hub." in content) != second or "/hub takes you to the global hub." in content:
                     raise AssertionError("The hub help does not match the registered command name")
-            if proc.returncode or "Goodbye!" not in content or "Error occurred while disabling TeleHop" in content:
+            stopped = "Goodbye!" in content or (paper and "TeleHop has been disabled." in content and "Shutdown completed." in content)
+            if proc.returncode or not stopped or "Error occurred while disabling TeleHop" in content:
                 raise RuntimeError("Unclean shutdown: " + content[-4000:])
         finally:
             if proc.poll() is None:
@@ -171,12 +179,8 @@ def main():
     directory = args.directory
     directory.mkdir(parents=True, exist_ok=False)
     name, digest = SERVERS[args.server]
-    jar = directory / "server.jar"
-    subprocess.run(["curl", "-fsSL", "--retry", "3", "-A", "TeleHop-CI/1.0 (https://github.com/gitEpildev/TeleHop)",
-                    "-o", str(jar), f"https://fill-data.papermc.io/v1/objects/{digest}/{name}"], check=True)
-    if hashlib.sha256(jar.read_bytes()).hexdigest() != digest:
-        raise ValueError("Server download checksum mismatch")
     platform = args.server.split("-")[0]
+    prepare_server(directory, platform, name, digest)
     configure(directory, platform, args.bundle, args.version)
     legacy = use_legacy_paper_config(directory) if args.server == "paper-1.21.11" else None
     seed_legacy_homes()
@@ -184,8 +188,16 @@ def main():
         check_conflicting_upgrade(args.bundle, args.version)
     for second in (False, True):
         if second and platform == "paper":
-            (directory / "plugins/TeleHop/config/features.yml").write_text("features: {hub: true}\n")
-            (directory / "plugins/TeleHop/config/commands.yml").write_text("tp: [networktp, ntp]\nhub: [lobby, hub]\n")
+            data = directory / "plugins/TeleHop"
+            (data / "config/single/features.yml").write_text("features: {hub: true}\n")
+            root = data / "config.yml"
+            root.write_text(re.sub(r"(custom-names:\s*\n\s*enabled:) false", r"\1 true", root.read_text()))
+            (data / "commands/hub.yml").write_text("hub: {custom-name: {enabled: true, name: lobby, aliases: [hub]}}\n")
+            import yaml
+            tp_file = data / "commands/teleport.yml"
+            teleport = yaml.safe_load(tp_file.read_text())
+            teleport["tp"]["custom-name"] = {"enabled": True, "name": "networktp", "aliases": ["ntp"]}
+            tp_file.write_text(yaml.safe_dump(teleport, sort_keys=False))
         boot(directory, platform, second)
         check_migration()
         if legacy:

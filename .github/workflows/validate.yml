@@ -62,6 +62,12 @@ jobs:
       - name: Test release rules and publishing retries
         run: python3 -m unittest discover -v -s .github/release
 
+      - name: Install the YAML parser used for configuration checks
+        run: |
+          python3 -m venv "$RUNNER_TEMP/telehop-yaml"
+          "$RUNNER_TEMP/telehop-yaml/bin/pip" install PyYAML==6.0.3
+          echo "$RUNNER_TEMP/telehop-yaml/bin" >> "$GITHUB_PATH"
+
       - name: Check published command and permission references
         run: python3 .github/tests/check_command_docs.py
 
@@ -86,6 +92,7 @@ jobs:
           errors = []
           files = (
             glob.glob("paper/src/main/resources/config/*.yml") +
+            glob.glob("paper/src/main/resources/commands/*.yml") +
             glob.glob("paper/src/main/resources/languages/*.yml")
           )
           if not files:

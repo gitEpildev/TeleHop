@@ -2,7 +2,7 @@
 
 Use this reference to grant member, moderator and administrator access on the Paper backends where players run TeleHop commands. The in-game reference is available through `/telehop perms` or `/telehop permissions` with `telehop.admin.permissions`. [Command syntax and aliases](commands.md)
 
-These tables list every permission declared by the Paper plugin and the three permission patterns for named spawns, individual warps and personal warp limits. A permissions manager such as LuckPerms can grant or deny individual nodes.
+These tables list every permission declared by the Paper plugin and its configurable permission patterns. A permissions manager such as LuckPerms can grant or deny individual nodes.
 
 ## Member permissions
 
@@ -97,10 +97,12 @@ These nodes default to false. TeleHop uses the highest granted slot count up to 
 
 ## Permissions generated from your configuration
 
+World and backend permission suffixes use lowercase names. Spaces and punctuation outside letters, digits, underscores and hyphens use percent encoding. For example, the world `Deep Mines` has the permission suffix `deep%20mines`.
+
 | Permission pattern | How it works |
 |---|---|
 | `telehop.spawn.destination.<name>` | Use the destination’s actual name. Public destinations allow travel by default. Restricted destinations require a grant. An explicit denial also blocks a public destination. |
-| `telehop.warp.<name>` | Gives access to one global warp by name. The general `telehop.warp` permission already grants access to all global warps. To offer selected warps only, remove the general grant for that group and grant the named warps. Listing with `/warps` requires the general permission. |
+| `telehop.warp.<name>` | Grants one existing global warp. A specific denial overrides the general grant. Members with individual grants can list their accessible warps with `/warps`. |
 | `telehop.warps.<number>` | Sets a personal warp allowance. Use a positive whole number such as `telehop.warps.3`. TeleHop takes the highest effective positive allowance. With no allowance a member cannot create personal warps. `telehop.warps.unlimited` removes the limit. |
 
 ## LuckPerms quick setup
@@ -134,3 +136,25 @@ lp group staff permission set telehop.homes.10
 Both coordinate permissions are children of `telehop.tp`. Existing grants of the parent include both. If a group already inherits the parent, deny the specific operation you want to restrict. For example, to allow staff to teleport themselves to coordinates while blocking coordinate teleports of other players, run `lp group staff permission set telehop.tp.coordinates.others false`.
 
 A moderator can inspect a home list with `lp group moderator permission set telehop.admin.homes.list true`. Grant `telehop.admin.homes.visit` separately for visits and `telehop.admin.homes.delete` for deletion. For a restricted destination named `staff-room`, use `lp group moderator permission set telehop.spawn.destination.staff-room true`. [Staff and destination examples](spawns.md#member-moderator-and-administrator-examples)
+
+
+## Command variants and scoped access
+
+| Permission | Purpose |
+|---|---|
+| `telehop.command.<id>` | Use the additional travel command with this stable configuration ID. |
+| `telehop.rtp.region.<id>` | Select this configured RTP region. |
+| `telehop.rtp.server.<id>` | Select this RTP backend. |
+| `telehop.rtp.world.<id>` | Use RTP in this configured destination world. |
+| `telehop.rtp.dimension.<id>` | Select this RTP dimension. |
+| `telehop.admin.commands.list` | Inspect the full command registry. |
+| `telehop.admin.commands.validate` | Validate the proposed command settings. |
+| `telehop.admin.commands.reload` | Apply command rules for existing registrations. |
+| `telehop.admin.config.validate` | Validate the entire active profile. |
+| `telehop.admin.platform.info` | Inspect the detected platform and adapter. |
+| `telehop.admin.diagnostics` | Show operational diagnostics. |
+| `telehop.admin.migration.status` | Inspect the configuration migration state. |
+
+The originating backend checks the feature permission, stable command ID and selected destination. The destination backend resolves the same definition and checks access again before placement. Each `require-…-permission` switch requires a positive decision for that scope. An explicit denial also blocks public destinations. Standard RTP uses optional destination nodes so existing players keep access. LuckPerms supplies effective group, wildcard and contextual decisions. Before a local placement into a different world, TeleHop also evaluates the destination world through the optional LuckPerms API, retaining the current server and other active contexts. Without LuckPerms, TeleHop uses the native effective permissions on that backend. The explicit `telehop.rtp.world.<id>` node supports destination world restrictions with either provider.
+
+A member who holds `telehop.warp.arena` can list and visit the existing `arena` warp. An explicit denial of that individual node hides it and blocks direct travel even when the general `telehop.warp` node is granted. Lists and argument suggestions evaluate actual stored warps. Staff inspection of personal warps through `/listwarps` still requires its dedicated administrative permission.

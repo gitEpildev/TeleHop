@@ -5,6 +5,24 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [4.0.0] - 2026-11-27
+
+### Added
+
+- Choose a standalone, multi-proxy or custom deployment profile. Both plugins use YAML and keep database credentials separate from the active profile. Existing settings have a migration history and private recovery copies.
+- Configure command names by category and define additional random teleport, named spawn and hub commands. A command can require permissions for its own identifier and its destination. Global warp lists honour individual warp permissions.
+- Inspect the detected platform, validate configuration and view migration details in game. The backend selects available teleport and chunk operations at startup.
+- Release checks exercise the published previous version, multiple database engines and a network containing different backend implementations. The release includes a checksum for each plugin file.
+
+### Fixed
+
+- Proxy travel checks the player's current connection and the destination before applying a configured command. Duplicate forwarded requests are discarded and the player list collects replies from multiple proxies.
+- Fresh installations can search the world where a player died for a safe respawn. Upgrades retain existing world exclusions and destinations. A delayed result from an earlier death cannot move the player again.
+
+### Upgrade
+
+Back up the shared database and both plugin folders. Install matching 4.0.0 files, review the selected profile and check a saved home and spawn with a member account. [Upgrade and recovery](https://github.com/gitEpildev/TeleHop/blob/v4.0.0/docs/migration.md)
+
 ## [3.0.1] - 2026-11-25
 
 ### Fixed

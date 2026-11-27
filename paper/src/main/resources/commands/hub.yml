@@ -1,0 +1,12 @@
+# Enable commands.custom-names.enabled in config.yml to use the names below.
+# Restart the backend after changing registered names or aliases.
+
+hub:
+  custom-name:
+    enabled: false
+    name: hub
+    aliases: []
+  # Additional commands also require commands.additional-commands.enabled in config.yml.
+  additional-commands:
+    enabled: false
+    commands: {}

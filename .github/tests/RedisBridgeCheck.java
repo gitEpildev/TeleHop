@@ -14,10 +14,12 @@ import java.util.function.BooleanSupplier;
 
 /** Exercises the bridge from the shaded Velocity JAR against a disposable Redis process. */
 class RedisBridgeCheck {
-    static final int PORT = 16379;
+    static final int PORT = Integer.parseInt(System.getenv().getOrDefault("TELEHOP_TEST_REDIS_PORT", "16379"));
+    static final String TLS = System.getenv("TELEHOP_TEST_REDIS_DIR");
     static final String CHANNEL = "telehop-ci:cross-proxy";
 
     static Process startRedis() throws Exception {
+        if (TLS != null) return new ProcessBuilder("redis-server", TLS + "/redis.conf").inheritIO().start();
         return new ProcessBuilder("redis-server", "--bind", "127.0.0.1", "--port", String.valueOf(PORT),
                 "--save", "", "--appendonly", "no").inheritIO().start();
     }
@@ -30,12 +32,14 @@ class RedisBridgeCheck {
         }
     }
 
-    static boolean subscribed() {
+    static boolean subscribed(int count) {
         try {
-            var cli = new ProcessBuilder("redis-cli", "-p", String.valueOf(PORT), "--raw",
-                    "PUBSUB", "NUMSUB", CHANNEL).start();
+            var args = new ArrayList<>(java.util.List.of("redis-cli", "-p", String.valueOf(PORT), "--raw"));
+            if (TLS != null) args.addAll(java.util.List.of("--tls", "--cacert", TLS + "/ca.pem", "-h", "localhost"));
+            args.addAll(java.util.List.of("PUBSUB", "NUMSUB", CHANNEL));
+            var cli = new ProcessBuilder(args).start();
             return cli.waitFor(3, TimeUnit.SECONDS) && cli.exitValue() == 0
-                    && cli.inputReader().lines().toList().equals(java.util.List.of(CHANNEL, "2"));
+                    && cli.inputReader().lines().toList().equals(java.util.List.of(CHANNEL, Integer.toString(count)));
         } catch (Exception e) {
             throw new IllegalStateException(e);
         }
@@ -50,8 +54,9 @@ class RedisBridgeCheck {
     }
 
     static RedisCrossProxyBridge bridge(String proxy) {
-        return new RedisCrossProxyBridge(new RedisConfig(true, "127.0.0.1", PORT, "", "telehop-ci",
-                proxy, false, true, ""), LoggerFactory.getLogger(proxy));
+        return new RedisCrossProxyBridge(new RedisConfig(true, TLS == null ? "127.0.0.1" : "localhost", PORT,
+                TLS == null ? "" : System.getenv("REDISCLI_AUTH"), "telehop-ci", proxy, TLS != null, true,
+                TLS == null ? "" : TLS + "/ca.pem"), LoggerFactory.getLogger(proxy));
     }
 
     public static void main(String[] args) throws Exception {
@@ -65,7 +70,7 @@ class RedisBridgeCheck {
             b.setPacketHandler(remote::add);
             a.start();
             b.start();
-            await("two Redis subscriptions", RedisBridgeCheck::subscribed);
+            await("two Redis subscriptions", () -> subscribed(2));
             var id = UUID.randomUUID();
             a.broadcastPlayerUpdate(id, "Alex", "survival", "JOIN");
             await("remote join", () -> "survival".equals(b.globalPlayerMap().get(id))
@@ -74,7 +79,7 @@ class RedisBridgeCheck {
 
             stopRedis(redis);
             redis = startRedis();
-            await("both bridges to reconnect", RedisBridgeCheck::subscribed);
+            await("both bridges to reconnect", () -> subscribed(2));
             a.broadcastPlayerUpdate(id, "Alex", "", "LEAVE");
             await("remote leave", () -> !b.globalPlayerMap().containsKey(id)
                     && !b.globalPlayerNameMap().containsKey("alex"));
@@ -82,7 +87,7 @@ class RedisBridgeCheck {
             var samples = new ArrayList<Long>();
             for (int i = 0; i < 30; i++) {
                 var request = NetworkPacket.request(PacketType.ADMIN_TP_REQUEST, "lobby", "survival")
-                        .put("targetName", "Alex");
+                        .put("mode", "SELF_TO_TARGET").put("senderUuid", id.toString()).put("targetName", "Alex");
                 long start = System.nanoTime();
                 a.forwardPacket(request);
                 var received = remote.poll(5, TimeUnit.SECONDS);
@@ -91,6 +96,32 @@ class RedisBridgeCheck {
                 samples.add(TimeUnit.NANOSECONDS.toMicros(System.nanoTime() - start));
             }
             if (!echo.isEmpty()) throw new AssertionError("Forwarded packets echoed to their sender");
+            var once = NetworkPacket.request(PacketType.ADMIN_TP_REQUEST, "lobby", "survival").put("mode", "SELF_TO_TARGET").put("senderUuid", id.toString()).put("targetName", "Alex");
+            a.forwardPacket(once);
+            a.forwardPacket(once);
+            if (remote.poll(5, TimeUnit.SECONDS) == null || remote.poll(600, TimeUnit.MILLISECONDS) != null) {
+                throw new AssertionError("Duplicate forwarding must deliver once");
+            }
+            var third = bridge("proxy-c");
+            try {
+                b.setPacketHandler(p -> b.sendPlayerListResponse(p.get("correlationId"), "Alex,Shared"));
+                third.setPacketHandler(p -> third.sendPlayerListResponse(p.get("correlationId"), "Blake,Shared"));
+                third.start();
+                await("three Redis subscriptions", () -> subscribed(3));
+                a.broadcastPlayerUpdate(id, "Alex", "old-backend", "JOIN");
+                await("initial owner", () -> "old-backend".equals(b.globalPlayerMap().get(id)));
+                third.broadcastPlayerUpdate(id, "Alex", "new-backend", "JOIN");
+                await("new proxy owner", () -> "new-backend".equals(b.globalPlayerMap().get(id)));
+                a.broadcastPlayerUpdate(id, "Alex", "", "LEAVE");
+                UUID fence = UUID.randomUUID();
+                a.broadcastPlayerUpdate(fence, "Another", "old-backend", "JOIN");
+                await("delivery of the old proxy departure", () -> b.globalPlayerMap().containsKey(fence));
+                if (!"new-backend".equals(b.globalPlayerMap().get(id))) throw new AssertionError("Stale proxy removed a live player");
+                String names = a.requestRemotePlayerList(1200).get(5, TimeUnit.SECONDS);
+                if (!names.equals("Alex,Blake,Shared")) throw new AssertionError("Incomplete remote list: " + names);
+            } finally {
+                third.shutdown();
+            }
             Collections.sort(samples);
             System.out.printf("Redis forwarding: 30/30 packets received, median %d us, p95 %d us%n",
                     samples.get(14), samples.get(28));

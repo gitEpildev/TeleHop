@@ -1,0 +1,38 @@
+# Enable commands.custom-names.enabled in config.yml to use the names below.
+# Restart the backend after changing registered names or aliases.
+
+tpa:
+  custom-name:
+    enabled: false
+    name: tpa
+    aliases: []
+
+tpahere:
+  custom-name:
+    enabled: false
+    name: tpahere
+    aliases: []
+
+tpaaccept:
+  custom-name:
+    enabled: false
+    name: tpaaccept
+    aliases: []
+
+tpadeny:
+  custom-name:
+    enabled: false
+    name: tpadeny
+    aliases: []
+
+tpacancel:
+  custom-name:
+    enabled: false
+    name: tpacancel
+    aliases: []
+
+tpatoggle:
+  custom-name:
+    enabled: false
+    name: tpatoggle
+    aliases: []

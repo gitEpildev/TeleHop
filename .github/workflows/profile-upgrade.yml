@@ -1,0 +1,65 @@
+name: Profile and database upgrades
+
+on:
+  workflow_call:
+    inputs:
+      bundle:
+        type: string
+        required: true
+      version:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  upgrade:
+    name: Upgrade released JARs on ${{ matrix.database }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        database: ['mysql:8.4', 'mariadb:11.4']
+    services:
+      database:
+        image: ${{ matrix.database }}
+        env:
+          MYSQL_DATABASE: telehop_ci
+          MYSQL_USER: telehop
+          MYSQL_PASSWORD: ci-password
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+        ports: ['3306/tcp']
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.bundle }}
+          path: bundle
+      - name: Test migration from the previous release
+        env:
+          VERSION: ${{ inputs.version }}
+          MYSQL_PORT: ${{ job.services.database.ports['3306'] }}
+          MYSQL_PWD: ci-password
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install PyYAML==6.0.3
+          for attempt in {1..60}; do
+            if mysql -h 127.0.0.1 -P "$MYSQL_PORT" -u telehop telehop_ci -e 'SELECT 1'; then break; fi
+            sleep 1
+          done
+          .venv/bin/python .github/tests/profile_upgrade.py bundle "$VERSION" upgrade
+      - name: Retain server logs for diagnosis
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: upgrade-logs-${{ strategy.job-index }}-${{ github.run_attempt }}
+          path: upgrade/*/boot-*.log
+          if-no-files-found: ignore

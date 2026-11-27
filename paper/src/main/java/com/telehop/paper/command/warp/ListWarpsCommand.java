@@ -1,5 +1,6 @@
 package com.telehop.paper.command.warp;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
@@ -8,6 +9,8 @@ import co.aikar.commands.annotation.Default;
 import com.telehop.common.model.PlayerWarpRecord;
 import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
@@ -34,30 +37,29 @@ public class ListWarpsCommand extends BaseCommand {
     }
 
     private void listAll(Player player) {
-        plugin.playerWarpService().listAll().thenAccept(warps -> {
+        plugin.playerWarpService().listAll().thenAcceptAsync(warps -> {
+            if (!player.isOnline() || !player.hasPermission(PermissionNodes.ADMIN_WARPS_LIST)) return;
             if (warps.isEmpty()) {
-                player.sendMessage(plugin.msg("listwarps-none"));
+                PlatformText.send(player, plugin.msg("listwarps-none"));
                 return;
             }
 
             Map<String, List<PlayerWarpRecord>> grouped = warps.stream()
                     .collect(Collectors.groupingBy(PlayerWarpRecord::ownerUuid, LinkedHashMap::new, Collectors.toList()));
 
-            player.sendMessage(plugin.msg("listwarps-header", java.util.Map.of("count", String.valueOf(warps.size()))));
+            PlatformText.send(player, plugin.msg("listwarps-header", java.util.Map.of("count", String.valueOf(warps.size()))));
             for (var entry : grouped.entrySet()) {
                 String ownerName = resolvePlayerName(entry.getKey());
                 List<PlayerWarpRecord> playerWarps = entry.getValue();
-                StringBuilder sb = new StringBuilder();
-                for (int i = 0; i < playerWarps.size(); i++) {
-                    if (i > 0) sb.append("<gray>, ");
-                    PlayerWarpRecord w = playerWarps.get(i);
-                    sb.append("<aqua>").append(w.name());
-                    if (w.isPublic()) sb.append(" <dark_gray>[public]");
-                    sb.append("<gray>@").append(w.server());
-                }
-                player.sendMessage(plugin.messageService().deserialize("<yellow>" + ownerName + " <gray>(" + playerWarps.size() + "): " + sb));
+                var messages = plugin.messageService();
+                var items = playerWarps.stream().map(warp -> messages.rawFormat("listwarps-summary-item",
+                        Map.of("name", warp.name(), "server", warp.server()),
+                        Map.of("visibility", warp.isPublic() ? Component.space().append(messages.raw("warp-public-label")) : Component.empty()))).toList();
+                var list = Component.join(JoinConfiguration.separator(Component.text(", ")), items);
+                PlatformText.send(player, messages.rawFormat("listwarps-owner-line", Map.of("player", ownerName,
+                        "count", String.valueOf(playerWarps.size())), Map.of("warps", list)));
             }
-        });
+        }, task -> Bukkit.getScheduler().runTask(plugin, task));
     }
 
     private void listForPlayer(Player player, String targetName) {
@@ -65,20 +67,22 @@ public class ListWarpsCommand extends BaseCommand {
         org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         String targetUuid = target.getUniqueId().toString();
 
-        plugin.playerWarpService().listByOwner(targetUuid).thenAccept(warps -> {
+        plugin.playerWarpService().listByOwner(targetUuid).thenAcceptAsync(warps -> {
+            if (!player.isOnline() || !player.hasPermission(PermissionNodes.ADMIN_WARPS_LIST)) return;
             if (warps.isEmpty()) {
-                player.sendMessage(plugin.msg("listwarps-player-none", java.util.Map.of("player", targetName)));
+                PlatformText.send(player, plugin.msg("listwarps-player-none", java.util.Map.of("player", targetName)));
                 return;
             }
 
-            player.sendMessage(plugin.msg("listwarps-player-header", java.util.Map.of("player", targetName, "count", String.valueOf(warps.size()))));
+            PlatformText.send(player, plugin.msg("listwarps-player-header", java.util.Map.of("player", targetName, "count", String.valueOf(warps.size()))));
             for (PlayerWarpRecord w : warps) {
-                String pub = w.isPublic() ? "<green>[public]" : "<red>[private]";
-                player.sendMessage(plugin.messageService().deserialize("<gray>  <aqua>" + w.name() + " " + pub +
-                        " <dark_gray>- " + w.server() + " " + w.world() +
-                        " (" + (int) w.x() + ", " + (int) w.y() + ", " + (int) w.z() + ")"));
+                var messages = plugin.messageService();
+                PlatformText.send(player, messages.rawFormat("listwarps-detail", Map.of("name", w.name(),
+                        "server", w.server(), "world", w.world(), "x", String.valueOf((int) w.x()),
+                        "y", String.valueOf((int) w.y()), "z", String.valueOf((int) w.z())),
+                        Map.of("visibility", messages.raw(w.isPublic() ? "warp-public-label" : "warp-private-label"))));
             }
-        });
+        }, task -> Bukkit.getScheduler().runTask(plugin, task));
     }
 
     private String resolvePlayerName(String uuid) {

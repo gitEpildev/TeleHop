@@ -1,27 +1,22 @@
 package com.telehop.paper.service;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.plugin.java.JavaPlugin;
+import com.telehop.paper.NetworkPaperPlugin;
 
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 public class RtpManager {
-    private final JavaPlugin plugin;
-    private final Random random = new Random();
+    private final NetworkPaperPlugin plugin;
     private final Map<String, Long> cooldowns = new ConcurrentHashMap<>();
     private final Map<String, Long> pendingRtps = new ConcurrentHashMap<>();
 
-    public RtpManager(JavaPlugin plugin) {
+    public RtpManager(NetworkPaperPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -60,39 +55,29 @@ public class RtpManager {
                 System.currentTimeMillis() + (expectedSeconds + 15) * 1000L);
     }
 
+    /** Expire disconnected players' state without shortening their cooldown when they return. */
+    public void expire() {
+        long now = System.currentTimeMillis();
+        pendingRtps.values().removeIf(deadline -> deadline <= now);
+        cooldowns.values().removeIf(deadline -> deadline <= now);
+    }
+
     public void clearPendingRtp(Player player) {
         pendingRtps.remove(player.getUniqueId().toString());
     }
 
     public CompletableFuture<Location> findSafeLocation(World world, int radius) {
-        return CompletableFuture.supplyAsync(() -> {
-            for (int i = 0; i < 300; i++) {
-                int x = random.nextInt(radius * 2 + 1) - radius;
-                int z = random.nextInt(radius * 2 + 1) - radius;
-                try {
-                    Location safe = Bukkit.getScheduler().callSyncMethod(plugin, () -> findSafeAtSync(world, x, z)).get();
-                    if (safe != null) {
-                        return safe;
-                    }
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return null;
-                } catch (ExecutionException e) {
-                    return null;
-                }
-            }
-            return null;
-        });
+        return SafeColumnSearch.find(plugin, world, radius, 300, this::findSafeAtSync);
     }
 
     private Location findSafeAtSync(World world, int x, int z) {
-        int minY = Math.max(world.getMinHeight() + 1, -63);
+        int minY = world.getMinHeight() + 1;
         int maxY = world.getMaxHeight() - 2;
         boolean isNether = world.getEnvironment() == World.Environment.NETHER;
         boolean isOverworld = world.getEnvironment() == World.Environment.NORMAL;
 
         if (isNether) {
-            maxY = Math.min(maxY, 120);
+            maxY = Math.min(maxY, world.getMinHeight() + world.getLogicalHeight() - 8);
         }
 
         for (int y = maxY; y >= minY; y--) {
@@ -118,7 +103,7 @@ public class RtpManager {
             if (hasAdjacentLiquid(world, x, y, z)) continue;
 
             // Minimum Y threshold for overworld to avoid deep caves
-            if (isOverworld && y < 50) continue;
+            if (isOverworld && y < world.getSeaLevel() - 13) continue;
 
             return new Location(world, x + 0.5, y, z + 0.5);
         }
@@ -152,12 +137,12 @@ public class RtpManager {
         }
 
         if (world.getEnvironment() == World.Environment.NETHER) {
-            if (type == Material.BEDROCK || y > 120) return false;
+            if (type == Material.BEDROCK) return false;
         }
         return true;
     }
 
     public void teleport(Player player, Location location) {
-        Bukkit.getScheduler().runTask(plugin, () -> player.teleportAsync(location, PlayerTeleportEvent.TeleportCause.PLUGIN));
+        plugin.platform().teleport(player, location);
     }
 }

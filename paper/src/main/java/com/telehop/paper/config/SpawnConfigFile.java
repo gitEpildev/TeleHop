@@ -28,7 +28,10 @@ public final class SpawnConfigFile {
     public SpawnRoutes configuration() { return configuration; }
 
     public static SpawnConfigFile edit(File folder, String name, SpawnPoint point) throws Exception {
-        Path path = folder.toPath().resolve("config/spawns.yml");
+        return edit(folder.toPath().resolve("config/spawns.yml"), name, point);
+    }
+
+    public static SpawnConfigFile edit(Path path, String name, SpawnPoint point) throws Exception {
         byte[] old = Files.readAllBytes(path);
         var yaml = SpawnRoutes.decode(new String(old, java.nio.charset.StandardCharsets.UTF_8));
         var original = SpawnRoutes.parse(yaml);

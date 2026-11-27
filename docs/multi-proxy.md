@@ -1,180 +1,38 @@
-# Multi-Proxy Setup Guide
+# Multi-proxy networks
 
-TeleHop supports multiple Velocity proxies sharing the same set of backend servers. This is common in networks with regional proxies (e.g. USA and EU) where each proxy handles players from a specific region but all backends are shared.
+Choose `MULTI` when multiple Velocity proxies share a set of backends. Install the same TeleHop version on every proxy and backend. The proxies share Redis for player presence and cross-proxy messages. Every instance shares the SQL database containing homes, warps, spawn routes and player records. A single Velocity proxy with several backends uses `SINGLE`. [Installation](setup.md)
 
-## Prerequisites
+## Connect the proxies
 
-- Matching TeleHop 3.0.1 builds on every Paper backend and Velocity proxy for named spawns
-- A shared MySQL database accessible from all servers
-- A Redis instance accessible from all Velocity proxies (can be shared with other plugins)
-- All Velocity proxies must have the same backend servers registered in `velocity.toml`
+1. Register each participating backend under the same name in each proxy's `velocity.toml`. Use the backend's real reachable address on that proxy.
+2. Set `mode: MULTI` in each proxy's `plugins/telehop-velocity/config.yml`. In `config/multi/servers.yml`, list the registered names and choose the global hub. For example, a network whose backends are `gate` and `orchard` could use:
 
-## Architecture
+   ```yaml
+   servers:
+     hub: gate
+     backends: [gate, orchard]
+   ```
 
-```
-                    ┌─────────────┐
-                    │    Redis    │
-                    └──────┬──────┘
-                           │ pub/sub
-              ┌────────────┼────────────┐
-              │                         │
-       ┌──────┴──────┐          ┌──────┴──────┐
-       │ Velocity USA│          │ Velocity EU │
-       │ proxy-usa-1 │          │ proxy-eu-1  │
-       └──────┬──────┘          └──────┬──────┘
-              │ plugin msg             │ plugin msg
-    ┌─────────┼─────────┐    ┌────────┼─────────┐
-    │         │         │    │        │         │
- lobby-usa   usa       eu  lobby-eu  usa       eu
-```
+3. Give each proxy a distinct `proxy.id` in `config/multi/proxy.yml`. The generated ID is unique on a fresh proxy. Assign a new one if you copied the folder. To include users on other proxies in player lists, keep `proxy.global-player-list: true`.
+4. Configure each proxy's `config/database.yml` and `config/redis.yml`. Use the same database, Redis service and channel prefix across this network. Keep separate networks on different prefixes. Restart the proxies after editing. [Redis authentication and TLS](redis.md)
 
-Both proxies can route players to any backend. Redis enables cross-proxy communication so TPA, admin TP, and player lists work regardless of which proxy a player is connected to.
+## Configure backend routing
 
-## Step-by-Step Setup
-
-### 1. Velocity Configuration
-
-On **each** Velocity proxy, edit `plugins/telehop-velocity/config.properties`:
-
-```properties
-# Give each proxy a unique ID
-proxy.id=proxy-usa-1
-
-# Enable multi-proxy mode
-multi-proxy.enabled=true
-multi-proxy.global-player-list=true
-multi-proxy.cross-proxy-timeout-ms=15000
-
-# Redis connection (same instance for all proxies)
-redis.host=redis.internal
-redis.port=6379
-redis.password=your-redis-password
-redis.channel-prefix=telehop
-
-# Optional: encrypt the Redis connection with TLS
-redis.ssl=false
-redis.ssl-verify=true
-redis.ssl-ca-cert=
-```
-
-The second proxy would have `proxy.id=proxy-eu-1` but identical Redis settings.
-
-### 2. Paper Configuration
-
-On **each** Paper backend, edit `plugins/TeleHop/config/general.yml`:
+Set `mode: MULTI` in each backend's `plugins/TeleHop/config.yml`. In `config/multi/general.yml`, set its unique `server-name` and the global `hub-server`. Make the corresponding `config/multi/regions.yml` agree across backends. For example:
 
 ```yaml
-multi-proxy:
-  enabled: true
-
 regions:
-  usa:
-    servers:
-      - usa
-      - lobby-usa
-    hub: lobby-usa
-  eu:
-    servers:
-      - eu
-      - lobby-eu
-    hub: lobby-eu
+  countryside:
+    servers: [gate, orchard]
+    hub: gate
 ```
 
-With the default spawn configuration, `/spawn` routes players according to the region of their current backend. A backend shared by two proxies has the same regional mapping for players entering through either proxy.
+Choose your own region and backend names. Regional spawn routing uses the player's **current backend**. Players on the same backend receive the same regional default regardless of the entry proxy. Configure explicit named or per-world routes in the source backend's `config/multi/spawns.yml`. Define named locations on the backend that owns the world. Travel between loaded worlds on that backend is local, including Multiverse worlds.
 
-### Named spawns on a shared backend
+Bare `/spawn` tries the world's configured override, then the backend's route, then its regional or global hub. The optional `/hub` command always uses `hub-server`. Restart when changing profile, backend identity, messaging or command registration. Run `/telehop config validate` and `/telehop reload config` for reloadable route changes. [Spawn routing](spawns.md)
 
-Define each named spawn in `config/spawns.yml` on the Paper backend that owns its world. A player changing worlds on that backend travels locally. For a move to another backend, TeleHop checks support on the player's own proxy, connects the player and waits for the destination backend to confirm placement. Other players already on either backend can be connected through different proxies. Each proxy must register the target under the same name.
+## Verify cross-proxy travel
 
-Velocity 3 and 4 proxies can coexist. Install the same TeleHop version on both generations. A player still connected through a TeleHop 2.3.0 proxy can use the original regional route. A named cross-server trip through that proxy reports an unavailable destination while the player is still on the source backend. If the proxy is current but the destination Paper backend was rolled back, the connection can switch before placement times out. The player stays at their ordinary arrival location on that backend and sees the failure. See the [spawn configuration guide](spawns.md).
+Join through two different proxies. Test a player lookup and a TPA between them, then use a named destination on another backend. Verify both the target backend and the final world and coordinates. Confirm the IDs differ between proxies, the global player list is enabled and the Redis subscriber is connected if the remote player is missing. Verify every proxy registers the destination backend if only one entry point can reach it.
 
-### 3. Home Blocking
-
-To block home-setting on all lobby servers regardless of their name, add to `home.yml`:
-
-```yaml
-homes:
-  blocked-server-prefixes:
-    - "lobby"
-```
-
-This matches `lobby-usa`, `lobby-eu`, `lobby-asia`, etc.
-
-### 4. Apply Changes
-
-- **Paper servers**: Run `/telehop reload` on each server (no restart needed)
-- **Velocity proxies**: Restart required (restart one proxy at a time)
-
-## How It Works
-
-### Player Tracking
-
-When a player connects or switches servers, their Velocity proxy broadcasts the update to Redis. All other proxies receive this and update their global player map. This means every proxy knows which server every player is on, even players connected through other proxies.
-
-### Cross-Proxy Packet Forwarding
-
-When a packet handler (TPA, admin TP, transfer) can't find the target player on the local proxy, it checks if multi-proxy is enabled and forwards the packet via Redis. The proxy that owns the target player receives the forwarded packet and executes it locally.
-
-### Global Player List
-
-When `global-player-list` is true, player list requests aggregate names from all proxies. The requesting proxy collects its local players, then asks other proxies for their player lists via Redis, waits up to `cross-proxy-timeout-ms`, and merges the results.
-
-## Configuration Reference
-
-### Velocity (`config.properties`)
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `proxy.id` | `proxy-1` | Unique ID for this proxy instance |
-| `multi-proxy.enabled` | `false` | Master toggle for cross-proxy features |
-| `multi-proxy.global-player-list` | `true` | Include remote proxy players in lists |
-| `multi-proxy.cross-proxy-timeout-ms` | `15000` | Timeout for cross-proxy requests |
-| `redis.host` | `127.0.0.1` | Redis server hostname |
-| `redis.port` | `6379` | Redis server port |
-| `redis.password` | (empty) | Redis auth password |
-| `redis.channel-prefix` | `telehop` | Prefix for Redis pub/sub channels |
-| `redis.ssl` | `false` | Connect to Redis over TLS (rediss) |
-| `redis.ssl-verify` | `true` | Verify the server certificate and hostname. Keep enabled and supply the trusted CA when using a private certificate |
-| `redis.ssl-ca-cert` | (empty) | Path to a PEM CA certificate for self-signed setups. Empty uses the system trust store |
-
-### Paper (`general.yml`)
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `multi-proxy.enabled` | `false` | Enables region-aware spawn routing |
-| `regions.<name>.servers` | (empty) | List of servers in this region |
-| `regions.<name>.hub` | (empty) | Hub/lobby server for this region |
-
-### Paper (`home.yml`)
-
-| Key | Default | Description |
-|-----|---------|-------------|
-| `homes.blocked-server-prefixes` | `[]` | Block homes on servers matching these prefixes |
-
-## Troubleshooting
-
-### Players can't TPA across proxies
-
-1. Verify both proxies have `multi-proxy.enabled=true`
-2. Check that `proxy.id` is unique on each proxy
-3. Verify Redis connectivity: check Velocity logs for "RedisCrossProxyBridge started"
-4. Ensure both proxies point to the same Redis instance
-
-### /spawn goes to wrong lobby
-
-1. Check that `multi-proxy.enabled: true` is set in Paper's `general.yml`
-2. Verify the `regions` mapping includes the current server
-3. Make sure server names in `regions` match exactly what's in `velocity.toml`
-
-### Player list only shows local proxy players
-
-1. Ensure `multi-proxy.global-player-list=true` in Velocity config
-2. Check `cross-proxy-timeout-ms` isn't too low (default 15000ms is recommended)
-3. Look for Redis errors in Velocity logs
-
-### Redis connection errors
-
-1. Verify the Redis host is reachable from the Velocity server
-2. Check the password is correct
-3. Ensure the Redis port is open in your firewall
-4. Check Redis max connections hasn't been exceeded
+New cross-server command variants require matching V4 support on the backends and proxy. Legacy named travel through a 2.3.0 proxy is rejected before the switch. A destination backend rolled back independently may accept the connection but fail the placement, leaving the player at its ordinary arrival point. Roll out matching JARs together and keep pre-upgrade data backups. [Velocity settings](velocity.md) · [Upgrade procedure](migration.md)

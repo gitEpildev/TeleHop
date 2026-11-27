@@ -5,6 +5,8 @@ import com.telehop.common.messaging.PacketCodec;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import org.bukkit.Bukkit;
+import org.bukkit.Server;
+import org.bukkit.plugin.messaging.Messenger;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -28,12 +30,28 @@ class PaperMessagingManagerTest {
     }
 
     @Test
+    void directlyAuthenticatedStandaloneServerRegistersNoProxyChannel() {
+        Server server = mock(Server.class);
+        when(plugin.getServer()).thenReturn(server);
+        when(server.getOnlineMode()).thenReturn(true);
+        when(plugin.getLogger()).thenReturn(java.util.logging.Logger.getAnonymousLogger());
+        try (var bukkit = mockStatic(Bukkit.class)) {
+            messaging.register(true);
+            bukkit.verifyNoInteractions();
+            assertFalse(messaging.send(mock(Player.class), NetworkPacket.spawnProbe("hub", "velocity", UUID.randomUUID())));
+        }
+    }
+
+    @Test
     void probeRepliesOnTheTravellersConnectionEvenWithAnotherProxyOnTheBackend() {
         UUID id = UUID.randomUUID();
         Player traveller = mock(Player.class);
         Player otherProxy = mock(Player.class);
         var probe = NetworkPacket.spawnProbe("velocity", "hub", id);
         try (var bukkit = mockStatic(Bukkit.class)) {
+            when(plugin.getServer()).thenReturn(mock(Server.class));
+            bukkit.when(Bukkit::getMessenger).thenReturn(mock(Messenger.class));
+            messaging.register(true);
             var scheduler = mock(BukkitScheduler.class);
             bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
             when(scheduler.runTask(eq(plugin), any(Runnable.class))).thenAnswer(invocation -> {
@@ -65,6 +83,9 @@ class PaperMessagingManagerTest {
         Player departed = mock(Player.class);
         var arrival = NetworkPacket.request(PacketType.NAMED_SPAWN_ARRIVAL, "velocity", "hub").put("uuid", id.toString());
         try (var bukkit = mockStatic(Bukkit.class)) {
+            when(plugin.getServer()).thenReturn(mock(Server.class));
+            bukkit.when(Bukkit::getMessenger).thenReturn(mock(Messenger.class));
+            messaging.register(true);
             var scheduler = mock(BukkitScheduler.class);
             bukkit.when(Bukkit::getScheduler).thenReturn(scheduler);
             when(scheduler.runTask(eq(plugin), any(Runnable.class))).thenAnswer(invocation -> {

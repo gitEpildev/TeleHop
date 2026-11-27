@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import com.telehop.common.PermissionNodes;
@@ -40,14 +41,14 @@ public class PlayerInfoCommand extends BaseCommand {
                 Player onlineTarget = Bukkit.getPlayer(playerName);
                 String currentServer = onlineTarget != null ? plugin.settings().serverName() : "offline";
 
-                sender.sendMessage(plugin.msg("playerinfo-header", Map.of("player", playerName)));
-                sender.sendMessage(plugin.msg("playerinfo-server", Map.of("server", currentServer)));
-                sender.sendMessage(plugin.msg("playerinfo-homes", Map.of("count", String.valueOf(homeCount))));
-                sender.sendMessage(plugin.msg("playerinfo-warps", Map.of("count", String.valueOf(warpCount))));
+                PlatformText.send(sender, plugin.msg("playerinfo-header", Map.of("player", playerName)));
+                PlatformText.send(sender, plugin.msg("playerinfo-server", Map.of("server", currentServer)));
+                PlatformText.send(sender, plugin.msg("playerinfo-homes", Map.of("count", String.valueOf(homeCount))));
+                PlatformText.send(sender, plugin.msg("playerinfo-warps", Map.of("count", String.valueOf(warpCount))));
 
                 if (lastLoc.isPresent()) {
                     var loc = lastLoc.get();
-                    sender.sendMessage(plugin.msg("playerinfo-lastloc", Map.of(
+                    PlatformText.send(sender, plugin.msg("playerinfo-lastloc", Map.of(
                             "server", loc.server(),
                             "world", loc.world(),
                             "x", String.valueOf((int) loc.x()),
@@ -55,7 +56,7 @@ public class PlayerInfoCommand extends BaseCommand {
                             "z", String.valueOf((int) loc.z())
                     )));
                 } else {
-                    sender.sendMessage(plugin.msg("playerinfo-lastloc-none"));
+                    PlatformText.send(sender, plugin.msg("playerinfo-lastloc-none"));
                 }
             });
         });

@@ -1,98 +1,143 @@
 package com.telehop.paper.gui;
 
 import com.telehop.paper.NetworkPaperPlugin;
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.paper.service.PingService;
 import dev.triumphteam.gui.builder.item.ItemBuilder;
 import dev.triumphteam.gui.guis.Gui;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import com.telehop.paper.config.RtpPolicy;
+import com.telehop.paper.config.TravelVariant;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.IntConsumer;
 
 public class RtpGui {
     private final NetworkPaperPlugin plugin;
     private final BiConsumer<String, String> selectionConsumer;
 
-    public RtpGui(NetworkPaperPlugin plugin, BiConsumer<String, String> selectionConsumer) {
+    private final TravelVariant variant;
+
+    public RtpGui(NetworkPaperPlugin plugin, TravelVariant variant, BiConsumer<String, String> selectionConsumer) {
         this.plugin = plugin;
+        this.variant = variant;
         this.selectionConsumer = selectionConsumer;
     }
 
-    public void openRegion(Player player) {
-        FileConfiguration cfg = loadRtpConfig();
-        ConfigurationSection regions = cfg.getConfigurationSection("rtp.regions");
-        if (regions == null || regions.getKeys(false).isEmpty()) {
-            selectionConsumer.accept("default", "overworld");
-            return;
-        }
-        Set<String> regionKeys = regions.getKeys(false);
-        if (regionKeys.size() == 1) {
-            openDimension(player, regionKeys.iterator().next());
-            return;
-        }
+    private RtpPolicy policy() { return plugin.commandNames().rtp(); }
 
-        String title = cfg.getString("rtp.gui.region-menu.title", "<dark_purple>Select Region</dark_purple>");
-        int rows = cfg.getInt("rtp.gui.region-menu.rows", 3);
-        Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
-
-        int slot = centerStartSlot(rows, regionKeys.size());
-        List<RegionEntry> entries = new ArrayList<>();
-        for (String key : regionKeys) {
-            ConfigurationSection guiSection = regions.getConfigurationSection(key + ".gui");
-            Material material = parseMaterial(guiSection, Material.GRASS_BLOCK);
-            String name = guiSection != null ? guiSection.getString("name", "<green><bold>" + capitalize(key) + "</bold>") : "<green><bold>" + capitalize(key) + "</bold>";
-            List<String> baseLore = guiSection != null ? guiSection.getStringList("lore") : List.of();
-            List<String> lore = new ArrayList<>(baseLore);
-            lore.addAll(buildPingLore(cfg, player, key));
-
-            ItemStack item = buildItem(material, name, lore);
-            final String regionKey = key;
-            gui.setItem(slot, ItemBuilder.from(item).asGuiItem(click -> openDimension(player, regionKey)));
-            entries.add(new RegionEntry(slot, material, name, baseLore, regionKey));
-            slot += 2;
-        }
-        gui.open(player);
-        startPingRefresh(player, gui, cfg, entries);
+    private List<String> dimensions(Player player, String region) {
+        return policy().eligibleDimensions(player, variant, region, plugin.permissionService());
     }
 
-    private void openDimension(Player player, String region) {
-        FileConfiguration cfg = loadRtpConfig();
-        String title = cfg.getString("rtp.gui.dimension-menu.title", "<gold>Select Dimension</gold>");
-        int rows = cfg.getInt("rtp.gui.dimension-menu.rows", 3);
+    private List<String> regions(Player player) {
+        List<String> options = variant != null && variant.region() != null ? List.of(variant.region())
+                : variant != null || policy().regions().isEmpty() ? List.of("")
+                : List.copyOf(policy().regions().keySet());
+        return options.stream().filter(key -> !dimensions(player, key).isEmpty()).toList();
+    }
 
-        Gui gui = Gui.gui().title(plugin.messageService().deserialize(title)).rows(Math.max(1, Math.min(6, rows))).disableAllInteractions().create();
-        gui.setItem(11, ItemBuilder.from(buildItem(Material.GRASS_BLOCK, "<green><bold>Overworld</bold>",
-                        List.of("<gray>Random teleport in the Overworld")))
-                .asGuiItem(click -> select(player, region, "overworld")));
-        gui.setItem(13, ItemBuilder.from(buildItem(Material.NETHERRACK, "<red><bold>Nether</bold>",
-                        List.of("<gray>Random teleport in the Nether")))
-                .asGuiItem(click -> select(player, region, "nether")));
-        gui.setItem(15, ItemBuilder.from(buildItem(Material.END_STONE, "<light_purple><bold>End</bold>",
-                        List.of("<gray>Random teleport in The End")))
-                .asGuiItem(click -> select(player, region, "end")));
+    public void openRegion(Player player) { openRegion(player, 0); }
 
-        boolean hasMultipleRegions = hasMultipleRegions(cfg);
-        if (hasMultipleRegions) {
-            String backName = plugin.messageService().rawString("rtp-back-button");
-            String backLore = plugin.messageService().rawString("rtp-back-lore");
-            int backSlot = (rows - 1) * 9;
-            gui.setItem(backSlot, ItemBuilder.from(buildItem(Material.SPECTRAL_ARROW, backName, List.of(backLore)))
+    private void openRegion(Player player, int requestedPage) {
+        var available = regions(player);
+        var page = Page.forItems(available.size(), policy().regionMenu().rows(), false, requestedPage);
+        var choices = available.subList(page.start(), page.end());
+        if (choices.isEmpty()) { PlatformText.send(player, plugin.msg("no-permission")); return; }
+        if (available.size() == 1) {
+            if (variant == null && policy().regions().isEmpty() && !policy().selectDimensionWithoutRegion()) {
+                String dimension = policy().defaultDimension();
+                if (dimensions(player, "").contains(dimension)) selectionConsumer.accept("", dimension);
+                else PlatformText.send(player, plugin.msg("no-permission"));
+            } else openDimension(player, choices.getFirst());
+            return;
+        }
+        var menu = policy().regionMenu();
+        int rows = page.rows();
+        Gui gui = Gui.gui().title(plugin.messageService().deserialize(menu.title())).rows(rows).disableAllInteractions().create();
+        var entries = new ArrayList<RegionEntry>();
+        for (int index = 0; index < choices.size(); index++) {
+            String key = choices.get(index);
+            var region = policy().regions().get(key);
+            Material material = icon(region.material());
+            var lore = new ArrayList<>(region.lore());
+            lore.addAll(buildPingLore(player, key));
+            int slot = slot(rows, choices.size(), index);
+            gui.setItem(slot, ItemBuilder.from(buildItem(material, region.title(), lore)).asGuiItem(click -> openDimension(player, key)));
+            entries.add(new RegionEntry(slot, material, region.title(), region.lore(), key));
+        }
+        navigation(gui, page, index -> openRegion(player, index));
+        gui.open(player);
+        startPingRefresh(player, gui, entries);
+    }
+
+    private void openDimension(Player player, String region) { openDimension(player, region, 0); }
+
+    private void openDimension(Player player, String region, int requestedPage) {
+        var available = dimensions(player, region);
+        boolean back = regions(player).size() > 1;
+        var page = Page.forItems(available.size(), policy().dimensionMenu().rows(), back, requestedPage);
+        var choices = available.subList(page.start(), page.end());
+        if (choices.isEmpty()) { player.closeInventory(); PlatformText.send(player, plugin.msg("no-permission")); return; }
+        var menu = policy().dimensionMenu();
+        int rows = page.rows();
+        Gui gui = Gui.gui().title(plugin.messageService().deserialize(menu.title())).rows(rows).disableAllInteractions().create();
+        for (int index = 0; index < choices.size(); index++) {
+            String dimension = choices.get(index);
+            var item = policy().dimensionItem(dimension, dimension.isEmpty() ? variant.world() : dimension);
+            Material icon = icon(item.material());
+            int slot = slot(rows, choices.size(), index);
+            // Keep the last slot available when the menu also contains a back button.
+            if (back && slot == rows * 9 - 1) slot = index;
+            gui.setItem(slot, ItemBuilder.from(buildItem(icon, item.title(), item.lore())).asGuiItem(click -> select(player, region, dimension)));
+        }
+        if (back) {
+            gui.setItem(page.paged() ? rows * 9 - 5 : rows * 9 - 1, ItemBuilder.from(buildItem(Material.SPECTRAL_ARROW,
+                    plugin.messageService().rawString("rtp-back-button"), List.of(plugin.messageService().rawString("rtp-back-lore"))))
                     .asGuiItem(click -> openRegion(player)));
         }
-
+        navigation(gui, page, index -> openDimension(player, region, index));
         gui.open(player);
+    }
+
+    private static Material icon(String configured) {
+        var material = Material.matchMaterial(configured);
+        return material == null || !material.isItem() || material.isAir() ? Material.GRASS_BLOCK : material;
+    }
+
+    record Page(int start, int end, int rows, int index, int last) {
+        static Page forItems(int count, int minimumRows, boolean back, int requested) {
+            int needed = count + (back ? 1 : 0);
+            if (needed <= 54) return new Page(0, count, Math.max(minimumRows, (needed + 8) / 9), 0, 0);
+            // Reserve the bottom row for navigation on inventories larger than a double chest.
+            int last = (count - 1) / 45;
+            int index = Math.clamp(requested, 0, last);
+            return new Page(45 * index, Math.min(count, 45 * (index + 1)), 6, index, last);
+        }
+        boolean paged() { return last > 0; }
+    }
+
+    private void navigation(Gui gui, Page page, IntConsumer change) {
+        if (page.index() > 0) {
+            gui.setItem(45, ItemBuilder.from(buildItem(Material.ARROW, plugin.messageService().rawString("rtp-previous-page"), List.of()))
+                    .asGuiItem(click -> change.accept(page.index() - 1)));
+        }
+        if (page.index() < page.last()) {
+            gui.setItem(53, ItemBuilder.from(buildItem(Material.ARROW, plugin.messageService().rawString("rtp-next-page"), List.of()))
+                    .asGuiItem(click -> change.accept(page.index() + 1)));
+        }
+    }
+
+    private static int slot(int rows, int count, int index) {
+        return count <= 4 ? (rows / 2) * 9 + 4 - count + 1 + index * 2 : index;
     }
 
     /**
@@ -112,17 +157,16 @@ public class RtpGui {
      * is colour-coded (green/yellow/red). Controlled by the
      * {@code rtp.gui.ping} section of rtp.yml.
      */
-    private List<String> buildPingLore(FileConfiguration cfg, Player player, String regionKey) {
-        if (!cfg.getBoolean("rtp.gui.ping.enabled", true)) {
+    private List<String> buildPingLore(Player player, String regionKey) {
+        if (!policy().ping()) {
             return List.of();
         }
 
         PingService pingService = plugin.services().pingService();
-        boolean proxyPing = cfg.getBoolean("rtp.gui.ping.proxy-ping", true);
+        boolean proxyPing = policy().proxyPing();
 
         String currentServer = plugin.settings().serverName();
-        String mapped = plugin.settings().servers().get(regionKey.toLowerCase());
-        String targetServer = mapped != null ? mapped : currentServer;
+        String targetServer = policy().server(regionKey);
 
         long playerPing = Math.max(0, player.getPing());
         long estimate;
@@ -146,8 +190,8 @@ public class RtpGui {
      * the ping line stays current, including while the player hovers an
      * item. Stops itself as soon as the menu is closed.
      */
-    private void startPingRefresh(Player player, Gui gui, FileConfiguration cfg, List<RegionEntry> entries) {
-        if (!cfg.getBoolean("rtp.gui.ping.enabled", true) || entries.isEmpty()) {
+    private void startPingRefresh(Player player, Gui gui, List<RegionEntry> entries) {
+        if (!policy().ping() || entries.isEmpty()) {
             return;
         }
         final BukkitTask[] taskHolder = new BukkitTask[1];
@@ -159,7 +203,7 @@ public class RtpGui {
             }
             for (RegionEntry entry : entries) {
                 List<String> lore = new ArrayList<>(entry.baseLore());
-                lore.addAll(buildPingLore(cfg, player, entry.regionKey()));
+                lore.addAll(buildPingLore(player, entry.regionKey()));
                 gui.updateItem(entry.slot(), buildItem(entry.material(), entry.name(), lore));
             }
         }, 10L, 10L);
@@ -170,28 +214,17 @@ public class RtpGui {
 
     // ── helpers ──────────────────────────────────────────────────────
 
-    private boolean hasMultipleRegions(FileConfiguration cfg) {
-        ConfigurationSection regions = cfg.getConfigurationSection("rtp.regions");
-        return regions != null && regions.getKeys(false).size() > 1;
-    }
-
-    private FileConfiguration loadRtpConfig() {
-        File rtpFile = new File(plugin.getDataFolder(), "config/rtp.yml");
-        if (rtpFile.exists()) return YamlConfiguration.loadConfiguration(rtpFile);
-        return plugin.getConfig();
-    }
-
     private ItemStack buildItem(Material material, String name, List<String> loreRaw) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
-            meta.displayName(plugin.messageService().deserialize(name));
+            meta.setDisplayName(PlatformText.legacy(plugin.messageService().deserialize(name)));
             if (!loreRaw.isEmpty()) {
                 List<net.kyori.adventure.text.Component> lore = new ArrayList<>();
                 for (String line : loreRaw) {
                     lore.add(plugin.messageService().deserialize(line));
                 }
-                meta.lore(lore);
+                meta.setLore(lore.stream().map(PlatformText::legacy).toList());
             }
             // Keep tooltips clean: only the name and lore should show.
             meta.addItemFlags(ItemFlag.values());
@@ -200,22 +233,4 @@ public class RtpGui {
         return item;
     }
 
-    private Material parseMaterial(ConfigurationSection section, Material fallback) {
-        if (section == null) return fallback;
-        String raw = section.getString("material", fallback.name());
-        Material m = Material.matchMaterial(raw);
-        return m != null ? m : fallback;
-    }
-
-    private int centerStartSlot(int rows, int itemCount) {
-        int middleRow = rows / 2;
-        int widthNeeded = itemCount * 2 - 1;
-        int startCol = Math.max(0, (9 - widthNeeded) / 2);
-        return middleRow * 9 + startCol;
-    }
-
-    private String capitalize(String s) {
-        if (s == null || s.isEmpty()) return s;
-        return s.substring(0, 1).toUpperCase() + s.substring(1);
-    }
 }

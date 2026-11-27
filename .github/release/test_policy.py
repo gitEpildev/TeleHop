@@ -5,11 +5,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import xml.etree.ElementTree as ET
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 
 import changelog
 import ci_status
 import prepare
+import package_jars
 
 
 def entry(version, text="- Fixed the colour of home labels.", day="2026-11-23"):
@@ -134,6 +135,29 @@ class BuildTests(unittest.TestCase):
                 jar.writestr("plugin.yml", "version: 2.2.0")
             with self.assertRaisesRegex(ValueError, "Incorrect embedded version"):
                 prepare.verify_jars("2.4.0", Path("."))
+
+    def test_backend_with_missing_runtime_resources_cannot_be_published(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            with ZipFile(directory / "telehop-paper-4.0.0.jar", "w") as jar:
+                jar.writestr("plugin.yml", "version: 4.0.0")
+            with self.assertRaisesRegex(ValueError, r"lacks required runtime files:.*commands/hub.yml"):
+                prepare.verify_jars("4.0.0", directory)
+
+    def test_rebuilt_release_files_keep_their_hash_despite_zip_dates_and_entry_order(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            outputs = []
+            for iteration, names in enumerate((("plugin.yml", "lang.yml"), ("lang.yml", "plugin.yml"))):
+                source, target = root / f"source{iteration}.jar", root / f"result{iteration}.jar"
+                with ZipFile(source, "w") as jar:
+                    for name in names:
+                        jar.writestr(ZipInfo(name, (2000 + iteration, 1, 1, 0, 0, 0)), name)
+                package_jars.package(source, target)
+                outputs.append(target.read_bytes())
+                with ZipFile(target) as jar:
+                    self.assertEqual(jar.read("plugin.yml"), b"plugin.yml")
+            self.assertEqual(*outputs)
 
     def test_wrong_release_request_stops_before_build_or_publication(self):
         with tempfile.TemporaryDirectory() as tmp, chdir(tmp):

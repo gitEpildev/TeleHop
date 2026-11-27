@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
@@ -9,6 +10,7 @@ import com.telehop.common.PermissionNodes;
 import com.telehop.paper.NetworkPaperPlugin;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
@@ -33,17 +35,18 @@ public class ForceDelHomeCommand extends BaseCommand {
         plugin.services().homeService().listByPlayer(uuid).thenAccept(homes -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (homes.isEmpty()) {
-                    sender.sendMessage(plugin.msg("forcedelhome-no-homes", Map.of("player", playerName)));
+                    PlatformText.send(sender, plugin.msg("forcedelhome-no-homes", Map.of("player", playerName)));
                     return;
                 }
-                sender.sendMessage(plugin.msg("forcedelhome-header", Map.of("player", playerName, "count", String.valueOf(homes.size()))));
+                PlatformText.send(sender, plugin.msg("forcedelhome-header", Map.of("player", playerName, "count", String.valueOf(homes.size()))));
                 for (var home : homes) {
-                    Component line = plugin.messageService().deserialize(
-                            "<gray>  " + home.name() + " <dark_gray>(" + home.server() + " " +
-                                    (int) home.x() + "," + (int) home.y() + "," + (int) home.z() + ") ")
+                    String details = "(" + home.server() + " " + (int) home.x() + ", "
+                            + (int) home.y() + ", " + (int) home.z() + ") ";
+                    Component line = Component.text("  " + home.name() + " ", NamedTextColor.GRAY)
+                            .append(Component.text(details, NamedTextColor.DARK_GRAY))
                             .append(plugin.messageService().raw("homes-delete-button")
-                                    .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + home.name())));
-                    sender.sendMessage(line);
+                                    .clickEvent(ClickEvent.runCommand("/" + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + HomeCommandArgument.encode(home.name()))));
+                    PlatformText.send(sender, line);
                 }
             });
         });
@@ -51,18 +54,19 @@ public class ForceDelHomeCommand extends BaseCommand {
 
     @co.aikar.commands.annotation.Subcommand("confirm")
     @CommandAlias("%{cmd-forcedelhome-confirm}")
-    public void confirm(Player sender, String uuid, String name, @co.aikar.commands.annotation.Optional String action) {
+    public void confirm(Player sender, String uuid, String argument, @co.aikar.commands.annotation.Optional String action) {
         if (!sender.hasPermission(PermissionNodes.ADMIN_HOMES_DELETE)) {
-            sender.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(sender, plugin.msg("no-permission"));
             return;
         }
+        String name = HomeCommandArgument.decode(argument);
         if (!"confirm".equals(action)) {
-            sender.sendMessage(plugin.msg("homes-confirm", Map.of("name", name)).clickEvent(ClickEvent.runCommand("/"
-                    + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + name + " confirm")));
+            PlatformText.send(sender, plugin.msg("homes-confirm", Map.of("name", name)).clickEvent(ClickEvent.runCommand("/"
+                    + plugin.commandNames().primary("forcedelhome-confirm") + " " + uuid + " " + HomeCommandArgument.encode(name) + " confirm")));
             return;
         }
         plugin.services().homeService().delete(uuid, name).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(plugin.msg("forcedelhome-deleted", Map.of("name", name)))));
+                        PlatformText.send(sender, plugin.msg("forcedelhome-deleted", Map.of("name", name)))));
     }
 }

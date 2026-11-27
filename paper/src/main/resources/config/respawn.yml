@@ -10,9 +10,9 @@
 #  Feature toggle lives in features.yml under "random-respawn".
 
 random-respawn:
-  # World that random respawn locations are generated in.
-  # Must be a world loaded on this server (e.g. world, world_nether).
-  world: "world"
+  # Leave empty to search the world where the player died. To use a fixed
+  # destination, enter its loaded world name or namespaced world key.
+  world: ""
 
   # Maximum distance from 0,0 on both X and Z axes.
   # A random coordinate in [-radius, +radius] is selected for each axis.
@@ -20,16 +20,15 @@ random-respawn:
 
   # If the player has a bed set and their bed is accessible, skip
   # random respawn and send them to their bed instead.
-  # Set to false to always randomize regardless of bed.
+  # Set to false to use random respawn regardless of the bed.
   respect-bed-spawn: true
 
   # If the player has a charged respawn anchor set, skip random respawn
   # and send them to their anchor instead.
-  # Set to false to always randomize regardless of anchor.
+  # Set to false to use random respawn regardless of the anchor.
   respect-anchor-spawn: true
 
   # Worlds where random respawn is disabled. Deaths in these worlds
   # will use the default respawn logic instead.
-  # Supports prefix matching with a trailing * (e.g. "pvpindex_arena_*").
-  excluded-worlds:
-    - "pvpindex_arena_*"
+  # To match a prefix, add a trailing * to your own world name pattern.
+  excluded-worlds: []

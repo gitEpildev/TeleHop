@@ -2,6 +2,7 @@ package com.telehop.paper.messaging;
 
 import com.telehop.common.NetworkConstants;
 import com.telehop.common.messaging.PacketCodec;
+import com.telehop.common.messaging.TravelFields;
 import com.telehop.common.messaging.RequestBroker;
 import com.telehop.common.messaging.RequestTracker;
 import com.telehop.common.model.NetworkPacket;
@@ -25,9 +26,14 @@ public class PaperMessagingManager implements PluginMessageListener {
     private final long timeoutMs;
     private final Supplier<String> serverName;
     private PacketHandler handler;
+    private boolean enabled;
 
     public interface PacketHandler {
         void handle(NetworkPacket packet, Player carrier);
+
+        default CompletableFuture<Boolean> handleVariant(NetworkPacket packet, Player carrier) {
+            return CompletableFuture.completedFuture(false);
+        }
     }
 
     public PaperMessagingManager(JavaPlugin plugin, long dedupeWindowMs, long timeoutMs, Supplier<String> serverName) {
@@ -38,7 +44,16 @@ public class PaperMessagingManager implements PluginMessageListener {
         this.requestBroker = new RequestBroker(requestTracker, this::sendInternal);
     }
 
-    public void register() {
+    /** Whether the backend is using a proxy transport rather than standalone world travel. */
+    public boolean enabled() {
+        return enabled;
+    }
+
+    public void register(boolean networkEnabled) {
+        // A directly authenticated client is never a trusted proxy transport.
+        enabled = networkEnabled && !plugin.getServer().getOnlineMode();
+        if (networkEnabled && !enabled) plugin.getLogger().info("Online-mode backend: using local travel without proxy messaging.");
+        if (!enabled) return;
         Bukkit.getMessenger().registerOutgoingPluginChannel(plugin, NetworkConstants.CHANNEL_ID);
         Bukkit.getMessenger().registerIncomingPluginChannel(plugin, NetworkConstants.CHANNEL_ID, this);
     }
@@ -57,7 +72,7 @@ public class PaperMessagingManager implements PluginMessageListener {
     }
 
     public boolean send(Player carrier, NetworkPacket packet) {
-        if (!carrier.isOnline() || Bukkit.getPlayer(carrier.getUniqueId()) != carrier) return false;
+        if (!enabled || !carrier.isOnline() || Bukkit.getPlayer(carrier.getUniqueId()) != carrier) return false;
         carrier.sendPluginMessage(plugin, NetworkConstants.CHANNEL_ID, PacketCodec.encode(packet));
         return true;
     }
@@ -67,6 +82,7 @@ public class PaperMessagingManager implements PluginMessageListener {
     }
 
     private boolean sendInternal(NetworkPacket packet) {
+        if (!enabled) return false;
         var carrier = Bukkit.getOnlinePlayers().stream().findFirst();
         if (carrier.isEmpty()) {
             return false;
@@ -77,13 +93,15 @@ public class PaperMessagingManager implements PluginMessageListener {
 
     @Override
     public void onPluginMessageReceived(String channel, Player player, byte[] message) {
-        if (!NetworkConstants.CHANNEL_ID.equals(channel)) {
+        if (!enabled || !NetworkConstants.CHANNEL_ID.equals(channel)) {
             return;
         }
         NetworkPacket packet = PacketCodec.decode(message);
-        boolean probe = packet.getType() == PacketType.PING && packet.supportsSpawns();
+        if (packet == null || !TravelFields.valid(packet, false) || !serverName.get().equalsIgnoreCase(packet.getTargetServer())) return;
+        boolean probe = packet.getType() == PacketType.PING && (packet.supportsSpawns() || packet.supportsVariants());
         boolean arrival = packet.getType() == PacketType.NAMED_SPAWN_ARRIVAL;
-        if ((probe || arrival) && (!"velocity".equalsIgnoreCase(packet.getOriginServer())
+        boolean variant = packet.getType() == PacketType.VARIANT_ARRIVAL;
+        if ((probe || arrival || variant) && (!"velocity".equalsIgnoreCase(packet.getOriginServer())
                 || !serverName.get().equalsIgnoreCase(packet.getTargetServer())
                 || !player.getUniqueId().toString().equals(packet.get("uuid")))) return;
         if (!requestBroker.handleIncoming(packet, dedupeWindowMs, player) || handler == null) return;
@@ -93,11 +111,19 @@ public class PaperMessagingManager implements PluginMessageListener {
                 if (probe) reply.put("capability", packet.get("capability"));
                 if (!send(player, reply) || probe) return;
             }
-            handler.handle(packet, player);
+            if (variant) {
+                if (Bukkit.getPlayer(player.getUniqueId()) != player) return;
+                handler.handleVariant(packet, player).whenComplete((placed, error) ->
+                        Bukkit.getScheduler().runTask(plugin, () -> send(player, NetworkPacket.response(
+                                packet, error == null && Boolean.TRUE.equals(placed), null))));
+            } else {
+                handler.handle(packet, player);
+            }
         });
     }
 
     public void shutdown() {
+        requestTracker.close();
         scheduler.shutdownNow();
     }
 }

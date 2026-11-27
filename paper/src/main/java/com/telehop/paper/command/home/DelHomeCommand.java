@@ -1,5 +1,6 @@
 package com.telehop.paper.command.home;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -20,16 +21,16 @@ public class DelHomeCommand extends BaseCommand {
     @Default
     public void execute(Player player, String name) {
         if (!plugin.isFeatureEnabled("homes")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(player, PermissionNodes.DELHOME)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         if (name == null || name.isBlank()) {
-            player.sendMessage(plugin.msg("home-invalid-name"));
+            PlatformText.send(player, plugin.msg("home-invalid-name"));
             return;
         }
 
@@ -37,12 +38,12 @@ public class DelHomeCommand extends BaseCommand {
         plugin.services().homeService().find(uuid, name).thenAccept(opt -> {
             org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
                 if (opt.isEmpty()) {
-                    player.sendMessage(plugin.msg("home-not-found"));
+                    PlatformText.send(player, plugin.msg("home-not-found"));
                     return;
                 }
                 plugin.services().homeService().delete(uuid, opt.get().name()).thenRun(() ->
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
-                                player.sendMessage(plugin.msg("home-deleted", Map.of("name", opt.get().name())))));
+                                PlatformText.send(player, plugin.msg("home-deleted", Map.of("name", opt.get().name())))));
             });
         });
     }

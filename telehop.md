@@ -6,9 +6,9 @@ TeleHop supports **single-proxy and multi-proxy Velocity networks**. Use homes, 
 
 [Downloads](https://modrinth.com/plugin/telehop/versions) · [GitHub](https://github.com/gitEpildev/TeleHop) · [Documentation](https://github.com/gitEpildev/TeleHop/tree/main/docs) · [Setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/setup.md) · [Commands](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md) · [Permissions](https://github.com/gitEpildev/TeleHop/blob/main/docs/permissions.md) · [Configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md) · [Multi-proxy setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/multi-proxy.md) · [Report an issue](https://github.com/gitEpildev/TeleHop/issues) · [Support Discord](https://discord.gg/E8kpxdGbxn)
 
-## ✨ New in 3.0.1
+## ✨ New in 4.0.0
 
-In `config/features.yml`, set `hub: true` under `features:`. Restart Paper to register the names listed under `hub` in `config/commands.yml`. Upgrades retain your previous hub setting and add missing switches and command names to existing files.
+One backend JAR detects compatible platforms, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
 
 ## Named spawns in 3.0.0
 
@@ -47,7 +47,7 @@ routing:
 
 ```
 
-Save this in `plugins/TeleHop/config/spawns.yml` and run `/telehop reload` on the owning backend. Replace the backend name, world and coordinates with your own. A valid reload publishes the updated locations and access rules to the shared database. Invalid edits keep the previously accepted settings active. [Spawn configuration and examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/spawns.md)
+Save this in `plugins/TeleHop/config/<profile>/spawns.yml` and run `/telehop reload` on the owning backend. Replace the backend name, world and coordinates with your own. A valid reload publishes the updated locations and access rules to the shared database. Invalid edits keep the previously accepted settings active. [Spawn configuration and examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/spawns.md)
 
 ## 🚀 Travel features
 
@@ -77,7 +77,7 @@ Staff can create network-wide warps such as `shop`, with individual access throu
 
 ### 💀 Random respawn
 
-Enable random respawn per backend and choose the world and radius in `config/respawn.yml`. TeleHop searches for a safe landing after death. You can exclude worlds and honour beds and charged respawn anchors.
+Enable random respawn per backend and choose the search radius in `config/<profile>/respawn.yml`. TeleHop searches the world where the player died by default. You can choose a fixed destination world, exclude worlds and honour beds and charged respawn anchors.
 
 ### 🛠️ Staff tools
 
@@ -85,7 +85,7 @@ Staff can inspect player records, manage homes and warps, publish spawn destinat
 
 ## 📋 Complete command reference
 
-These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit `config/commands.yml` and restart Paper. To change a destination name, edit `config/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
+These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit the relevant file in `commands/` and restart Paper. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
 
 ### Spawn, homes and travel
 
@@ -93,7 +93,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/features.yml` and Paper has restarted | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` and Paper has restarted | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
 | `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
@@ -121,7 +121,7 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 
 | Command | Action | Permission |
 |---|---|---|
-| `/warps` | List global warps | `telehop.warp` |
+| `/warps` | List accessible global warps | `telehop.warp` or an individual warp grant |
 | `/warp <name>` | Visit a global warp | `telehop.warp` or `telehop.warp.<name>` |
 | `/setwarp <name>` | Create or update a global warp | `telehop.admin.warps.set` |
 | `/delwarp <name>` | Delete a global warp | `telehop.admin.warps.delete` |
@@ -151,6 +151,15 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 | `/telehop version`, `/telehop ver` | Display the Paper plugin version | Everyone |
 | `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
 | `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload config` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload messages` | Reload only the active language and its English fallback | `telehop.admin.reload` |
+| `/telehop commands list` | List the registered command labels | `telehop.admin.commands.list` |
+| `/telehop commands validate` | Validate grouped command files | `telehop.admin.commands.validate` |
+| `/telehop reload commands` | Apply validated command settings and report registration changes that need a restart | `telehop.admin.commands.reload` |
+| `/telehop config validate` | Check the active configuration without applying it | `telehop.admin.config.validate` |
+| `/telehop platform info` | Show the detected server implementation, version and capabilities | `telehop.admin.platform.info` |
+| `/telehop migration status` | Show the configuration schema, deployment mode and migration identifier | `telehop.admin.migration.status` |
+| `/telehop diagnostics` | Show the deployment mode, backend identity and database circuit state | `telehop.admin.diagnostics` |
 | `/telehop spawn list` | Show the network's named destinations | `telehop.admin.spawn.list` |
 | `/telehop spawn set <name> <access>` | Save your position on this backend with access set to `public` or `restricted` | `telehop.admin.spawn.set` |
 | `/telehop spawn setdefault` | Save the ordinary backend spawn at your position | `telehop.admin.spawn.set` |
@@ -231,6 +240,13 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 
 | Permission | Purpose |
 |---|---|
+| `telehop.admin.commands.list` | List the registered command labels. |
+| `telehop.admin.commands.validate` | Validate grouped command files. |
+| `telehop.admin.commands.reload` | Apply validated command settings and report registration changes that need a restart. |
+| `telehop.admin.config.validate` | Check the active configuration without applying it. |
+| `telehop.admin.platform.info` | Show the detected server implementation, version and capabilities. |
+| `telehop.admin.migration.status` | Show the configuration schema, deployment mode and migration identifier. |
+| `telehop.admin.diagnostics` | Show the deployment mode, backend identity and database circuit state. |
 | `telehop.admin.spawn.list` | List named destinations. |
 | `telehop.admin.spawn.set` | Set named spawns and the ordinary backend spawn. |
 | `telehop.admin.spawn.delete` | Delete a named spawn after confirmation. |
@@ -269,8 +285,13 @@ These nodes default to false. TeleHop uses the highest granted slot count up to 
 
 | Permission pattern | How it works |
 |---|---|
+| `telehop.command.<id>` | Use an additional command when its configured permission check is enabled. The ID stays the same when its label changes. |
+| `telehop.rtp.region.<id>` | Use a configured RTP region when the variant requires this permission. |
+| `telehop.rtp.server.<id>` | Use a configured RTP server when the variant requires this permission. |
+| `telehop.rtp.world.<id>` | Use a configured RTP world when the variant requires this permission. |
+| `telehop.rtp.dimension.<id>` | Use a configured RTP dimension when the variant requires this permission. |
 | `telehop.spawn.destination.<name>` | Use the destination’s actual name. Public destinations allow travel by default. Restricted destinations require a grant. An explicit denial also blocks a public destination. |
-| `telehop.warp.<name>` | Gives access to one global warp by name. The general `telehop.warp` permission already grants access to all global warps. To offer selected warps only, remove the general grant for that group and grant the named warps. Listing with `/warps` requires the general permission. |
+| `telehop.warp.<name>` | Grants one global warp. An explicit denial overrides general travel access. With only individual grants, `/warps` lists the authorised existing warps. |
 | `telehop.warps.<number>` | Sets a personal warp allowance. Use a positive whole number such as `telehop.warps.3`. TeleHop takes the highest effective positive allowance. With no allowance a member cannot create personal warps. `telehop.warps.unlimited` removes the limit. |
 
 ### LuckPerms console examples
@@ -290,80 +311,68 @@ The moderator in this example can inspect a home list. Grant `telehop.admin.home
 
 ## 📥 Requirements and compatibility
 
-| Install location | TeleHop 3.0.1 file | Supported platform |
+| Install location | TeleHop 4.0.0 file | Supported platform |
 |---|---|---|
-| Each Paper backend’s `plugins/` folder | `telehop-paper-3.0.1.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.2 and 26.2 on Java 25 |
-| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-3.0.1.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
+| Each Paper backend’s `plugins/` folder | `telehop-paper-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
+| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-paper-4.0.0.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
+| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-4.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
 
-Minecraft 1.21.2 clients can connect through Velocity to Paper 1.21.3 using their shared protocol. PaperMC did not publish a standalone 1.21.2 server. TeleHop 3.0.0 was also tested with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
+Minecraft 1.21.2 clients passed a login and named teleport through Velocity 3.5 to Paper 1.21.3. Minecraft 26.1 clients passed the same checks through Velocity 4.3.1 to Paper 26.1.2. TeleHop 4.0.0 also passed two-player network tests with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
 
-TeleHop requires a Velocity proxy, including for a single Paper backend running several worlds. Standalone Paper, BungeeCord and hybrid server platforms are outside the supported setups. LuckPerms is optional. Redis is used for multi-proxy synchronisation.
+Standalone Bukkit-compatible backends can run local travel, including named destinations in loaded Multiverse worlds. Add Velocity for cross-server travel and Redis for cross-proxy synchronisation. LuckPerms is optional. The backend selects its platform adapter automatically. See the [tested server implementations and versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md).
 
 ## ⚙️ Setup
 
 1. Install matching TeleHop JARs on every proxy and backend. Start the instances once to generate their configuration.
 2. Connect all instances to the same MySQL 8.0+ or MariaDB 10.5+ database. TeleHop creates and upgrades its database tables on startup.
 3. Give each Paper backend a unique `server-name` matching its Velocity registration. Set `hub-server` to the backend that owns the global hub.
-4. For a multi-proxy network, register the same backends on every proxy, give each proxy a unique `proxy.id` and configure the shared Redis service. Redis supports TLS, certificate and hostname verification and a custom CA certificate.
+4. For a multi-proxy network, register the same backends on every proxy, give each proxy a unique `proxy.id` in its active profile and configure the shared Redis service. Redis supports TLS, certificate and hostname verification and a custom CA certificate.
 5. Restart the proxies and backends, then test a home, a named spawn and a regional RTP destination as a member.
 
-## 📁 Paper configuration layout
+## 📁 Configuration layout
 
-Paper generates the following files under its plugin folder.
+Replace `<profile>` in file paths with `single`, `multi` or `custom`. The backend reads routes, features, menus and timings from that profile. Command labels live in `commands/`, translations live in `languages/`, and credentials stay in shared files under `config/`. Velocity also reads YAML. Existing properties migrate during the first upgrade.
 
 ```text
 plugins/TeleHop/
+  config.yml
   config/
-    general.yml
     database.yml
-    features.yml
-    commands.yml
-    spawns.yml
-    teleport.yml
-    tpa.yml
-    rtp.yml
-    home.yml
-    respawn.yml
     WIKI.md
-  storage.yml
+    single/   multi/   custom/
+  commands/
+    spawn.yml   hub.yml   teleport.yml   tpa.yml   rtp.yml   back.yml
+    homes.yml   warps.yml   player-warps.yml   lastlocation.yml   playerinfo.yml   admin.yml
   languages/
-    en.yml
-    nl.yml
-    de.yml
-    es.yml
-    zh.yml
-    pl.yml
+    en.yml   nl.yml   de.yml   es.yml   zh.yml   pl.yml
+  migrations/
+    state.yml   history.log   backups/
+  storage.yml
+
+plugins/telehop-velocity/
+  config.yml
+  config/
+    database.yml   redis.yml
+    single/   multi/   custom/
+  migrations/
+    state.yml   history.log   backups/
 ```
 
-`config/WIKI.md` is the bundled configuration reference.
-
-| Paper file | What it controls |
-|---|---|
-| `general.yml` | Backend identity, hub, servers, regional routing and language |
-| `database.yml` | Database credentials and connection pool |
-| `features.yml` | Per-backend feature switches and optional hub command registration |
-| `spawns.yml` | Named destinations, access, default routes, per-world routes |
-| `commands.yml` | Root command names and aliases |
-| `teleport.yml` | Countdown display, particles and sounds |
-| `tpa.yml` | Request timeouts, cooldowns, warmups and movement cancellation |
-| `rtp.yml` | Regions, dimensions, radius, menus, destination ping and RTP timing |
-| `home.yml` | Home slots, menu appearance, bed colours and blocked servers |
-| `respawn.yml` | Random respawn, target world and radius |
-
-The ordinary saved backend spawn lives in `plugins/TeleHop/storage.yml`. Restart Paper after changing database settings, command aliases or registration of the optional hub command. [Configuration guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md)
+In the backend SINGLE profile, `general.yml` also contains the messaging and region settings. MULTI and CUSTOM give these sections their own `messaging.yml` and `regions.yml` files.
 
 ## 🌐 Velocity configuration
 
-Edit `plugins/telehop-velocity/config.properties` on each proxy.
+Select the deployment mode in `plugins/telehop-velocity/config.yml`. Each proxy reads the following files when it starts.
 
-| Settings | Purpose |
+| File | Purpose |
 |---|---|
-| `mysql.host`, `mysql.port`, `mysql.database`, `mysql.username`, `mysql.password`, `mysql.poolSize` | Connect to the same database as the Paper backends and size the connection pool |
-| `servers.hub`, `servers.backends` | Identify the hub and participating backends |
-| `messaging.dedupeWindowMs`, `messaging.requestTimeoutMs` | Set the duplicate-message window and request timeout |
-| `proxy.id`, `multi-proxy.enabled`, `multi-proxy.global-player-list`, `multi-proxy.cross-proxy-timeout-ms` | Identify each proxy, enable synchronisation and configure cross-proxy lookups |
-| `redis.host`, `redis.port`, `redis.password`, `redis.channel-prefix` | Connect the proxies to the same Redis service and channels |
-| `redis.ssl`, `redis.ssl-verify`, `redis.ssl-ca-cert` | Enable TLS, verify the Redis certificate and hostname, and optionally provide a custom CA certificate |
+| `config/database.yml` | Shared MySQL or MariaDB settings and connection pool size |
+| `config/redis.yml` | Redis host, port, credentials, channel prefix, TLS verification and optional CA certificate |
+| `config/<profile>/servers.yml` | Registered backend names and the hub. In SINGLE, this also holds the `proxy` section. |
+| `config/multi/proxy.yml` or `config/custom/proxy.yml` | Unique proxy ID, global player list, cross-proxy timeout and CUSTOM deployment options |
+| `config/<profile>/messaging.yml` | Request timeout and duplicate-message window |
+
+Register the same backend names in Velocity’s `velocity.toml`. The first V4 start imports an existing `config.properties`. [Velocity configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/velocity.md)
 
 ## 🗄️ Database tables
 
@@ -387,16 +396,17 @@ TeleHop includes English, Dutch, German, Spanish, Simplified Chinese and Polish 
 
 ## 🔄 Updating an existing network
 
-Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching 3.0.1 builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/main/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md)
+Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching 4.0.0 builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/main/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md)
 
 | Upgrading from | What to check |
 |---|---|
 | 1.x, including 1.0.0 and 1.0.2 | Keep the old `config.yml` for migration to split YAML. A numbered home such as slot 1 becomes `Home 1`. Verify an existing player's home count and destination after upgrading. |
 | 2.0.x | Compare your RTP menu settings with `rtp.gui.ping` and check destination selection and cooldowns. |
 | 2.1.x | Review `show-countdown`, your warmup duration and any custom `countdown-title` translation. |
-| 2.2.x | Review the Paper command names and aliases in `config/commands.yml`, including any command visibility rules. |
+| 2.2.x | Review the Paper command names and aliases in the matching file under `commands/`, including any command visibility rules. |
 | 2.3.x | Keep your saved spawn, homes, warps and aliases. Test ordinary `/spawn` through each entry proxy before enabling custom routes. Then test a named destination locally and from another backend. |
 | 3.0.0 | Paper imports the previous hub command setting into `features.hub`, fills in missing feature and command entries and retains custom aliases. Restart Paper after changing the switch. |
+| 3.0.1 | Stop the instance, install the V4 JAR and start it once. Confirm the profile, grouped command files, database settings and saved destinations. Follow the migration log for recovery. |
 
 ## 🧪 Building from source
 
@@ -406,7 +416,7 @@ Use Java 21 for Maven and configure the Java 25 toolchain for the newer Paper ad
 mvn clean verify
 ```
 
-Installable outputs are `paper/target/telehop-paper-3.0.1.jar` and `velocity/target/telehop-velocity-3.0.1.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-paper-4.0.0.jar` and `velocity/target/telehop-velocity-4.0.0.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
 
 ## 👤 Author and company
 

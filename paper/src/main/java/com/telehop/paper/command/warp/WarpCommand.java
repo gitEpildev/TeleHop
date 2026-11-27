@@ -1,8 +1,8 @@
 package com.telehop.paper.command.warp;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
-import com.telehop.common.PermissionNodes;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.WarpRecord;
@@ -24,23 +24,26 @@ public class WarpCommand extends BaseCommand {
     @CommandCompletion("@warps")
     public void warp(Player player, String name) {
         if (!plugin.isFeatureEnabled("warps")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
-        if (!plugin.permissionService().has(player, PermissionNodes.WARP) &&
-                !plugin.permissionService().has(player, PermissionNodes.warpNode(name))) {
-            player.sendMessage(plugin.msg("no-permission"));
+        if (!plugin.permissionService().warp(player, name)) {
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         plugin.warpService().find(name).thenAccept(optionalWarp -> Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline()) return;
             if (optionalWarp.isEmpty()) {
-                player.sendMessage(plugin.msg("warp-not-found", Map.of("name", name)));
+                PlatformText.send(player, plugin.msg("warp-not-found", Map.of("name", name)));
+                return;
+            }
+            if (!plugin.permissionService().warp(player, optionalWarp.get(), plugin.settings().serverName()) || !plugin.isFeatureEnabled("warps")) {
+                PlatformText.send(player, plugin.msg("no-permission"));
                 return;
             }
             WarpRecord warp = optionalWarp.get();
-            player.sendMessage(plugin.msg("warp-teleporting", Map.of("name", name)));
+            PlatformText.send(player, plugin.msg("warp-teleporting", Map.of("name", name)));
             if (warp.server().equalsIgnoreCase(plugin.settings().serverName())) {
                 plugin.services().teleportService().teleportToWarp(player, warp);
             } else {

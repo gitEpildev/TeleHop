@@ -77,6 +77,8 @@ class SpawnAccessTest {
         when(services.teleportService()).thenReturn(teleport);
         when(player.getUniqueId()).thenReturn(UUID.randomUUID());
         when(player.hasPermission(PermissionNodes.SPAWN)).thenReturn(true);
+        when(player.spigot()).thenReturn(mock(Player.Spigot.class));
+        when(plugin.msg("spawn-sent")).thenReturn(net.kyori.adventure.text.Component.text("Teleporting"));
         when(player.getWorld()).thenReturn(world);
         when(world.getKey()).thenReturn(NamespacedKey.minecraft("overworld"));
         var routes = new SpawnRoutes(false, false, null, Map.of(), Map.of());

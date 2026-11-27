@@ -23,55 +23,37 @@ rtp:
   # Region-specific radius is capped to this value.
   max-radius: 25000
 
-  # ── Regions ─────────────────────────────────────────────────────────
-  #  Define one or more RTP regions. Each region can have its own world,
-  #  radius, and GUI appearance.
-  #
-  #  ONE region  → player skips the region picker and goes straight to
-  #                the dimension selector.
-  #  TWO+ regions → a region picker GUI opens first.
-  #
-  #  gui.material - Any Bukkit Material name (e.g. GRASS_BLOCK, RED_CONCRETE)
-  #  gui.name     - Display name in the GUI. Supports MiniMessage colors:
-  #                 <red>, <bold>, <gradient:red:gold>, etc.
-  #  gui.lore     - List of lore lines under the item name.
-  regions:
-    usa:
-      world: "world"
-      radius: 25000
-      gui:
-        material: "RED_CONCRETE"
-        name: "<red><bold>USA</bold>"
-        lore:
-          - "<gray>Random teleport on the US server"
-    eu:
-      world: "world"
-      radius: 25000
-      gui:
-        material: "BLUE_CONCRETE"
-        name: "<aqua><bold>EU</bold>"
-        lore:
-          - "<gray>Random teleport on the EU server"
+  # A region may set radius, world and its gui.material, gui.name and gui.lore.
+  # Map its ID to a backend in general.yml to route through the proxy.
+  regions: {}
 
-  # ── Dimension World Names ───────────────────────────────────────────
-  #  Map each dimension to the actual Minecraft world folder name.
-  #  Default Paper worlds are: world, world_nether, world_the_end.
-  dimensions:
-    overworld: "world"
-    nether: "world_nether"
-    end: "world_the_end"
+  # Empty dimensions discover the currently loaded worlds, including Multiverse worlds.
+  # To publish stable menu IDs across backends, map your own IDs to exact local world names.
+  # Example: dimensions: {surface: quarry_floor, depths: quarry_caves}
+  dimensions: {}
+
+  # Set default-region and default-dimension to configured IDs if order should not decide.
+  # When absent, the first configured region and dimension are the defaults.
+  # A region's optional world setting applies to its default dimension.
 
   # ── GUI Appearance ──────────────────────────────────────────────────
-  #  Customize the titles and sizes of the RTP picker GUIs.
+  #  Customise the titles and sizes of the RTP picker GUIs.
   #  Titles support MiniMessage formatting.
   #  Rows: 1-6 (each row = 9 slots).
   gui:
+    # Show the available dimensions on a backend without configured regions.
+    # Set to false to travel directly to its default dimension.
+    select-dimension-without-region: true
     region-menu:
       title: "<dark_purple>Select Region</dark_purple>"
       rows: 3
     dimension-menu:
       title: "<gold>Select Dimension</gold>"
       rows: 3
+
+    # Optional overrides keyed by your own dimension IDs.
+    # Example: dimension-items: {depths: {material: STONE, name: Caves, lore: []}}
+    dimension-items: {}
 
     # ── Destination Ping ──────────────────────────────────────────────
     #  Shows players the ping they will get on the destination server

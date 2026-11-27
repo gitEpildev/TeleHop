@@ -75,6 +75,12 @@ rtp-delay: "<yellow>Don't move! Teleporting in <gold><seconds></gold><yellow> se
 rtp-cancelled: "<red>Teleport cancelled - you moved."
 
 # ── Listwarps (/listwarps) ──────────────────────────────────────────
+warp-public-label: "<green>[public]"
+warp-private-label: "<red>[private]"
+pwarp-unlimited: "unlimited"
+listwarps-owner-line: "<yellow><player></yellow> <gray>(<count>): <warps>"
+listwarps-summary-item: "<aqua><name></aqua><visibility><gray>@<server>"
+listwarps-detail: "<gray>  <aqua><name></aqua> <visibility> <dark_gray>- <server> <world> (<x>, <y>, <z>)"
 listwarps-none: "<gray>No player warps found across all servers."
 listwarps-header: "<gold><bold>--- Player Warps (<count> total) ---</bold></gold>"
 listwarps-player-none: "<gray><player> has no warps."
@@ -112,7 +118,7 @@ help-warps-header: "<yellow><bold>Admin Warps</bold></yellow>"
 help-warp: "<gray>  <aqua>/warp <name></aqua> <dark_gray>- Teleport to a global warp"
 help-setwarp: "<gray>  <aqua>/setwarp <name></aqua> <dark_gray>- Create/update a global warp"
 help-delwarp: "<gray>  <aqua>/delwarp <name></aqua> <dark_gray>- Delete a global warp"
-help-warps-list: "<gray>  <aqua>/warps</aqua> <dark_gray>- List all global warps"
+help-warps-list: "<gray>  <aqua>/warps</aqua> <dark_gray>- List accessible global warps"
 help-pwarps-header: "<yellow><bold>Player Warps</bold></yellow>"
 help-pwarp-set: "<gray>  <aqua>/pwarp set <name></aqua> <dark_gray>- Create a personal warp"
 help-pwarp-del: "<gray>  <aqua>/pwarp del <name></aqua> <dark_gray>- Delete your warp"
@@ -198,6 +204,8 @@ lastloc-no-location: "<red>No saved logout location found."
 lastloc-world-missing: "<red>The world from your last logout location no longer exists."
 
 # ── RTP GUI ──────────────────────────────────────────────────────────────
+rtp-previous-page: "<yellow>Previous page"
+rtp-next-page: "<yellow>Next page"
 rtp-back-button: "<gold>Back"
 rtp-back-lore: "<gray>Return to region selection"
 
@@ -251,3 +259,12 @@ perms-spawn-routes: "<aqua>Public destinations allow members. Grant telehop.spaw
 homes-confirm: "<red>Click to confirm deletion of <name>."
 reload-invalid: "<red>Could not reload the configuration. Check the server log."
 spawn-reload-first: "<yellow>The file has pending edits. Run /telehop reload before changing a spawn in game."
+config-valid: "<aqua>The active configuration is valid."
+platform-info: "<aqua>Platform: <platform>"
+migration-state: "<aqua>Configuration schema <schema>, deployment <mode>. See <migration> / migrations/state.yml and migrations/history.log for the last migration."
+network-diagnostics: "<aqua>Deployment <mode>, backend <server>, database circuit <database>, consecutive failures <failures>."
+command-line: "<gold><id></gold> <gray>|</gray> <aqua><names></aqua>"
+
+messages-reloaded: "<green>Language files reloaded.</green>"
+help-travel-commands: "<gray>  <aqua>/telehop commands list|validate, /telehop reload config|commands|messages</aqua> <dark_gray>- Inspect command registrations and rules"
+help-config-tools: "<gray>  <aqua>/telehop config validate, /telehop platform info, /telehop migration status, /telehop diagnostics</aqua> <dark_gray>- Check configuration, platform and migration details"

@@ -1,5 +1,5 @@
 name: TeleHop
-version: 3.0.1
+version: 4.0.0
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]
@@ -7,7 +7,7 @@ description: Cross-server teleportation for Velocity networks.
 website: https://developer.epildevconnect.uk/
 softdepend: [LuckPerms]
 
-# ACF registers the roots configured in config/commands.yml.
+# ACF registers the built-in roots and enabled labels from the command group files.
 permissions:
   telehop.spawn:
     description: Use /spawn
@@ -102,6 +102,10 @@ permissions:
     description: Admin commands - setwarp, delwarp, listwarps, forcedelwarp, forcedelhome, telehop reload/perms
     default: op
     children:
+      telehop.admin.config.validate: true
+      telehop.admin.platform.info: true
+      telehop.admin.migration.status: true
+      telehop.admin.diagnostics: true
       telehop.admin.spawn.list: true
       telehop.admin.spawn.set: true
       telehop.admin.spawn.delete: true
@@ -117,6 +121,9 @@ permissions:
       telehop.admin.warps.delete: true
       telehop.admin.playerwarps.delete: true
       telehop.admin.playerinfo: true
+      telehop.admin.commands.list: true
+      telehop.admin.commands.validate: true
+      telehop.admin.commands.reload: true
       telehop.admin.reload: true
       telehop.admin.permissions: true
   telehop.back:
@@ -178,4 +185,25 @@ permissions:
   telehop.tp.player.self:
     default: false
   telehop.tp.player.others:
+    default: false
+  telehop.admin.config.validate:
+    description: Validate the selected deployment configuration
+    default: false
+  telehop.admin.platform.info:
+    description: Inspect the detected platform and Java runtime
+    default: false
+  telehop.admin.migration.status:
+    description: Inspect the configuration migration state
+    default: false
+  telehop.admin.diagnostics:
+    description: Inspect the active deployment and database health
+    default: false
+  telehop.admin.commands.list:
+    description: Inspect the active command names and aliases
+    default: false
+  telehop.admin.commands.validate:
+    description: Validate the proposed command configuration
+    default: false
+  telehop.admin.commands.reload:
+    description: Reload command rules for registered labels
     default: false

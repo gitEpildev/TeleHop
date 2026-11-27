@@ -50,6 +50,10 @@ Existing grants of `telehop.tp` include the coordinate permissions. To restrict 
 
 Install matching 3.0.1 builds. Paper adds missing entries to the existing `commands.yml` and `features.yml` at startup. Review `features.hub`: it inherits your old `spawns.yml` choice unless you already set the new switch. Check your custom command names in `commands.yml`, restart Paper after changing registration, and try the command with a member account. [Hub setup](docs/spawns.md#enable-the-hub-command)
 
+## From 3.0.1 to 4.0.0
+
+Stop the network and save a consistent database and configuration backup. Install both matching builds. Start one backend and proxy first, verify their selected profiles, then start the remaining instances. Use the new group files in `commands/` for future edits. Additional commands require a V4 proxy and V4 destination. [Migration and recovery](docs/migration.md) · [Active configuration](docs/configuration.md)
+
 ## Returning to the previous release
 
 Stop the upgraded instances and keep a copy of their logs. Restore the previous JARs, configuration folders and matching database backup together, then start the proxies and backends. A database restore returns player data to the backup time. Check a saved home and the normal spawn route before reopening the network.

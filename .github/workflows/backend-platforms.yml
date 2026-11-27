@@ -1,0 +1,126 @@
+name: Bukkit backend compatibility
+
+on:
+  workflow_call:
+    inputs:
+      bundle:
+        required: true
+        type: string
+      version:
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.pins.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: pins
+        run: echo "matrix=$(python3 .github/tests/platforms/builds.py)" >> "$GITHUB_OUTPUT"
+
+  backend:
+    needs: inventory
+    name: ${{ matrix.distribution }} ${{ matrix.game }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 65
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.inventory.outputs.matrix) }}
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: telehop_ci
+          MYSQL_USER: telehop
+          MYSQL_PASSWORD: ci-password
+          MYSQL_RANDOM_ROOT_PASSWORD: 'yes'
+        ports: ['3306/tcp']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1"
+          --health-interval=5s --health-timeout=3s --health-retries=20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: ${{ matrix.java }}
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: ${{ inputs.bundle }}
+          path: bundle
+      - name: Install protocol client
+        if: matrix.client_schema != ''
+        run: npm ci --prefix .github/tests/network --ignore-scripts --no-audit --no-fund
+      - name: Build CraftBukkit and Spigot with the upstream revision
+        if: matrix.distribution == 'BuildTools'
+        env:
+          REVISION: ${{ matrix.revision }}
+          GAME: ${{ matrix.game }}
+        run: |
+          mkdir tools
+          cd tools
+          curl -fsSL --retry 3 https://hub.spigotmc.org/jenkins/job/BuildTools/201/artifact/target/BuildTools.jar -o BuildTools.jar
+          echo "81ed06f5ce5fb705b558bf9b3cc2c5c53cdd9742406c5338c452faa13a1e1c24  BuildTools.jar" | sha256sum -c -
+          java -jar BuildTools.jar --rev "$REVISION" --compile craftbukkit,spigot --nogui
+          python3 ../.github/tests/platforms/builds.py --verify . "$GAME"
+      - name: Fetch the pinned Purpur distribution
+        if: matrix.distribution == 'Purpur'
+        run: |
+          mkdir tools
+          curl -fsSL --retry 3 https://api.purpurmc.org/v2/purpur/1.21.11/2568/download -o tools/purpur-1.21.11.jar
+          echo "ee199511bf0a970ee8459fe3a351703fec37293f00bc2de1c5cb746c7e4acc34  tools/purpur-1.21.11.jar" | sha256sum -c -
+      - name: Exercise the packaged plugin on each distribution
+        env:
+          GROUP: ${{ matrix.distribution }}
+          CLIENT: ${{ matrix.client_schema }}
+          GAME: ${{ matrix.game }}
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if [[ "$GROUP" == BuildTools ]]; then platforms=(CraftBukkit Spigot); else platforms=(Purpur); fi
+          checks=(--server-only)
+          if [[ -n "$CLIENT" ]]; then checks=(--client-schema "$CLIENT"); fi
+          for platform in "${platforms[@]}"; do
+            python3 .github/tests/platforms/boot.py "$platform" "tools/${platform,,}-$GAME.jar" \
+              "bundle/telehop-paper-$VERSION.jar" "test-$platform" --game "$GAME" "${checks[@]}"
+          done
+      - name: Check travel across CraftBukkit, Spigot and Paper through Velocity
+        if: matrix.distribution == 'BuildTools' && matrix.game == '1.21.11'
+        env:
+          MYSQL_PORT: ${{ job.services.mysql.ports['3306'] }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          python3 - <<'PYTHON'
+          import json, sys
+          from pathlib import Path
+          sys.path.insert(0, ".github/tests/network")
+          from run import download
+          pin = json.loads(Path(".github/release/compatibility.json").read_text())["paper"]["1.21.11"]
+          download(Path("tools/paper.jar"), f"https://fill-data.papermc.io/v1/objects/{pin['sha256']}/{pin['file']}", pin["sha256"])
+          PYTHON
+          python3 .github/tests/platforms/network.py tools/craftbukkit-1.21.11.jar tools/spigot-1.21.11.jar \
+            tools/paper.jar bundle "$VERSION" test-network
+      - name: Verify refusal on the Folia region scheduler
+        if: matrix.distribution == 'Purpur'
+        env:
+          VERSION: ${{ inputs.version }}
+        run: python3 .github/tests/platforms/folia.py "bundle/telehop-paper-$VERSION.jar" test-folia
+      - name: Preserve the server and client logs
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: platform-logs-${{ matrix.distribution }}-${{ matrix.game }}-${{ github.run_attempt }}
+          path: |
+            test-*/**/acceptance.log
+            test-*/**/boot-*.log
+            tools/BuildTools.log.txt
+          if-no-files-found: ignore

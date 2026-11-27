@@ -29,16 +29,18 @@ public record SpawnRoutes(boolean enabled, boolean legacyHubCommand, SpawnRoute 
         return parse(read(folder));
     }
 
+    public static SpawnRoutes loadProfile(java.nio.file.Path profile) {
+        try { return parse(decode(Files.readString(profile.resolve("spawns.yml")))); }
+        catch (Exception ex) { throw new IllegalArgumentException("Invalid " + profile.resolve("spawns.yml")); }
+    }
+
     static YamlConfiguration read(File folder) {
         try { return decode(Files.readString(new File(folder, "config/spawns.yml").toPath())); }
         catch (Exception ex) { throw new IllegalArgumentException("Cannot load config/spawns.yml: " + ex.getMessage(), ex); }
     }
 
     static YamlConfiguration decode(String text) throws org.bukkit.configuration.InvalidConfigurationException {
-        var options = new org.yaml.snakeyaml.LoaderOptions();
-        options.setAllowDuplicateKeys(false);
-        // Bukkit preserves comments for in-game edits, but accepts duplicate mapping keys by default.
-        new org.yaml.snakeyaml.Yaml(new org.yaml.snakeyaml.constructor.SafeConstructor(options)).load(text);
+        com.telehop.common.config.ConfigYaml.parse(text, "spawns.yml");
         var yaml = new YamlConfiguration();
         yaml.options().pathSeparator('\u001f');
         yaml.loadFromString(text);

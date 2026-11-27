@@ -2,6 +2,7 @@ package com.telehop.velocity.messaging;
 
 import com.telehop.common.NetworkConstants;
 import com.telehop.common.messaging.PacketCodec;
+import com.telehop.common.messaging.TravelFields;
 import com.telehop.common.messaging.RequestBroker;
 import com.telehop.common.messaging.RequestTracker;
 import com.telehop.common.model.NetworkPacket;
@@ -82,10 +83,10 @@ public class VelocityMessagingManager {
         // Only a backend connection may originate network commands.
         if (!(event.getSource() instanceof ServerConnection connection)) return;
         NetworkPacket packet = PacketCodec.decode(event.getData());
-        boolean probe = packet.getType() == PacketType.PING && packet.supportsSpawns();
-        if ((probe || packet.getType() == PacketType.NAMED_SPAWN_TRANSFER)
-                && (!current(connection) || !connection.getServerInfo().getName().equalsIgnoreCase(packet.getOriginServer())
-                || !"velocity".equalsIgnoreCase(packet.getTargetServer())
+        if (packet == null || !TravelFields.valid(packet, true) || !connection.getServerInfo().getName().equalsIgnoreCase(packet.getOriginServer())) return;
+        boolean probe = packet.getType() == PacketType.PING && (packet.supportsSpawns() || packet.supportsVariants());
+        if ((probe || packet.getType() == PacketType.NAMED_SPAWN_TRANSFER || packet.getType() == PacketType.VARIANT_TRANSFER)
+                && (!current(connection) || !"velocity".equalsIgnoreCase(packet.getTargetServer())
                 || !connection.getPlayer().getUniqueId().toString().equals(packet.get("uuid")))) return;
         if (packet.isResponse() && !current(connection)) return;
         if (!requestBroker.handleIncoming(packet, dedupeWindowMs, connection)) return;
@@ -97,6 +98,7 @@ public class VelocityMessagingManager {
     }
 
     public void shutdown() {
+        requestTracker.close();
         scheduler.shutdownNow();
     }
 }

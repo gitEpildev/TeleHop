@@ -15,7 +15,7 @@ TeleHop ships with 6 built-in languages:
 | `zh` | Chinese (Simplified) | `languages/zh.yml` |
 | `pl` | Polish | `languages/pl.yml` |
 
-Set your language in `config/general.yml`:
+Set your language in `config/<profile>/general.yml`:
 
 ```yaml
 language: "en"

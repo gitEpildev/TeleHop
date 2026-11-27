@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.telehop</groupId>
         <artifactId>telehop-parent</artifactId>
-        <version>3.0.1</version>
+        <version>4.0.0</version>
     </parent>
 
     <artifactId>telehop-velocity</artifactId>
@@ -76,6 +76,10 @@
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <relocations>
+                                <relocation>
+                                    <pattern>org.yaml.snakeyaml</pattern>
+                                    <shadedPattern>com.telehop.velocity.lib.yaml</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>com.zaxxer.hikari</pattern>
                                     <shadedPattern>com.telehop.velocity.lib.hikari</shadedPattern>

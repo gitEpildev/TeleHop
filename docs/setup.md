@@ -1,150 +1,49 @@
-# Setup Guide
+# Install TeleHop
 
-## Requirements
-
-Install the Paper JAR on each backend and the Velocity JAR from the same TeleHop release on each proxy. Check the Java version required for each instance. [Supported platforms and Java versions](../README.md#installation)
-
-All instances connect to the same MySQL 8.0+ or MariaDB 10.5+ database. LuckPerms is optional. Multiple proxies can share player presence through Redis. [Multi-proxy configuration](multi-proxy.md)
+Use the backend and proxy JARs from the same TeleHop 4.0.0 build. For a standalone server, install only the backend JAR. All participating instances need access to one MySQL or MariaDB database. [Platform and Java compatibility](version-compatibility.md)
 
 ## Step 1 - Create the MySQL Database
 
+Create a database and account. Replace the example host with the permitted Minecraft server host or subnet and choose a private password. Grant access for each machine that will connect.
+
 ```sql
-CREATE DATABASE telehop;
-CREATE USER 'telehop'@'%' IDENTIFIED BY 'your-secure-password';
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER ON telehop.* TO 'telehop'@'%';
-FLUSH PRIVILEGES;
+CREATE DATABASE telehop CHARACTER SET utf8mb4;
+CREATE USER 'telehop'@'localhost' IDENTIFIED BY 'replace-with-a-private-password';
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX ON telehop.* TO 'telehop'@'localhost';
 ```
 
-Use `'telehop'@'localhost'` instead of `'%'` if all servers are on the same machine.
+Back up the database and the plugin folders before upgrading an existing network. [Database settings](database.md) · [Upgrade and recovery](migration.md)
 
----
+## Step 2 - Choose the deployment
 
-## Step 2 - Install on the Velocity Proxy
+| Deployment | Root `mode` | Install |
+| --- | --- | --- |
+| One standalone backend, including multiple Multiverse worlds | `SINGLE` | Backend JAR |
+| One Velocity proxy with one or more backends | `SINGLE` | Proxy JAR on Velocity and backend JAR on each backend |
+| Multiple Velocity proxies sharing backends | `MULTI` | Proxy JAR on each proxy and backend JAR on each backend, plus shared Redis |
+| Operator-defined topology | `CUSTOM` | Configure the topology switches in each active profile |
 
-1. Place `telehop-velocity-3.0.1.jar` in `plugins/`.
-2. Start the proxy. A config is created at `plugins/telehop-velocity/config.properties`.
-3. Edit the config with your MySQL credentials and server list:
+Place each JAR in the instance's `plugins/` directory. Start each instance once to generate the configuration, then stop it. If the default database is unreachable, the initial configuration is still available for editing. Set `mode` in each plugin's root `config.yml`. The lowercase directory `config/single/`, `config/multi/` or `config/custom/` is the active profile.
 
-```properties
-mysql.host=127.0.0.1
-mysql.port=3306
-mysql.database=telehop
-mysql.username=telehop
-mysql.password=your-secure-password
-mysql.poolSize=5
+## Step 3 - Connect the backends
 
-servers.hub=lobby
-servers.backends=lobby,eu,usa
-```
+1. In `plugins/TeleHop/config/database.yml`, set the database connection details.
+2. In the active `general.yml`, set `server-name` to the exact backend name registered on Velocity and `hub-server` to the desired backend. On a standalone server, use the same local identifier for both. The initial value is derived from the server directory.
+3. On an online-mode standalone server, TeleHop disables network plugin messaging automatically. On an **offline-mode standalone** server, explicitly set `messaging.network-enabled: false` in `config/single/general.yml`. Behind Velocity, protect backend ports so only the trusted proxies can connect and configure Velocity's forwarding on each backend.
+4. Set `language` in the active `general.yml` independently on each backend. The six supplied files are in `languages/`. To add another locale, copy `en.yml`, translate the text while retaining its placeholders and set the language to the new filename without `.yml`.
+5. To enable the optional hub command, set `features.hub: true` and `features.spawn: true` in the active `features.yml`. Command labels and aliases live in `commands/hub.yml`. Registration changes require a restart. [Language and feature settings](configuration.md) · [Hub setup](spawns.md#enable-the-hub-command)
 
-Server names must exactly match your `velocity.toml` `[servers]` entries.
+On a standalone server the configured worlds must be loaded. For example, use a world's actual name from Multiverse when defining a named spawn. [Configure named spawns](spawns.md)
 
-4. Restart the proxy.
+## Step 4 - Connect Velocity
 
----
+1. Register each backend and its network address in Velocity's own `velocity.toml`.
+2. In `plugins/telehop-velocity/config/database.yml`, enter the same database as the backends.
+3. In the active `servers.yml` set `servers.hub` and list the backend names under `servers.backends`. These names must match Velocity's registrations.
+4. For `MULTI`, configure a unique `proxy.id` in each proxy's `config/multi/proxy.yml` and the same Redis service and channel prefix in each proxy's `config/redis.yml`. [Velocity fields](velocity.md) · [Multi-proxy setup](multi-proxy.md)
 
-## Step 3 - Install on Each Paper Server
+## Step 5 - Verify the installation
 
-1. Place `telehop-paper-3.0.1.jar` in `plugins/`.
-2. Start the server once to create the split files in `plugins/TeleHop/config/`. Keep `plugins/TeleHop/storage.yml` for the backend's saved default spawn.
-3. In `config/general.yml`, set a unique backend name matching its registration on each Velocity proxy.
+Start the database, Redis if required, the proxies and the backends. Check the TeleHop startup log on each instance. On each backend run `/telehop config validate` and `/telehop commands list`. Use `/telehop spawn setdefault` in game to record that backend's default spawn. Test `/spawn` from each participating backend and, on multi-proxy networks, from each entry proxy.
 
-```yaml
-server-name: "usa"
-hub-server: "lobby"
-servers:
-  lobby: "lobby"
-  eu: "eu"
-  us: "usa"
-```
-
-4. In `config/database.yml`, enter the shared database details.
-
-```yaml
-mysql:
-  host: "127.0.0.1"
-  port: 3306
-  database: "telehop"
-  username: "telehop"
-  password: "your-secure-password"
-  pool-size: 5
-```
-
-5. Restart each server. For an existing installation, check the steps for your installed version. [Legacy upgrade guide](../LEGACY.md)
-
----
-
-## Step 4 - Restart Order
-
-1. Velocity proxy (first)
-2. All Paper backends (after Velocity is fully started)
-
----
-
-## Language Setup
-
-TeleHop supports 6 languages out of the box: English (`en`), Dutch (`nl`), German (`de`), Spanish (`es`), Chinese (`zh`), and Polish (`pl`).
-
-Language files are stored in `plugins/TeleHop/languages/` and are automatically created on first startup. You can edit them freely or create your own (e.g. `fr.yml`). For a missing key, TeleHop checks the bundled translation for the selected language and then English.
-
-### Single-Server Setup
-
-Set your language in `config/general.yml` and restart (or use `/telehop reload`):
-
-```yaml
-language: "de"   # All players see German
-```
-
-### Multi-Server Setup
-
-Each Paper server has its own `config/general.yml`, so each can use a different language:
-
-| Server | `config/general.yml` setting |
-|--------|---------------------|
-| EU     | `language: "de"`    |
-| US     | `language: "en"`    |
-| Lobby  | `language: "en"`    |
-
-The Velocity proxy has no language setting -- it doesn't send player-facing messages.
-
-### Adding a Custom Language
-
-1. Copy `plugins/TeleHop/languages/en.yml` to a new file (e.g. `fr.yml`).
-2. Translate all the values (keep the keys and MiniMessage tags intact).
-3. Set `language: "fr"` in `config/general.yml`.
-4. Run `/telehop reload` or restart.
-
----
-
-## Multi-Proxy Setup
-
-If you run multiple Velocity proxies (e.g. regional proxies for USA and EU), see the dedicated **[Multi-Proxy Setup Guide](multi-proxy.md)** for full instructions.
-
-In short, you need to:
-1. Set `multi-proxy.enabled=true` and a unique `proxy.id` on each Velocity proxy
-2. Configure Redis connection on each proxy
-3. Set `multi-proxy.enabled: true` and configure `regions` on each Paper server
-4. Restart Velocity proxies; `/telehop reload` on Paper servers
-
----
-
-## LuckPerms Setup for Player Warp Limits
-
-To give players a warp limit, assign `telehop.warps.<number>` per rank:
-
-```bash
-# Default rank gets 3 warps
-lp group default permission set telehop.warps.3
-
-# VIP gets 10
-lp group vip permission set telehop.warps.10
-
-# Staff gets unlimited
-lp group staff permission set telehop.warps.unlimited
-```
-
-Players with no `telehop.warps.*` permission cannot create warps.
-
-## Optional hub command
-
-Set `hub: true` under `features:` in `plugins/TeleHop/config/features.yml` on each Paper backend where players should use it. Keep spawn travel enabled and set the desired command names under `hub` in `config/commands.yml`. Restart Paper and check `/telehop help` for the registered name. The global destination comes from `hub-server` in `general.yml`. [Configuration and upgrade example](spawns.md#enable-the-hub-command)
+Travellers need the permissions appropriate to each command. For example, grant `telehop.warps.3` to a group that may create three personal warps. Grant `telehop.warps.unlimited` for unlimited slots. [Command reference](commands.md) · [Permissions and LuckPerms](permissions.md)

@@ -122,7 +122,7 @@ When `TRANSFER_PLAYER` includes a `postAction`, Velocity queues a `PendingAction
 | Type | Direction | Payload Keys | Description |
 |------|-----------|-------------|-------------|
 | `SPAWN_REQUEST` | Velocity → Paper | `uuid` | Teleports a player to spawn on the local server |
-| `RTP_REQUEST` | Velocity → Paper | `uuid`, `region`, `dimension` | Executes a random teleport on the local server |
+| `RTP_REQUEST` | Velocity → Paper | `uuid`, optional `region` and `dimension` | Executes RTP on the local server. Omitted selectors inherit its active profile’s defaults. |
 | `TELEPORT_TO_PLAYER` | Velocity → Paper | `actorUuid`, `targetUuid` | Teleports one player to another on the same server |
 | `EXECUTE_POST_JOIN_TELEPORT` | Velocity → Paper | `uuid`, `world`, `x`, `y`, `z`, `yaw`, `pitch` | Teleports a player to exact coordinates after server transfer |
 | `ADMIN_TP_REQUEST` | Paper → Velocity | `mode` (`SELF_TO_TARGET`, `TARGET_TO_SENDER`, `PLAYER_TO_PLAYER`), player identifiers | Admin teleport routing |
@@ -176,3 +176,17 @@ The packet envelope has no version field. New operations that depend on both end
 4. A missing capability, an expired request or a changed connection stops the transaction. A failure after the server switch can leave the player at the destination's ordinary join location. The plugin reports placement failures to the player. Redis is unnecessary for this exchange because every leg travels through the proxy the player joined.
 
 Bare regional spawn retains the 2.x `TRANSFER_PLAYER` and `SPAWN_REQUEST` packet types. Regional RTP, warps and home GUI transfers also travel through the command player's connection. Velocity delivers their post-transfer actions through the player's destination connection. Existing Redis routing remains available for network-wide actions involving players on different proxies.
+
+## V4 configurable travel commands
+
+The source resolves the configured variant, tests its permissions and probes Velocity with `capability=command-variants-v1` and the player's `uuid`. The old named-spawn capability remains separate so a rolling upgrade cannot confuse the two operations.
+
+| Message | Direction | Required data and handling |
+| --- | --- | --- |
+| `VARIANT_TRANSFER` | Backend to Velocity | `uuid`, `targetServer`, `kind` and the configured `variant` ID. The proxy verifies the live player connection, source and registered destination. |
+| `PING` | Velocity to destination | Verify the destination understands command variants on the new backend connection. |
+| `VARIANT_ARRIVAL` | Velocity to backend | `uuid`, `kind` and `variant`. The backend resolves its own configuration and checks destination permissions, world and placement. It acknowledges the outcome after placement completes. |
+
+The proxy can report a failed arrival after the player has already changed backend. Missing variants, unavailable worlds or permissions and stale connections result in a failed placement. The proxy never transmits executable commands or a permission grant. Install matching definitions on the participating backends.
+
+The decoder bounds envelopes at 32,766 UTF-8 bytes and 64 payload keys. Requests have a limited lifetime and replay cache. Pending responses must reverse the request's endpoints. Player-bound transfers also match the live connection. Redis-forwarded operations use the same payload validation and replay window. A directly authenticated backend disables the proxy channel. When deploying a proxy, restrict backend connections to the proxy hosts. [Velocity network security](https://docs.papermc.io/velocity/security/)

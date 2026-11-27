@@ -39,6 +39,12 @@ public record RedisConfig(
             sslCaCert = "";
     }
 
+    /** Keep credentials out of diagnostic messages that include this record. */
+    @Override
+    public String toString() {
+        return "RedisConfig[host=" + host + ", port=" + port + ", proxyId=" + proxyId + ", ssl=" + ssl + ", sslVerify=" + sslVerify + "]";
+    }
+
     public String crossProxyChannel() {
         return channelPrefix + ":cross-proxy";
     }

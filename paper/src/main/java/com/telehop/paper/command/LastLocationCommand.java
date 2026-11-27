@@ -1,5 +1,6 @@
 package com.telehop.paper.command;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -24,11 +25,11 @@ public class LastLocationCommand extends BaseCommand {
     @Default
     public void execute(Player player) {
         if (!plugin.isFeatureEnabled("last-location")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(player, PermissionNodes.LAST_LOCATION)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
@@ -36,7 +37,7 @@ public class LastLocationCommand extends BaseCommand {
         plugin.services().lastLocationService().find(uuid).thenAccept(opt -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (opt.isEmpty()) {
-                    player.sendMessage(plugin.msg("lastloc-no-location"));
+                    PlatformText.send(player, plugin.msg("lastloc-no-location"));
                     return;
                 }
                 LastLocationRecord record = opt.get();
@@ -55,18 +56,18 @@ public class LastLocationCommand extends BaseCommand {
                     packet.put("yaw", String.valueOf(record.yaw()));
                     packet.put("pitch", String.valueOf(record.pitch()));
                     plugin.messaging().send(player, packet);
-                    player.sendMessage(plugin.msg("lastloc-teleporting"));
+                    PlatformText.send(player, plugin.msg("lastloc-teleporting"));
                     return;
                 }
 
                 World world = plugin.versionAdapter().resolveWorld(record.world());
                 if (world == null) {
-                    player.sendMessage(plugin.msg("lastloc-world-missing"));
+                    PlatformText.send(player, plugin.msg("lastloc-world-missing"));
                     return;
                 }
                 Location target = new Location(world, record.x(), record.y(), record.z(),
                         record.yaw(), record.pitch());
-                player.sendMessage(plugin.msg("lastloc-teleporting"));
+                PlatformText.send(player, plugin.msg("lastloc-teleporting"));
                 plugin.services().teleportService().teleportBack(player, target);
             });
         });

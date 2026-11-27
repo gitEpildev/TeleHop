@@ -1,0 +1,3 @@
+# Regional hub routes for MULTI, or CUSTOM with multi-proxy enabled in general.yml.
+# Use your own region keys and exact backend names from Velocity.
+regions: {}

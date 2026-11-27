@@ -1,0 +1,14 @@
+# Enable commands.custom-names.enabled in config.yml to use the names below.
+# Restart the backend after changing registered names or aliases.
+
+lastlocation:
+  custom-name:
+    enabled: false
+    name: lastlocation
+    aliases: [lastloc, backlast, ll]
+
+forcelastloc:
+  custom-name:
+    enabled: false
+    name: forcelastloc
+    aliases: [forcell]

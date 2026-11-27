@@ -1,10 +1,7 @@
 package com.telehop.paper.service;
 
 import com.telehop.paper.NetworkPaperPlugin;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.title.Title;
-
-import java.time.Duration;
+import com.telehop.paper.platform.PlatformText;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -68,10 +65,8 @@ public class WarmupTask {
         }
         Map<String, String> countdownReplacements = Map.of("seconds", String.valueOf(remaining));
         if (showCountdown) {
-            player.showTitle(Title.title(
-                    plugin.messageService().rawFormat("countdown-title", countdownReplacements),
-                    Component.empty(),
-                    Title.Times.times(Duration.ZERO, Duration.ofMillis(1100), Duration.ZERO)));
+            String title = PlatformText.legacy(plugin.messageService().rawFormat("countdown-title", countdownReplacements));
+            player.sendTitle(title, "", 0, 22, 0);
         }
         remaining--;
     }
@@ -84,7 +79,7 @@ public class WarmupTask {
     }
 
     private void clearCountdown() {
-        if (showCountdown) player.clearTitle();
+        if (showCountdown) player.resetTitle();
     }
 
     private void stop() {

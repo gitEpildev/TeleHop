@@ -24,7 +24,19 @@ if (requestedVersion) {
   bot._client.serializer.once('data', bytes => decoder.end(bytes))
 }
 bot.on('spawn', () => console.log('CLIENT_READY'))
+bot.on('death', () => console.log('CLIENT_DEATH'))
+bot.on('respawn', () => console.log('CLIENT_RESPAWN'))
 bot.on('messagestr', text => console.log('CHAT', text))
+bot.on('message', message => {
+  const pending = [message.json]
+  while (pending.length) {
+    const part = pending.pop()
+    if (!part || typeof part !== 'object') continue
+    const event = part.click_event || part.clickEvent
+    if (event) console.log('CHAT_ACTION', event.action, event.command || event.value)
+    pending.push(...Object.values(part))
+  }
+})
 bot.on('kicked', reason => console.error('KICK', reason))
 bot.on('error', error => console.error(error))
 bot.on('end', () => process.exit(0))

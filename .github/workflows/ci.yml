@@ -127,6 +127,7 @@ jobs:
             release-bundle/telehop-paper-${{ steps.bundle.outputs.version }}.jar
             release-bundle/telehop-velocity-${{ steps.bundle.outputs.version }}.jar
             release-bundle/command-probe.jar
+            release-bundle/SHA256SUMS
           if-no-files-found: error
           retention-days: 7
 
@@ -167,13 +168,27 @@ jobs:
       bundle: ${{ needs.test.outputs.bundle }}
       version: ${{ needs.test.outputs.version }}
 
+  platforms:
+    needs: test
+    uses: ./.github/workflows/backend-platforms.yml
+    with:
+      bundle: ${{ needs.test.outputs.bundle }}
+      version: ${{ needs.test.outputs.version }}
+
+  upgrades:
+    needs: test
+    uses: ./.github/workflows/profile-upgrade.yml
+    with:
+      bundle: ${{ needs.test.outputs.bundle }}
+      version: ${{ needs.test.outputs.version }}
+
   compatibility:
     uses: ./.github/workflows/compatibility.yml
 
   readiness:
     name: Release readiness
     if: always()
-    needs: [checkstyle, compile, validate, test, compatibility, runtime]
+    needs: [checkstyle, compile, validate, test, compatibility, runtime, platforms, upgrades]
     runs-on: ubuntu-latest
     steps:
       - name: Require successful results for every build and test job

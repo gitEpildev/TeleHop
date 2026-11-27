@@ -1,5 +1,6 @@
 package com.telehop.paper.command.home;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -25,28 +26,28 @@ public class SetHomeCommand extends BaseCommand {
     @Default
     public void execute(Player player, String name) {
         if (!plugin.isFeatureEnabled("homes")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(player, PermissionNodes.SETHOME)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
         if (plugin.settings().isHomeBlockedOnCurrentServer()) {
-            player.sendMessage(plugin.msg("home-blocked-server"));
+            PlatformText.send(player, plugin.msg("home-blocked-server"));
             return;
         }
 
         if (name == null || name.isBlank()) {
-            player.sendMessage(plugin.msg("home-invalid-name"));
+            PlatformText.send(player, plugin.msg("home-invalid-name"));
             return;
         }
         if (name.length() > MAX_NAME_LENGTH) {
-            player.sendMessage(plugin.msg("home-name-too-long", Map.of("max", String.valueOf(MAX_NAME_LENGTH))));
+            PlatformText.send(player, plugin.msg("home-name-too-long", Map.of("max", String.valueOf(MAX_NAME_LENGTH))));
             return;
         }
         if (!NAME_PATTERN.matcher(name).matches()) {
-            player.sendMessage(plugin.msg("home-invalid-name"));
+            PlatformText.send(player, plugin.msg("home-invalid-name"));
             return;
         }
 
@@ -61,14 +62,14 @@ public class SetHomeCommand extends BaseCommand {
                         loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
                 plugin.services().homeService().upsert(home).thenRun(() ->
                         org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
-                                player.sendMessage(plugin.msg("home-set", Map.of("name", existing.get().name())))));
+                                PlatformText.send(player, plugin.msg("home-set", Map.of("name", existing.get().name())))));
                 return;
             }
 
             plugin.services().homeService().countByPlayer(uuid).thenAccept(count -> {
                 org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
                     if (count >= maxSlots) {
-                        player.sendMessage(plugin.msg("home-no-empty-slot"));
+                        PlatformText.send(player, plugin.msg("home-no-empty-slot"));
                         return;
                     }
                     Location loc = player.getLocation();
@@ -77,7 +78,7 @@ public class SetHomeCommand extends BaseCommand {
                             loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
                     plugin.services().homeService().upsert(home).thenRun(() ->
                             org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
-                                    player.sendMessage(plugin.msg("home-set", Map.of("name", name)))));
+                                    PlatformText.send(player, plugin.msg("home-set", Map.of("name", name)))));
                 });
             });
         });

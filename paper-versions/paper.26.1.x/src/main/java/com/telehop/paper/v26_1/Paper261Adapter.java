@@ -14,13 +14,13 @@ public final class Paper261Adapter implements VersionAdapter {
 
     @Override
     public String getWorldName(World world) {
-        return world.getKey().asString();
+        return world.getKey().toString();
     }
 
     @Override
     public World resolveWorld(String name) {
         NamespacedKey key = NamespacedKey.fromString(name);
-        World world = key == null ? null : Bukkit.getWorld(key);
+        World world = key == null ? null : worldByKey(key);
         if (world != null) return world;
         return Bukkit.getWorld(name);
     }

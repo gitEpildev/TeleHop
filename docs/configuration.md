@@ -1,49 +1,39 @@
-# Configuration Reference
+# Configuration reference
 
-## Spawn routes in 3.0.0
+Paper uses `plugins/TeleHop/`. Choose `SINGLE`, `MULTI` or `CUSTOM` in the root `config.yml`. The first start creates the three profile directories. Only the selected directory is read during normal operation. Replace `<profile>` below with its lowercase directory name.
 
-Choose a spawn by backend, world or name. On a single Paper server, players can move between loaded Multiverse worlds. On a network, Velocity connects the player to the owning backend before Paper places them at the saved location. Configure routes in `config/spawns.yml` and save destinations with `/telehop spawn set`. [Configuration, permissions and upgrade instructions](spawns.md)
+| Profile | Use |
+| --- | --- |
+| `SINGLE` | Standalone worlds, Multiverse or multiple backends on one Velocity proxy. Redis is optional infrastructure and the proxy does not connect to it in this mode. |
+| `MULTI` | Multiple Velocity proxies using Redis and a shared database. Paper selects the regional hub using configured backend membership. |
+| `CUSTOM` | Explicit control through the backend's `multi-proxy.enabled` and the proxy's `proxy.multi-proxy-enabled`. |
 
-The paths below are relative to the Paper plugin folder, `plugins/TeleHop/`.
+The root accepts `config-version: 1`, `platform.detection: AUTO`, `commands.custom-names.enabled`, `commands.additional-commands.enabled`, `migration.automatic`, `migration.backup-before-update` and `migration.backup-retention`. Automatic migration and backups default to true. New installations leave both command customisation switches off. Console detail is controlled by the booleans under `logging`: `debug`, `configuration-validation`, `migration` and `platform-detection`.
 
-| File | Purpose |
-|------|---------|
-| `config/general.yml` | Server identity, regional hubs, language, messaging and audit |
-| `config/spawns.yml` | Named destinations, world routes, backend defaults |
-| `config/commands.yml` | Command names and aliases. Restart Paper after editing |
-| `config/database.yml` | MySQL connection settings |
-| `config/features.yml` | Feature switches and optional hub command registration |
-| `config/teleport.yml` | Show-countdown, particles and sounds per teleport type |
-| `config/tpa.yml` | TPA timeout, cooldown, delay, cancel-on-move |
-| `config/rtp.yml` | RTP cooldown, delay, regions, dimensions, GUI |
-| `config/respawn.yml` | Death respawn settings, beds, anchors and excluded worlds |
-| `config/home.yml` | Homes: slots, GUI, bed colours, blocked servers, world/server colours |
-| `storage.yml` | Runtime-mutable values (spawn location). Written by the plugin. |
+| Path | Contents |
+| --- | --- |
+| `config/<profile>/general.yml` | Language, backend identity, global hub, server labels, audit and CUSTOM multi-proxy switch |
+| `config/multi/messaging.yml`, `config/custom/messaging.yml` | Plugin messaging switch, deduplication window and request timeout. In SINGLE these fields live in `config/single/general.yml`. |
+| `config/multi/regions.yml`, `config/custom/regions.yml` | Regional server membership and regional hubs. SINGLE retains the `regions` mapping in `config/single/general.yml`. |
+| `config/<profile>/spawns.yml` | Named destinations and world or backend spawn routes |
+| `config/<profile>/features.yml` | Per-backend features and optional hub registration |
+| `config/<profile>/teleport.yml` | Countdown, particles and sounds |
+| `config/<profile>/tpa.yml` | TPA timeout, cooldown, delay and movement cancellation |
+| `config/<profile>/rtp.yml` | RTP regions, worlds, search radii and menus |
+| `config/<profile>/respawn.yml` | Death respawn settings, beds, anchors and excluded worlds |
+| `config/<profile>/home.yml` | Home slots, menus and backend restrictions |
+| `config/database.yml`, `config/WIKI.md` | Shared database settings and bundled guide |
+| `commands/`, `languages/` | Command groups and messages shared across profiles |
+| `storage.yml` | This backend's runtime spawn position |
+| `migrations/` | Migration state, history, private backups and any pending journal |
 
-The split prevents `/telehop reload` or server restarts from overwriting values that were set in-game.
+### Identity, messaging and routes
 
-### Auto-Migration from Legacy `config.yml`
+Set `server-name` to the registered name of this backend behind Velocity. Fresh installs derive an initial name from the server directory and use it as the global hub. Set `hub-server` to the desired backend. `servers` maps display labels to backend names. `language` defaults to `en`. Enable `audit.enabled` to log teleport actions.
 
-Where an old `config.yml` exists and `config/general.yml` has yet to be created, Paper migrates the known settings into the split files. It preserves custom files and archives the source. A failed migration stops startup and resumes after the cause is corrected. [Legacy upgrade guide](../LEGACY.md#from-1x)
+For SINGLE edit `config/single/general.yml`. MULTI and CUSTOM use their own `messaging.yml` and `regions.yml`. Online-mode backends automatically disable the plugin channel. On an offline-mode standalone backend, set `messaging.network-enabled: false`. Behind a trusted proxy, restrict network access to the backend port. `messaging.request-timeout-ms` defaults to 10000 and `messaging.dedupe-window-ms` defaults to 30000. Set `regions.<name>.servers` and `regions.<name>.hub` for regional routing. You choose the region and backend identifiers. [Named and world routes](spawns.md)
 
-> **Reload vs Restart:** Most settings can be reloaded live with `/telehop reload`. However, **MySQL connection settings** (`database.yml`) require a full server restart -- the connection pool is created once at startup.
-
----
-
-## `config/general.yml`
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `language` | string | `"en"` | Language code. Available: `en`, `nl`, `de`, `es`, `zh`, `pl`. |
-| `server-name` | string | `"lobby"` | Name of THIS server (must match `velocity.toml`) |
-| `hub-server` | string | `"lobby"` | Server for `/spawn` (must match `velocity.toml`) |
-| `servers` | map | `{lobby: "lobby"}` | All network servers. Key = label, value = Velocity name |
-| `messaging.dedupe-window-ms` | long | `30000` | Packet dedup window (ms) |
-| `messaging.request-timeout-ms` | long | `10000` | Cross-server response timeout (ms) |
-| `audit.enabled` | boolean | `false` | Log teleports and admin actions |
-| `multi-proxy.enabled` | boolean | `false` | Enable region-aware spawn routing for multi-proxy setups |
-| `regions.<name>.servers` | list | `[]` | Servers belonging to this region |
-| `regions.<name>.hub` | string | - | Hub/lobby server for this region |
+Use `/telehop config validate` to check the candidate and `/telehop reload` or `/telehop reload config` to apply reloadable settings. Use `/telehop reload messages` to refresh only the running language and English fallback. A failed validation keeps the running configuration. Restart after changing the active profile, database, network transport or timings, server identity or registered command labels. [Migration and recovery](migration.md)
 
 ## `config/database.yml`
 
@@ -56,7 +46,7 @@ Where an old `config.yml` exists and `config/general.yml` has yet to be created,
 | `mysql.password` | string | `"change-me"` | MySQL password |
 | `mysql.pool-size` | int | `5` | Connection pool size |
 
-## `config/features.yml`
+## `config/<profile>/features.yml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -75,7 +65,7 @@ Where an old `config.yml` exists and `config/general.yml` has yet to be created,
 
 The hub switch controls command registration at startup. Upgrades inherit `hub-command.enabled` from the old `spawns.yml` when the new switch is missing. For the other switches, when a feature is `false`, its commands still exist but display "This feature is disabled on this server."
 
-## `config/teleport.yml`
+## `config/<profile>/teleport.yml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -90,7 +80,7 @@ The hub switch controls command registration at startup. Upgrades inherit `hub-c
 
 Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `back`. If a type is not specified, the `default` settings are used.
 
-## `config/tpa.yml`
+## `config/<profile>/tpa.yml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -99,7 +89,7 @@ Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `ba
 | `tpa.delay-seconds` | int | `0` | Warmup countdown after accept (0 = instant) |
 | `tpa.cancel-on-move` | boolean | `true` | Cancel warmup if acceptor moves |
 
-## `config/rtp.yml`
+## `config/<profile>/rtp.yml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
@@ -107,8 +97,12 @@ Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `ba
 | `rtp.delay-seconds` | int | `0` | Warmup countdown before RTP teleport |
 | `rtp.cancel-on-move` | boolean | `true` | Cancel warmup if player moves |
 | `rtp.max-radius` | int | `25000` | Max distance from 0,0 |
-| `rtp.regions` | map | *(see below)* | RTP region definitions |
-| `rtp.dimensions.*` | map | *(overworld, nether, end)* | World name mapping |
+| `rtp.regions` | map | `{}` | RTP region definitions |
+| `rtp.dimensions` | map | `{}` | Map dimension IDs to loaded world names. An empty map discovers the loaded worlds. |
+| `rtp.default-region` | string | First region | Region for ordinary arrivals with no region selector |
+| `rtp.default-dimension` | string | First dimension | Dimension used when a direct command or ordinary arrival omits a world and dimension |
+| `rtp.gui.select-dimension-without-region` | boolean | `true` in fresh profiles | Open the dimension selector when no regions exist. An omitted setting preserves direct travel. |
+| `rtp.gui.dimension-items.<id>` | map | Grass block labelled with the ID | Display material, name and lore for a configured dimension |
 | `rtp.gui.*` | map | - | Region and dimension picker GUI settings |
 | `rtp.gui.ping.enabled` | boolean | `true` | Show estimated destination ping on region items, refreshed twice per second while the menu is open |
 | `rtp.gui.ping.proxy-ping` | boolean | `true` | Include the proxy-to-destination leg in the estimate (measured by Velocity every 10s). `false` shows only the player's current ping |
@@ -117,29 +111,34 @@ Supported `<type>` values: `default`, `spawn`, `tpa`, `rtp`, `warp`, `home`, `ba
 
 ```yaml
 rtp:
+  default-dimension: surface
+  dimensions: {surface: woodland, caves: old_mines}
   regions:
-    us:
-      world: "world"
+    quarry:
+      world: quarry_floor
       radius: 5000
       gui:
-        material: "RED_CONCRETE"
-        name: "<red><bold>USA</bold>"
-        lore:
-          - "<gray>Random teleport on the US server"
+        material: STONE_PICKAXE
+        name: "<gold>Quarry</gold>"
+        lore: ["<gray>Find a safe spot in the quarry"]
 ```
 
-## `config/home.yml`
+## `config/<profile>/respawn.yml`
+
+Leave `random-respawn.world` empty to search the world where the player died. Enter a loaded world name or namespaced world key to select a fixed destination. A missing configured world leaves the ordinary respawn in place. `random-respawn.excluded-worlds` starts empty and accepts exact names or prefixes ending in `*`. Existing world selections and exclusions carry through an upgrade. A standalone server can use random respawn with its default identity. A backend acting as the network hub retains ordinary respawns.
+
+## `config/<profile>/home.yml`
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
 | `homes.max-slots` | int | `10` | Maximum home slots (1-10) |
 | `homes.confirm-set` | boolean | `true` | Retained for compatibility. The homes menu saves an empty slot when clicked and confirms deletion separately. |
 | `homes.gui-title` | string | `"<gradient:red:gold>Your Homes</gradient>"` | Homes GUI title (MiniMessage) |
-| `homes.gui-rows` | int | `5` | Number of rows. Beds are displayed across two rows with a blank row between them. |
+| `homes.gui-rows` | int | `5` | Inventory rows (1-6). Ten beds require at least two rows. When space permits, a blank row separates the two groups of beds. |
 | `homes.bed-set` | string | `"LIME_BED"` | Bed material for occupied home slots |
 | `homes.bed-empty` | string | `"RED_BED"` | Bed material for available (empty) slots |
 | `homes.bed-locked` | string | `"LIGHT_BLUE_BED"` | Bed material for locked (no permission) slots |
-| `homes.blocked-servers` | list | `["lobby"]` | Servers where `/sethome` is blocked (exact match). Players can still teleport to existing homes. |
+| `homes.blocked-servers` | list | `[]` | Servers where `/sethome` is blocked (exact match). Players can still teleport to existing homes. |
 | `homes.blocked-server-prefixes` | list | `[]` | Block `/sethome` on servers whose name starts with any of these strings (e.g. `"lobby"` matches `lobby-usa`, `lobby-eu`). |
 | `homes.show-location` | boolean | `true` | Show x/y/z coordinates in the home GUI tooltip |
 | `homes.world-colors.overworld` | string | `"<green>Overworld</green>"` | Display name for overworld dimensions (MiniMessage) |
@@ -165,54 +164,24 @@ Any server not listed displays in plain white.
 
 ---
 
-## Velocity `config.properties`
+## Velocity profiles
 
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `mysql.host` | string | `127.0.0.1` | MySQL server IP (must match Paper) |
-| `mysql.port` | int | `3306` | MySQL port |
-| `mysql.database` | string | `telehop` | Database name (must match Paper) |
-| `mysql.username` | string | `telehop` | MySQL username |
-| `mysql.password` | string | `change-me` | MySQL password |
-| `mysql.poolSize` | int | `5` | Connection pool size |
-| `messaging.dedupeWindowMs` | long | `30000` | Packet dedup window (ms) |
-| `messaging.requestTimeoutMs` | long | `10000` | Request timeout (ms) |
-| `servers.hub` | string | `lobby` | Hub server name |
-| `servers.backends` | string | `lobby` | Comma-separated server list |
-| `proxy.id` | string | `proxy-1` | Unique ID for this proxy (multi-proxy only) |
-| `multi-proxy.enabled` | boolean | `false` | Enable cross-proxy communication via Redis |
-| `multi-proxy.global-player-list` | boolean | `true` | Include remote proxy players in lists |
-| `multi-proxy.cross-proxy-timeout-ms` | long | `15000` | Timeout for cross-proxy requests |
-| `redis.host` | string | `127.0.0.1` | Redis host (multi-proxy only) |
-| `redis.port` | int | `6379` | Redis port |
-| `redis.password` | string | - | Redis auth password |
-| `redis.channel-prefix` | string | `telehop` | Redis channel prefix |
-| `redis.ssl` | boolean | `false` | Connect to Redis over TLS (rediss) |
-| `redis.ssl-verify` | boolean | `true` | Verify the server certificate and hostname |
-| `redis.ssl-ca-cert` | string | - | Path to a PEM CA certificate for self-signed setups |
-
----
+The proxy has a separate root selector, with shared database and Redis settings. [Velocity configuration](velocity.md)
 
 ## Paper `storage.yml`
 
-Use `/telehop spawn setdefault` in game to save the current backend spawn and publish it to the shared directory.
-
-| Key | Type | Default | Description |
-|-----|------|---------|-------------|
-| `spawn.world` | string | `"world"` | World name for spawn |
-| `spawn.x` | double | `0.5` | Spawn X |
-| `spawn.y` | double | `100.0` | Spawn Y |
-| `spawn.z` | double | `0.5` | Spawn Z |
-| `spawn.yaw` | double | `0.0` | Spawn yaw |
-| `spawn.pitch` | double | `0.0` | Spawn pitch |
+On a new backend the saved default is initialised from the first loaded world's actual spawn. TeleHop records the world, X, Y, Z, yaw and pitch under `spawn`. Existing `storage.yml` or a migrated legacy spawn takes precedence. Use `/telehop spawn setdefault` in game to replace this location and publish the new coordinates to the shared directory.
 
 ## Command names and aliases
 
-Edit `plugins/TeleHop/config/commands.yml` on each Paper backend and restart it. Each key identifies a built-in command. Its first list entry is the primary name and subsequent entries are optional aliases.
+Set `commands.custom-names.enabled: true` in the root selector. Under `commands/`, edit the appropriate group's built-in command key and enable its `custom-name`. For example, in `commands/teleport.yml`:
 
 ```yaml
-tp: [networktp, ntp]
-pwarp: [mywarp]
+tp:
+  custom-name:
+    enabled: true
+    name: networktp
+    aliases: [ntp]
 ```
 
-This registers `/networktp` and `/ntp`, leaving `/tp` available to another plugin. The player warp command uses only `/mywarp`. Omitted keys inherit the bundled defaults. Use unique lowercase labels containing letters, digits, hyphens or underscores. TeleHop reports unknown keys, invalid labels and duplicates during startup.
+Restart the backend after changing registered names or aliases. Permissions follow the original action. `/telehop` remains available for administrative recovery. [Command reference](commands.md)

@@ -1,5 +1,7 @@
 package com.telehop.paper;
 
+import com.telehop.paper.platform.PlatformText;
+import co.aikar.commands.BukkitCommandManager;
 import co.aikar.commands.PaperCommandManager;
 import com.telehop.common.db.DatabaseManager;
 import com.telehop.common.db.HomeRepository;
@@ -10,7 +12,6 @@ import com.telehop.common.db.TpaRepository;
 import com.telehop.common.db.WarpRepository;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
-import com.telehop.common.model.PlayerWarpRecord;
 import com.telehop.common.service.HomeService;
 import com.telehop.common.service.LastLocationService;
 import com.telehop.common.service.PlayerServerCache;
@@ -22,6 +23,7 @@ import com.telehop.common.service.WarpCache;
 import com.telehop.common.service.WarpService;
 import com.telehop.paper.command.BackCommand;
 import com.telehop.paper.command.RtpCommand;
+import com.telehop.paper.command.TravelCommandRegistry;
 import com.telehop.paper.command.SpawnCommand;
 import com.telehop.paper.command.HubCommand;
 import com.telehop.paper.config.SpawnRoutes;
@@ -53,7 +55,9 @@ import com.telehop.paper.command.warp.PlayerWarpCommand;
 import com.telehop.paper.command.warp.SetWarpCommand;
 import com.telehop.paper.command.warp.WarpCommand;
 import com.telehop.paper.command.warp.WarpsCommand;
-import com.telehop.paper.config.ConfigMigrator;
+import com.telehop.common.config.DeploymentConfig;
+import com.telehop.paper.config.PaperProfiles;
+import com.telehop.paper.config.LanguageFiles;
 import com.telehop.paper.config.CommandNames;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.config.StorageManager;
@@ -78,78 +82,40 @@ import com.telehop.paper.service.TpaRuntimeManager;
 import com.telehop.paper.version.VersionAdapter;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
-import org.bukkit.configuration.InvalidConfigurationException;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Performs the full plugin startup sequence and constructs the {@link ServiceRegistry}.
  * Keeps {@link NetworkPaperPlugin} thin, lifecycle only.
  */
 public final class Bootstrap {
-    private static final List<String> LANGUAGE_CODES = List.of("en", "nl", "de", "es", "zh", "pl");
     private static final MiniMessage MINI = MiniMessage.miniMessage();
 
     private Bootstrap() {}
 
-    /**
-     * Initialises every service, registers commands, listeners, and scheduled tasks.
-     *
-     * @return a fully wired {@link ServiceRegistry}, or {@code null} if startup fails
-     */
-    private static final String[] CONFIG_TEMPLATES = {
-            "config/general.yml", "config/database.yml",
-            "config/teleport.yml", "config/tpa.yml", "config/rtp.yml",
-            "config/spawns.yml", "config/home.yml", "config/respawn.yml", "config/WIKI.md"
-    };
-
     public static ServiceRegistry init(NetworkPaperPlugin plugin) {
+        VersionAdapter versionAdapter = plugin.platform().version();
         printBanner(plugin);
-
-        VersionAdapter versionAdapter = resolveVersionAdapter(plugin);
-        if (versionAdapter == null) {
-            plugin.getLogger().severe("Unsupported Minecraft version! TeleHop supports Paper 1.21.x and 26.1.x.");
-            Bukkit.getPluginManager().disablePlugin(plugin);
-            return null;
-        }
         plugin.setVersionAdapter(versionAdapter);
 
-        if (ConfigMigrator.needsMigration(plugin)) {
-            try {
-                ConfigMigrator.migrate(plugin);
-            } catch (IOException | InvalidConfigurationException ex) {
-                plugin.getLogger().log(Level.SEVERE, "Could not migrate the legacy Paper configuration", ex);
-                Bukkit.getPluginManager().disablePlugin(plugin);
-                return null;
-            }
-        }
-        initConfigFiles(plugin);
-        SpawnRoutes routes = SpawnRoutes.load(plugin.getDataFolder());
-        try {
-            ConfigMigrator.completeCommandSettings(plugin, routes.legacyHubCommand());
-            ConfigMigrator.refreshBundledGuide(plugin);
-        } catch (IOException | InvalidConfigurationException ex) {
-            throw new IllegalStateException("Cannot upgrade command or feature configuration", ex);
-        }
-        PaperSettings settings = PaperSettings.load(plugin);
+        DeploymentConfig configuration = PaperProfiles.initialise(plugin);
+        plugin.setConfiguration(configuration);
+        if (configuration.logPlatform()) plugin.getLogger().info("Platform detection completed: " + plugin.platform().description());
+        if (configuration.debug()) plugin.getLogger().info("Active configuration directory: " + plugin.profileDirectory());
+        plugin.getLogger().info("Deployment profile: " + configuration.mode() + " (" + plugin.profileDirectory() + ")");
+        SpawnRoutes routes = SpawnRoutes.loadProfile(plugin.profileDirectory());
+        PaperSettings settings = PaperSettings.load(plugin.getDataFolder().toPath(), configuration);
         boolean hubCommand = settings.isFeatureEnabled("hub");
-        plugin.setCommandNames(CommandNames.load(plugin, hubCommand));
+        plugin.setCommandNames(CommandNames.load(plugin, settings, plugin.profileDirectory().toFile(),
+                configuration.customNames(), configuration.additionalCommands()));
+        TravelCommandRegistry.checkOwnership(plugin, plugin.commandNames());
         ServiceRegistry reg = new ServiceRegistry();
         reg.setSettings(settings);
 
-        initLanguageFiles(plugin);
-        reg.setMessageService(buildMessageService(plugin, settings));
-        reg.setPermissionService(new PermissionService());
+        reg.setMessageService(buildMessageService(plugin, settings, plugin.commandNames()));
+        reg.setPermissionService(PermissionService.create(plugin));
         reg.setAuditLogger(new AuditLogger(plugin, settings.auditEnabled()));
         reg.setPendingTeleportManager(new PendingTeleportManager());
         reg.setRtpManager(new RtpManager(plugin));
@@ -166,7 +132,7 @@ public final class Bootstrap {
 
         DatabaseManager db;
         try {
-            db = DatabaseManager.open(settings.databaseConfig());
+            db = DatabaseManager.start(settings.databaseConfig(), plugin.getLogger());
         } catch (Exception e) {
             plugin.getLogger().severe("Failed to initialize database: " + e.getMessage());
             Bukkit.getPluginManager().disablePlugin(plugin);
@@ -195,7 +161,7 @@ public final class Bootstrap {
 
         PaperMessagingManager messaging = new PaperMessagingManager(plugin, settings.dedupeWindowMs(),
                 settings.requestTimeoutMs(), () -> reg.settings().serverName());
-        messaging.register();
+        messaging.register(settings.networkMessagingEnabled());
         messaging.setHandler(new PacketHandler(plugin, reg));
         reg.setMessaging(messaging);
 
@@ -205,11 +171,19 @@ public final class Bootstrap {
         registerCommands(plugin, reg);
         startScheduledTasks(plugin, reg);
 
-        net.kyori.adventure.text.logger.slf4j.ComponentLogger clog = plugin.getComponentLogger();
-        clog.info(MINI.deserialize(
-                "<green>Startup complete! <gray>Server: <aqua>" + reg.settings().serverName()
-                        + " <gray>| Adapter: <aqua>" + versionAdapter.getClass().getSimpleName()
-                        + " <gray>| Language: <aqua>" + reg.settings().language()));
+        db.schemaReady().whenComplete((ready, failure) -> {
+            if (!plugin.isEnabled()) return;
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                if (failure != null) {
+                    plugin.getLogger().severe("Database startup failed. Check config/database.yml, connectivity and schema permissions.");
+                    Bukkit.getPluginManager().disablePlugin(plugin);
+                } else {
+                    plugin.getLogger().info("Startup complete! Server: " + reg.settings().serverName()
+                            + " | Adapter: " + versionAdapter.getClass().getSimpleName()
+                            + " | Language: " + reg.settings().language());
+                }
+            });
+        });
 
         return reg;
     }
@@ -219,75 +193,90 @@ public final class Bootstrap {
         if (reg.messaging() != null) reg.messaging().shutdown();
         if (reg.databaseManager() != null) reg.databaseManager().shutdown();
 
-        net.kyori.adventure.text.logger.slf4j.ComponentLogger clog = plugin.getComponentLogger();
-        clog.info(MINI.deserialize("<red>TeleHop <gray>has been <red>disabled<gray>. Goodbye!"));
+        plugin.getLogger().info("TeleHop has been disabled.");
+    }
+
+    private record Candidate(DeploymentConfig deployment, PaperSettings settings, SpawnRoutes routes,
+                             CommandNames names, MessageService messages) {}
+
+    /** Inspect all reloadable files without changing live services or publishing routes. */
+    public static void validateConfiguration(NetworkPaperPlugin plugin) {
+        candidate(plugin);
+    }
+
+    /** Replace only the loaded locale and fallback after both pass validation. */
+    public static void reloadMessages(NetworkPaperPlugin plugin) {
+        if (plugin.reloadInProgress()) throw new IllegalArgumentException("A configuration reload is already running");
+        var messages = buildMessageService(plugin, plugin.settings(), plugin.commandNames());
+        plugin.services().setMessageService(messages);
+        plugin.services().teleportService().setMessageService(messages);
+    }
+
+    private static Candidate candidate(NetworkPaperPlugin plugin) {
+        var data = plugin.getDataFolder().toPath();
+        final DeploymentConfig deployment;
+        try { deployment = DeploymentConfig.read(data); }
+        catch (IOException ex) { throw new IllegalArgumentException("Cannot read config.yml", ex); }
+        if (deployment.mode() != plugin.configuration().mode()) throw new IllegalArgumentException("Restart the backend after changing deployment mode");
+        var settings = PaperSettings.load(data, deployment);
+        var current = plugin.settings();
+        if (!current.databaseConfig().equals(settings.databaseConfig()) || !current.serverName().equals(settings.serverName())
+                || current.requestTimeoutMs() != settings.requestTimeoutMs() || current.dedupeWindowMs() != settings.dedupeWindowMs()
+                || current.networkMessagingEnabled() != settings.networkMessagingEnabled() || current.multiProxyEnabled() != settings.multiProxyEnabled()) {
+            throw new IllegalArgumentException("Restart the backend to apply database, identity or messaging changes");
+        }
+        var routes = SpawnRoutes.loadProfile(plugin.profileDirectory());
+        var names = CommandNames.load(plugin, settings, plugin.profileDirectory().toFile(),
+                deployment.customNames(), deployment.additionalCommands(), plugin.services().spawns().hubCommand());
+        TravelCommandRegistry.checkOwnership(plugin, names);
+        if (!plugin.commandNames().sameRegistration(names)) throw new IllegalArgumentException("Restart the backend to register changed command names or aliases");
+        return new Candidate(deployment, settings, routes, names, buildMessageService(plugin, settings, names));
+    }
+
+    /** Validate command files against the running infrastructure before swapping their immutable snapshot. */
+    public static void commandRules(NetworkPaperPlugin plugin, boolean apply) {
+        if (apply && plugin.reloadInProgress()) throw new IllegalArgumentException("A configuration reload is already running");
+        final DeploymentConfig deployment;
+        try { deployment = DeploymentConfig.read(plugin.getDataFolder().toPath()); }
+        catch (IOException ex) { throw new IllegalArgumentException("Cannot read config.yml", ex); }
+        if (deployment.mode() != plugin.configuration().mode()) throw new IllegalArgumentException("Restart after changing the deployment mode");
+        var next = CommandNames.load(plugin, plugin.settings(), plugin.profileDirectory().toFile(),
+                deployment.customNames(), deployment.additionalCommands(), plugin.services().spawns().hubCommand());
+        TravelCommandRegistry.checkOwnership(plugin, next);
+        if (apply) {
+            if (!plugin.commandNames().sameRegistration(next)) throw new IllegalArgumentException("Restart to register changed command labels");
+            plugin.setCommandNames(next);
+            plugin.getServer().getOnlinePlayers().forEach(Player::updateCommands);
+        }
     }
 
     public static java.util.concurrent.CompletableFuture<Void> reload(NetworkPaperPlugin plugin, ServiceRegistry reg) {
-        SpawnRoutes routes = SpawnRoutes.load(plugin.getDataFolder());
-        PaperSettings settings = PaperSettings.load(plugin);
-        initLanguageFiles(plugin);
-        var messages = buildMessageService(plugin, settings);
-        return reg.spawns().apply(settings.serverName(), routes, null).thenRun(() -> {
-            reg.setSettings(settings);
-            reg.setMessageService(messages);
+        Candidate next = candidate(plugin);
+        return reg.spawns().apply(next.settings().serverName(), next.routes(), null).thenRun(() -> {
+            plugin.setConfiguration(next.deployment());
+            plugin.setCommandNames(next.names());
+            reg.setSettings(next.settings());
+            reg.setMessageService(next.messages());
+            reg.setAuditLogger(new AuditLogger(plugin, next.settings().auditEnabled()));
+            var effects = new TeleportEffectPlayer(next.settings());
+            reg.setTeleportEffectPlayer(effects);
+            reg.teleportService().wire(next.messages(), reg.auditLogger(), reg.rtpManager(), effects, reg.backLocationManager(), next.settings().serverName());
             reg.warpService().refreshCache();
-            reg.setAuditLogger(new AuditLogger(plugin, settings.auditEnabled()));
-            plugin.getLogger().info("Reloaded TeleHop settings and spawn destinations.");
+            plugin.getServer().getOnlinePlayers().forEach(Player::updateCommands);
+            if (next.deployment().logValidation()) plugin.getLogger().info("Reloaded TeleHop settings and spawn destinations.");
         });
     }
 
-    // ── internal helpers ─────────────────────────────────────────────
-
-    static void initConfigFiles(NetworkPaperPlugin plugin) {
-        for (String template : CONFIG_TEMPLATES) {
-            File target = new File(plugin.getDataFolder(), template);
-            if (!target.exists()) {
-                target.getParentFile().mkdirs();
-                plugin.saveResource(template, false);
-            }
-        }
-    }
-
-    static void initLanguageFiles(NetworkPaperPlugin plugin) {
-        File langDir = new File(plugin.getDataFolder(), "languages");
-        langDir.mkdirs();
-        for (String code : LANGUAGE_CODES) {
-            File target = new File(langDir, code + ".yml");
-            if (!target.exists()) {
-                plugin.saveResource("languages/" + code + ".yml", false);
-            }
-        }
-    }
-
-    static MessageService buildMessageService(NetworkPaperPlugin plugin, PaperSettings settings) {
-        String lang = settings.language();
-        File langDir = new File(plugin.getDataFolder(), "languages");
-        File selected = new File(langDir, lang + ".yml");
-        if (!selected.exists()) {
-            plugin.getLogger().warning("Language '" + lang + "' not found, falling back to English.");
-            selected = new File(langDir, "en.yml");
-        }
-        FileConfiguration langFile = YamlConfiguration.loadConfiguration(selected);
-        try (var stream = plugin.getResource("languages/" + lang + ".yml")) {
-            if (stream != null) {
-                try (var reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
-                    langFile.setDefaults(YamlConfiguration.loadConfiguration(reader));
-                }
-            }
-        } catch (IOException ex) { throw new IllegalStateException("Cannot read bundled translation", ex); }
-        FileConfiguration fallback = YamlConfiguration.loadConfiguration(new File(langDir, "en.yml"));
-        // Existing installations keep customised language files across upgrades.
-        try (var reader = new InputStreamReader(plugin.getResource("languages/en.yml"), StandardCharsets.UTF_8)) {
-            fallback.setDefaults(YamlConfiguration.loadConfiguration(reader));
-        } catch (IOException e) {
-            throw new IllegalStateException("Cannot read bundled English messages", e);
-        }
-        return new MessageService(langFile, fallback, plugin.commandNames());
+    static MessageService buildMessageService(NetworkPaperPlugin plugin, PaperSettings settings, CommandNames names) {
+        var data = plugin.getDataFolder().toPath();
+        var fallback = LanguageFiles.load(data, "en", plugin);
+        var messages = settings.language().equals("en") ? fallback : LanguageFiles.load(data, settings.language(), plugin);
+        return new MessageService(messages, fallback, names);
     }
 
     private static void registerCommands(NetworkPaperPlugin plugin, ServiceRegistry reg) {
-        PaperCommandManager manager = new PaperCommandManager(plugin);
+        BukkitCommandManager manager = plugin.platform().capabilities().asynchronousTeleport()
+                ? new PaperCommandManager(plugin) : new BukkitCommandManager(plugin);
         manager.enableUnstableAPI("brigadier");
         manager.enableUnstableAPI("help");
         plugin.commandNames().register(manager.getCommandReplacements());
@@ -308,49 +297,50 @@ public final class Bootstrap {
                 c -> reg.networkPlayerNameCache().list());
         manager.getCommandCompletions().registerCompletion("warps",
                 c -> reg.warpService().listCached().stream()
+                        .filter(warp -> c.getPlayer() != null && reg.permissionService().warp(c.getPlayer(), warp, reg.settings().serverName()))
                         .map(com.telehop.common.model.WarpRecord::name).toList());
-        manager.getCommandCompletions().registerCompletion("playerwarps", c -> {
-            if (c.getPlayer() != null) {
-                return reg.playerWarpService()
-                        .listByOwner(c.getPlayer().getUniqueId().toString())
-                        .join().stream().map(PlayerWarpRecord::name).toList();
-            }
-            return List.of();
-        });
-
-        manager.registerCommand(new SpawnCommand(plugin));
-        if (reg.spawns().hubCommand()) manager.registerCommand(new HubCommand(plugin));
-        manager.registerCommand(new WarpCommand(plugin));
-        manager.registerCommand(new SetWarpCommand(plugin));
-        manager.registerCommand(new DelWarpCommand(plugin));
-        manager.registerCommand(new WarpsCommand(plugin));
-        manager.registerCommand(new TpaCommand(plugin));
-        manager.registerCommand(new TpaHereCommand(plugin));
-        manager.registerCommand(new TpaAcceptCommand(plugin));
-        manager.registerCommand(new TpaDenyCommand(plugin));
-        manager.registerCommand(new TpaCancelCommand(plugin));
-        manager.registerCommand(new AdminTeleportCommand(plugin));
-        manager.registerCommand(new TpHereAdminCommand(plugin));
-        manager.registerCommand(new RtpCommand(plugin));
-        manager.registerCommand(new PlayerWarpCommand(plugin));
-        manager.registerCommand(new TeleHopCommand(plugin));
-        manager.registerCommand(new ListWarpsCommand(plugin));
-        manager.registerCommand(new ForceDelWarpCommand(plugin));
-        manager.registerCommand(new HomeCommand(plugin));
-        manager.registerCommand(new SetHomeCommand(plugin));
-        manager.registerCommand(new DelHomeCommand(plugin));
-        manager.registerCommand(new BackCommand(plugin));
-        manager.registerCommand(new TpaToggleCommand(plugin));
-        manager.registerCommand(new ForceDelHomeCommand(plugin));
-        manager.registerCommand(new LastLocationCommand(plugin));
-        manager.registerCommand(new ForceLastLocCommand(plugin));
-        manager.registerCommand(new ForceSetHomeCommand(plugin));
-        manager.registerCommand(new ListHomesCommand(plugin));
-        manager.registerCommand(new PlayerInfoCommand(plugin));
+        try {
+            manager.registerCommand(new SpawnCommand(plugin));
+            if (reg.spawns().hubCommand()) manager.registerCommand(new HubCommand(plugin));
+            manager.registerCommand(new WarpCommand(plugin));
+            manager.registerCommand(new SetWarpCommand(plugin));
+            manager.registerCommand(new DelWarpCommand(plugin));
+            manager.registerCommand(new WarpsCommand(plugin));
+            manager.registerCommand(new TpaCommand(plugin));
+            manager.registerCommand(new TpaHereCommand(plugin));
+            manager.registerCommand(new TpaAcceptCommand(plugin));
+            manager.registerCommand(new TpaDenyCommand(plugin));
+            manager.registerCommand(new TpaCancelCommand(plugin));
+            manager.registerCommand(new AdminTeleportCommand(plugin));
+            manager.registerCommand(new TpHereAdminCommand(plugin));
+            manager.registerCommand(new RtpCommand(plugin));
+            manager.registerCommand(new PlayerWarpCommand(plugin));
+            manager.registerCommand(new TeleHopCommand(plugin));
+            manager.registerCommand(new ListWarpsCommand(plugin));
+            manager.registerCommand(new ForceDelWarpCommand(plugin));
+            manager.registerCommand(new HomeCommand(plugin));
+            manager.registerCommand(new SetHomeCommand(plugin));
+            manager.registerCommand(new DelHomeCommand(plugin));
+            manager.registerCommand(new BackCommand(plugin));
+            manager.registerCommand(new TpaToggleCommand(plugin));
+            manager.registerCommand(new ForceDelHomeCommand(plugin));
+            manager.registerCommand(new LastLocationCommand(plugin));
+            manager.registerCommand(new ForceLastLocCommand(plugin));
+            manager.registerCommand(new ForceSetHomeCommand(plugin));
+            manager.registerCommand(new ListHomesCommand(plugin));
+            manager.registerCommand(new PlayerInfoCommand(plugin));
+            TravelCommandRegistry.register(plugin, manager, reg.playerWarpService());
+        } catch (RuntimeException error) {
+            manager.unregisterCommands();
+            throw error;
+        }
     }
 
     private static void startScheduledTasks(NetworkPaperPlugin plugin, ServiceRegistry reg) {
-        Bukkit.getScheduler().runTaskTimer(plugin, reg.spawns()::refreshSuggestions, 1L, 200L);
+        Bukkit.getScheduler().runTaskTimer(plugin, () -> {
+            reg.spawns().refreshSuggestions();
+            reg.rtpManager().expire();
+        }, 1L, 200L);
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () ->
                 reg.tpaService().expiredNow(reg.settings().tpaTimeoutSeconds()).thenAccept(expired -> {
                     for (var request : expired) {
@@ -361,9 +351,9 @@ public final class Bootstrap {
                         Bukkit.getScheduler().runTask(plugin, () -> {
                             for (var request : expired) {
                                 Player sender = Bukkit.getPlayer(request.senderUuid());
-                                if (sender != null) sender.sendMessage(plugin.msg("request-expired"));
+                                if (sender != null) PlatformText.send(sender, plugin.msg("request-expired"));
                                 Player target = Bukkit.getPlayer(request.targetUuid());
-                                if (target != null) target.sendMessage(plugin.msg("request-expired"));
+                                if (target != null) PlatformText.send(target, plugin.msg("request-expired"));
                             }
                         });
                     }
@@ -377,60 +367,21 @@ public final class Bootstrap {
     }
 
     private static void printBanner(NetworkPaperPlugin plugin) {
-        net.kyori.adventure.text.logger.slf4j.ComponentLogger log = plugin.getComponentLogger();
-        log.info(MINI.deserialize(""));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ████████╗███████╗██╗     ███████╗██╗  ██╗ ██████╗ ██████╗</gradient>"));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ╚══██╔══╝██╔════╝██║     ██╔════╝██║  ██║██╔═══██╗██╔══██╗</gradient>"));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   █████╗  ██║     █████╗  ███████║██║   ██║██████╔╝</gradient>"));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ██╔══╝  ██║     ██╔══╝  ██╔══██║██║   ██║██╔═══╝</gradient>"));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ███████╗███████╗███████╗██║  ██║╚██████╔╝██║</gradient>"));
-        log.info(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝</gradient>"));
-        log.info(MINI.deserialize(""));
-        log.info(MINI.deserialize("  <aqua>Version: <white>" + plugin.getPluginMeta().getVersion()
-                + "  <gray>|  <aqua>Platform: <white>Paper"
-                + "  <gray>|  <aqua>MC: <white>" + detectMinecraftVersion(plugin)));
-        log.info(MINI.deserialize("  <aqua>Author: <white>Epildev  <gray>|  <aqua>Website: <white>developer.epildevconnect.uk"));
-        log.info(MINI.deserialize(""));
+        java.util.function.Consumer<net.kyori.adventure.text.Component> log = component ->
+                plugin.getServer().getConsoleSender().sendMessage(com.telehop.paper.platform.PlatformText.legacy(component));
+        log.accept(MINI.deserialize(""));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ████████╗███████╗██╗     ███████╗██╗  ██╗ ██████╗ ██████╗</gradient>"));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>  ╚══██╔══╝██╔════╝██║     ██╔════╝██║  ██║██╔═══██╗██╔══██╗</gradient>"));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   █████╗  ██║     █████╗  ███████║██║   ██║██████╔╝</gradient>"));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ██╔══╝  ██║     ██╔══╝  ██╔══██║██║   ██║██╔═══╝</gradient>"));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ██║   ███████╗███████╗███████╗██║  ██║╚██████╔╝██║</gradient>"));
+        log.accept(MINI.deserialize("<gradient:#00d4ff:#a855f7:#ff6b9d>     ╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝ ╚═════╝ ╚═╝</gradient>"));
+        log.accept(MINI.deserialize(""));
+        log.accept(MINI.deserialize("  <aqua>Version: <white>" + plugin.getDescription().getVersion()
+                + "  <gray>|  <aqua>Platform: <white>" + plugin.platform().implementation()
+                + "  <gray>|  <aqua>MC: <white>" + plugin.getServer().getBukkitVersion().split("-", 2)[0]));
+        log.accept(MINI.deserialize("  <aqua>Author: <white>Epildev  <gray>|  <aqua>Website: <white>developer.epildevconnect.uk"));
+        log.accept(MINI.deserialize(""));
     }
 
-    private static String detectMinecraftVersion(NetworkPaperPlugin plugin) {
-        try {
-            return (String) plugin.getServer().getClass()
-                    .getMethod("getMinecraftVersion").invoke(plugin.getServer());
-        } catch (Exception e) {
-            String ver = Bukkit.getVersion();
-            Matcher m = Pattern.compile("\\(MC: ([\\d.]+)\\)").matcher(ver);
-            if (m.find()) {
-                return m.group(1);
-            }
-            return Bukkit.getBukkitVersion().split("-")[0];
-        }
-    }
-
-    private static VersionAdapter resolveVersionAdapter(NetworkPaperPlugin plugin) {
-        String mcVersion = detectMinecraftVersion(plugin);
-        plugin.getLogger().info("Minecraft version: " + mcVersion);
-
-        if (mcVersion.startsWith("26.")) {
-            try {
-                return (VersionAdapter) Class.forName("com.telehop.paper.v26_1.Paper261Adapter")
-                        .getDeclaredConstructor().newInstance();
-            } catch (ReflectiveOperationException e) {
-                plugin.getLogger().severe("Failed to load Paper 26.1.x adapter: " + e.getMessage());
-                return null;
-            }
-        }
-
-        if (mcVersion.startsWith("1.21")) {
-            try {
-                return (VersionAdapter) Class.forName("com.telehop.paper.v1_21.Paper121Adapter")
-                        .getDeclaredConstructor().newInstance();
-            } catch (ReflectiveOperationException e) {
-                plugin.getLogger().severe("Failed to load Paper 1.21.x adapter: " + e.getMessage());
-                return null;
-            }
-        }
-
-        return null;
-    }
 }

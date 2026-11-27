@@ -31,6 +31,7 @@ class TransferCleanupTest {
         var player = mock(Player.class);
         var destination = mock(RegisteredServer.class);
         var request = mock(ConnectionRequestBuilder.class);
+        when(player.getUniqueId()).thenReturn(id);
         when(proxy.getPlayer(id)).thenReturn(Optional.of(player));
         when(proxy.getServer("hub")).thenReturn(Optional.of(destination));
         when(player.createConnectionRequest(destination)).thenReturn(request);

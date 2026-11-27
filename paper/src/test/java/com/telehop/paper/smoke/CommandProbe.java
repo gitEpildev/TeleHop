@@ -7,11 +7,19 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 /** Companion plugin used only by the packaged Paper server smoke tests. */
 public final class CommandProbe extends JavaPlugin {
+    private org.bukkit.command.CommandMap commandMap() {
+        try {
+            return (org.bukkit.command.CommandMap) getServer().getClass().getMethod("getCommandMap").invoke(getServer());
+        } catch (ReflectiveOperationException error) {
+            throw new AssertionError("This server does not expose a command map for verification", error);
+        }
+    }
+
     @Override
     public void onEnable() {
         Bukkit.getScheduler().runTask(this, () -> {
             boolean custom = Boolean.getBoolean("telehop.test.custom");
-            var commands = Bukkit.getCommandMap();
+            var commands = commandMap();
             var telehop = Bukkit.getPluginManager().getPlugin("TeleHop");
             if (telehop == null || !telehop.isEnabled()) throw new AssertionError("TeleHop failed to enable");
             for (String name : custom ? new String[]{"networktp", "ntp", "lobby", "hub"} : new String[]{"tp"}) {

@@ -1,5 +1,6 @@
 package com.telehop.paper.command.warp;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandCompletion;
@@ -24,16 +25,16 @@ public class DelWarpCommand extends BaseCommand {
     @CommandCompletion("@warps")
     public void execute(Player player, String name) {
         if (!plugin.isFeatureEnabled("warps")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return;
         }
-        plugin.warpService().find(name).thenAccept(opt -> {
+        plugin.warpService().find(name).thenAcceptAsync(opt -> {
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("warp-not-found", Map.of("name", name)));
+                PlatformText.send(player, plugin.msg("warp-not-found", Map.of("name", name)));
                 return;
             }
-            plugin.warpService().delete(name).thenRun(() ->
-                    player.sendMessage(plugin.msg("warp-deleted", Map.of("name", name))));
-        });
+            plugin.warpService().delete(name).thenRunAsync(() ->
+                    PlatformText.send(player, plugin.msg("warp-deleted", Map.of("name", name))), plugin::onMainThread);
+        }, plugin::onMainThread);
     }
 }

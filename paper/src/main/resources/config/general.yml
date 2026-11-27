@@ -1,79 +1,13 @@
-# ═══════════════════════════════════════════════════════════════════════
-#  TeleHop - General Configuration
-# ═══════════════════════════════════════════════════════════════════════
-#  Changes here take effect after /telehop reload (no restart needed).
-
-# ── Language ──────────────────────────────────────────────────────────
-#  Which language file to use for player-facing messages.
-#  Available: en, nl, de, es, zh, pl
-#  Custom languages: add a <code>.yml file in plugins/TeleHop/languages/
-#  Any missing key automatically falls back to English.
-language: "en"
-
-# ── Server Identity ───────────────────────────────────────────────────
-#  server-name - MUST match the name registered in velocity.toml [servers].
-#                Each Paper server needs a unique name.
-#  hub-server  - The default server players teleport to when they run /spawn.
-#                Must also match a velocity.toml server name.
-#                When regions are configured (see below), this is used as
-#                the fallback hub if the server isn't in any region.
-server-name: "lobby"
-hub-server: "lobby"
-
-# ── Server List ───────────────────────────────────────────────────────
-#  List every Paper server running TeleHop on your network.
-#  Format:  <label>: "<velocity-name>"
-#  The label is for display; the value must match velocity.toml exactly.
-servers:
-  lobby: "lobby"
-  # eu: "eu"
-  # us: "usa"
-
-# ── Multi-Proxy Support ──────────────────────────────────────────────
-#  Set to true when running multiple Velocity proxies (e.g. a USA and EU
-#  proxy). This enables region-aware spawn routing so /spawn sends players
-#  to their regional lobby instead of a single global hub.
-#
-#  When false (default), the fallback for /spawn is hub-server above.
-#  Local and per-world routes in spawns.yml take precedence.
+# Backend identity and player-facing language for this profile.
+# On first installation TeleHop fills in the server and hub names from the server folder.
+# Behind Velocity set server-name to this backend's registered name and hub-server to your hub.
+language: en
+server-name: ""
+hub-server: ""
+# Optional labels mapped to registered backend names.
+servers: {}
+# CUSTOM honours this flag. SINGLE and MULTI select their own network topology.
 multi-proxy:
   enabled: false
-
-# ── Region Mapping ───────────────────────────────────────────────────
-#  Groups servers into regions, each with its own hub (lobby).
-#  Used for region-aware /spawn routing when multi-proxy is enabled.
-#
-#  When a player runs /spawn, TeleHop checks which region their current
-#  server belongs to and sends them to that region's hub.
-#
-#  If the server isn't in any region, falls back to hub-server above.
-#
-#  Example for a USA + EU setup:
-#    regions:
-#      usa:
-#        servers:
-#          - usa
-#          - lobby-usa
-#        hub: lobby-usa
-#      eu:
-#        servers:
-#          - eu
-#          - lobby-eu
-#        hub: lobby-eu
-regions: {}
-
-# ── Cross-Server Messaging ───────────────────────────────────────────
-#  Advanced timing settings for plugin-message packets.
-#  You almost certainly don't need to change these.
-#
-#  dedupe-window-ms   - Ignores duplicate packets within this window.
-#  request-timeout-ms - How long to wait for a cross-server response.
-messaging:
-  dedupe-window-ms: 30000
-  request-timeout-ms: 10000
-
-# ── Audit Logging ─────────────────────────────────────────────────────
-#  When enabled, all teleport events are logged to the server console.
-#  Useful for debugging or monitoring; disable in production for less spam.
 audit:
   enabled: false

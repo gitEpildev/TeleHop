@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  * Manages runtime-mutable values persisted in {@code storage.yml}.
  * <p>
- * Static settings (MySQL, server name, features, etc.) stay in {@code config.yml}
+ * Static settings stay in the shared and profile configuration files
  * and are never written by the plugin at runtime. Values that can change in-game
  * (spawn location, future per-server state) live here so they survive reloads
  * without being overwritten by the default config template.
@@ -100,21 +100,18 @@ public final class StorageManager {
         catch (IllegalStateException ex) { load(); throw ex; }
     }
 
-    /**
-     * One-time migration: copies spawn values from config.yml into a fresh storage.yml
-     * so existing servers keep their spawn location after the config split.
-     */
+    /** On first installation use the real primary world spawn, retaining archived legacy values on upgrades. */
     private void migrateFromConfig() {
         File oldConfig = new File(plugin.getDataFolder(), "config.yml.old");
-        FileConfiguration cfg;
-        if (oldConfig.exists()) {
-            cfg = YamlConfiguration.loadConfiguration(oldConfig);
-        } else {
-            cfg = plugin.getConfig();
+        if (oldConfig.isFile()) {
+            data = legacySpawn(PaperProfiles.yaml(oldConfig.toPath()));
+            save();
+            return;
         }
-        data = legacySpawn(cfg);
-        save();
-        plugin.getLogger().info("Migrated spawn location from config.yml to storage.yml");
+        var worlds = plugin.getServer().getWorlds();
+        if (worlds.isEmpty()) throw new IllegalStateException("Load a backend world before initialising storage.yml");
+        data = new YamlConfiguration();
+        setSpawnLocation(worlds.getFirst().getSpawnLocation());
     }
 
     static YamlConfiguration legacySpawn(FileConfiguration cfg) {

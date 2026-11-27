@@ -6,13 +6,18 @@
     <parent>
         <groupId>com.telehop</groupId>
         <artifactId>telehop-parent</artifactId>
-        <version>3.0.1</version>
+        <version>4.0.0</version>
     </parent>
 
     <artifactId>telehop-common</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>2.5</version>
+        </dependency>
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-api</artifactId>

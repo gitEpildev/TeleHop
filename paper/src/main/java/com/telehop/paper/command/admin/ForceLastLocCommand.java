@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import com.telehop.common.PermissionNodes;
@@ -29,11 +30,11 @@ public class ForceLastLocCommand extends BaseCommand {
         plugin.services().lastLocationService().find(uuid).thenAccept(opt -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (opt.isEmpty()) {
-                    sender.sendMessage(plugin.msg("forcelastloc-no-data", Map.of("player", playerName)));
+                    PlatformText.send(sender, plugin.msg("forcelastloc-no-data", Map.of("player", playerName)));
                     return;
                 }
                 LastLocationRecord loc = opt.get();
-                sender.sendMessage(plugin.msg("forcelastloc-info", Map.of(
+                PlatformText.send(sender, plugin.msg("forcelastloc-info", Map.of(
                         "player", playerName,
                         "server", loc.server(),
                         "world", loc.world(),
@@ -55,7 +56,7 @@ public class ForceLastLocCommand extends BaseCommand {
         plugin.services().lastLocationService().find(uuid).thenAccept(opt -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
                 if (opt.isEmpty()) {
-                    sender.sendMessage(plugin.msg("forcelastloc-no-data", Map.of("player", playerName)));
+                    PlatformText.send(sender, plugin.msg("forcelastloc-no-data", Map.of("player", playerName)));
                     return;
                 }
                 LastLocationRecord loc = opt.get();
@@ -75,18 +76,18 @@ public class ForceLastLocCommand extends BaseCommand {
                     packet.put("yaw", String.valueOf(loc.yaw()));
                     packet.put("pitch", String.valueOf(loc.pitch()));
                     plugin.messaging().send(sender, packet);
-                    sender.sendMessage(plugin.msg("forcelastloc-tp", Map.of("player", playerName, "server", loc.server())));
+                    PlatformText.send(sender, plugin.msg("forcelastloc-tp", Map.of("player", playerName, "server", loc.server())));
                     return;
                 }
 
                 org.bukkit.World world = plugin.versionAdapter().resolveWorld(loc.world());
                 if (world == null) {
-                    sender.sendMessage(plugin.msg("lastloc-world-missing"));
+                    PlatformText.send(sender, plugin.msg("lastloc-world-missing"));
                     return;
                 }
                 org.bukkit.Location dest = new org.bukkit.Location(world, loc.x(), loc.y(), loc.z(), loc.yaw(), loc.pitch());
-                sender.teleportAsync(dest);
-                sender.sendMessage(plugin.msg("forcelastloc-tp", Map.of("player", playerName, "server", currentServer)));
+                plugin.platform().teleport(sender, dest);
+                PlatformText.send(sender, plugin.msg("forcelastloc-tp", Map.of("player", playerName, "server", currentServer)));
             });
         });
     }
@@ -100,6 +101,6 @@ public class ForceLastLocCommand extends BaseCommand {
 
         plugin.services().lastLocationService().delete(uuid).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(plugin.msg("forcelastloc-cleared", Map.of("player", playerName)))));
+                        PlatformText.send(sender, plugin.msg("forcelastloc-cleared", Map.of("player", playerName)))));
     }
 }

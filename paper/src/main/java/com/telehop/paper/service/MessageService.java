@@ -3,6 +3,8 @@ package com.telehop.paper.service;
 import com.telehop.paper.config.CommandNames;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.Map;
@@ -37,11 +39,12 @@ public class MessageService {
     }
 
     public Component format(String key, Map<String, String> replacements) {
-        String base = prefix() + resolve(key);
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            base = base.replace("<" + entry.getKey() + ">", entry.getValue());
-        }
-        return miniMessage.deserialize(base);
+        return format(key, replacements, Map.of());
+    }
+
+    /** Only templates and explicitly supplied components carry formatting; substitution values are literal text. */
+    public Component format(String key, Map<String, String> text, Map<String, Component> parts) {
+        return render(prefix() + resolve(key), text, parts);
     }
 
     public Component format(String key) {
@@ -54,11 +57,18 @@ public class MessageService {
     }
 
     public Component rawFormat(String key, Map<String, String> replacements) {
-        String base = resolve(key);
-        for (Map.Entry<String, String> entry : replacements.entrySet()) {
-            base = base.replace("<" + entry.getKey() + ">", entry.getValue());
-        }
-        return miniMessage.deserialize(base);
+        return rawFormat(key, replacements, Map.of());
+    }
+
+    public Component rawFormat(String key, Map<String, String> text, Map<String, Component> parts) {
+        return render(resolve(key), text, parts);
+    }
+
+    private Component render(String template, Map<String, String> text, Map<String, Component> parts) {
+        var tags = TagResolver.builder();
+        text.forEach((name, value) -> tags.resolver(Placeholder.unparsed(name, value)));
+        parts.forEach((name, component) -> tags.resolver(Placeholder.component(name, component)));
+        return miniMessage.deserialize(template, tags.build());
     }
 
     /** Deserialise an arbitrary MiniMessage string (not a language key). */

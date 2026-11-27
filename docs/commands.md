@@ -8,7 +8,7 @@ For every default root, alias, staff action and confirmation command, see the [c
 |---------|-------------|------------|
 | `/spawn` | Follow the current world, backend or hub route | `telehop.spawn` |
 | `/spawn <name>` | Visit a saved destination | `telehop.spawn`, `telehop.spawn.named` and destination access |
-| `/hub` | Visit the global hub when `features.hub` is enabled in `config/features.yml` and Paper has restarted | `telehop.hub` |
+| `/hub` | Visit the global hub when `features.hub` is enabled in the active profile’s `features.yml` and Paper has restarted | `telehop.hub` |
 | `/telehop spawn list` | Show IDs, owners and access | `telehop.admin.spawn.list` |
 | `/telehop spawn set <name> <public\|restricted>`, `/telehop spawn setdefault` | Save your location | `telehop.admin.spawn.set` |
 | `/telehop spawn delete <name> [revision]` | Request or confirm deletion | `telehop.admin.spawn.delete` |
@@ -20,7 +20,7 @@ For every default root, alias, staff action and confirmation command, see the [c
 | `/warp <name>` | Teleport to a global warp | `telehop.warp` or `telehop.warp.<name>` |
 | `/setwarp <name>` | Create or update a global warp | `telehop.admin.warps.set` |
 | `/delwarp <name>` | Delete a global warp | `telehop.admin.warps.delete` |
-| `/warps` | List all global warps | `telehop.warp` |
+| `/warps` | List accessible global warps | `telehop.warp` or access to an existing individual warp |
 
 ## Player Warps
 
@@ -128,4 +128,39 @@ Aliases: `/forcell` for `/forcelastloc`, `/pinfo` for `/playerinfo`
 
 The `telehop.admin` parent grants the delegated management actions. [All permission defaults, parents and limits](permissions.md)
 
-Command examples use the default names. Set primary names and aliases in `config/commands.yml` and restart Paper. See [configuration](configuration.md#command-names-and-aliases).
+### Command configuration and diagnostics
+
+| Command | Purpose | Permission |
+|---|---|---|
+| `/telehop reload config` | Validate and reload the active profile, routes and messages | `telehop.admin.reload` |
+| `/telehop reload messages` | Validate and refresh the active and fallback languages | `telehop.admin.reload` |
+| `/telehop commands list` | Inspect the registered labels and aliases for each stable ID | `telehop.admin.commands.list` |
+| `/telehop commands validate` | Check the proposed command names, access rules and RTP destinations against the running profile | `telehop.admin.commands.validate` |
+| `/telehop reload commands` | Apply rules and destinations for the existing registrations | `telehop.admin.commands.reload` |
+| `/telehop config validate` | Check the active configuration | `telehop.admin.config.validate` |
+| `/telehop platform info` | Display platform capabilities | `telehop.admin.platform.info` |
+| `/telehop migration status` | Show the backend configuration migration state | `telehop.admin.migration.status` |
+| `/telehop diagnostics` | Inspect deployment and service status | `telehop.admin.diagnostics` |
+
+Commands are grouped under `plugins/TeleHop/commands/`. To rename a command, enable `commands.custom-names.enabled` in the root `config.yml`, then set its `custom-name.enabled`, `name` and `aliases` in the group file. The first upgrade imports existing custom labels. The `/telehop` recovery name remains available after renaming its primary label.
+
+Enable `commands.additional-commands.enabled` in the root configuration to register extra travel commands. Each group has its own switch. For example, a named spawn command can use the following entry in `commands/spawn.yml`.
+
+```yaml
+spawn:
+  additional-commands:
+    enabled: true
+    commands:
+      garden-trip:
+        enabled: true
+        name: gardens
+        aliases: [garden]
+        destination: {type: NAMED_SPAWN, target: gardens}
+        permissions:
+          require-command-permission: true
+          require-destination-permission: true
+```
+
+Create the destination and grant the member `telehop.spawn`, `telehop.spawn.named`, `telehop.command.garden-trip` and `telehop.spawn.destination.gardens`. A renamed alias follows the same checks. A hub variant belongs in `commands/hub.yml` under `hub.additional-commands` and uses `destination: {type: HUB}`. The profile must enable hub travel and registration. Install cross-server variant definitions under the same ID on every participating backend. Named spawn existence and ownership are checked in the shared directory when the player travels. [RTP commands](rtp.md)
+
+Restart the backend to register changed names, new aliases, or added or removed commands. Invalid rules leave the previous snapshot active. An existing command owned by another plugin blocks registration and the startup log identifies the conflicting label. Choose a different label or change the other plugin’s configuration before restarting.

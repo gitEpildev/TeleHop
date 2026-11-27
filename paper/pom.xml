@@ -6,11 +6,23 @@
     <parent>
         <groupId>com.telehop</groupId>
         <artifactId>telehop-parent</artifactId>
-        <version>3.0.1</version>
+        <version>4.0.0</version>
     </parent>
 
     <artifactId>telehop-paper</artifactId>
     <packaging>jar</packaging>
+    <properties>
+        <!-- Minecraft 1.21.5 changed the vanilla component event format. -->
+        <adventure.version>4.26.1</adventure.version>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>spigot-repo</id>
+            <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
+            <releases><enabled>false</enabled></releases>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -25,16 +37,37 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>io.papermc.paper</groupId>
-            <artifactId>paper-api</artifactId>
+            <groupId>org.spigotmc</groupId>
+            <artifactId>spigot-api</artifactId>
             <version>${paper.api.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Only loaded when the optional permission provider is installed. -->
+        <dependency>
+            <groupId>net.luckperms</groupId>
+            <artifactId>api</artifactId>
+            <version>5.4</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>net.kyori</groupId>
             <artifactId>adventure-api</artifactId>
-            <version>4.26.1</version>
-            <scope>provided</scope>
+            <version>${adventure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-minimessage</artifactId>
+            <version>${adventure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-serializer-plain</artifactId>
+            <version>${adventure.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>net.kyori</groupId>
+            <artifactId>adventure-text-serializer-gson</artifactId>
+            <version>${adventure.version}</version>
         </dependency>
         <dependency>
             <groupId>co.aikar</groupId>
@@ -118,13 +151,21 @@
                                     <include>com.telehop:telehop-paper-26_1</include>
                                     <include>co.aikar:*</include>
                                     <include>dev.triumphteam:*</include>
+                                    <include>net.kyori:*</include>
                                     <include>com.zaxxer:*</include>
                                     <include>com.mysql:*</include>
                                     <include>com.google.code.gson:*</include>
                                     <include>com.google.protobuf:*</include>
                                 </includes>
                             </artifactSet>
+                            <transformers>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                            </transformers>
                             <relocations>
+                                <relocation>
+                                    <pattern>net.kyori</pattern>
+                                    <shadedPattern>com.telehop.paper.lib.kyori</shadedPattern>
+                                </relocation>
                                 <relocation>
                                     <pattern>co.aikar.commands</pattern>
                                     <shadedPattern>com.telehop.paper.lib.acf</shadedPattern>

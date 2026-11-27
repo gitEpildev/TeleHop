@@ -26,7 +26,7 @@ public class VelocityPlayerTracker {
 
     public CompletableFuture<Void> update(Player player, String serverName) {
         liveMap.put(player.getUniqueId(), serverName);
-        nameMap.put(player.getUsername().toLowerCase(), player.getUniqueId());
+        nameMap.put(player.getUsername().toLowerCase(java.util.Locale.ROOT), player.getUniqueId());
         if (redisBridge != null) {
             redisBridge.broadcastPlayerUpdate(player.getUniqueId(), player.getUsername(), serverName, "JOIN");
         }
@@ -35,7 +35,7 @@ public class VelocityPlayerTracker {
 
     public void remove(Player player) {
         liveMap.remove(player.getUniqueId());
-        nameMap.remove(player.getUsername().toLowerCase());
+        nameMap.remove(player.getUsername().toLowerCase(java.util.Locale.ROOT));
         if (redisBridge != null) {
             redisBridge.broadcastPlayerUpdate(player.getUniqueId(), player.getUsername(), null, "LEAVE");
         }
@@ -46,10 +46,10 @@ public class VelocityPlayerTracker {
      * Resolves a player UUID by name, checking local players first then the Redis global name map.
      */
     public Optional<UUID> resolveUuidByName(String name) {
-        UUID local = nameMap.get(name.toLowerCase());
+        UUID local = nameMap.get(name.toLowerCase(java.util.Locale.ROOT));
         if (local != null) return Optional.of(local);
         if (redisBridge != null) {
-            UUID remote = redisBridge.globalPlayerNameMap().get(name.toLowerCase());
+            UUID remote = redisBridge.globalPlayerNameMap().get(name.toLowerCase(java.util.Locale.ROOT));
             if (remote != null) return Optional.of(remote);
         }
         return Optional.empty();

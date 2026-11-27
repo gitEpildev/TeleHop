@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import com.telehop.common.PermissionNodes;
@@ -36,7 +37,7 @@ public class ForceSetHomeCommand extends BaseCommand {
 
         plugin.services().homeService().upsert(home).thenRun(() ->
                 Bukkit.getScheduler().runTask(plugin, () ->
-                        sender.sendMessage(plugin.msg("forcesethome-set", Map.of(
+                        PlatformText.send(sender, plugin.msg("forcesethome-set", Map.of(
                                 "player", playerName, "name", homeName)))));
     }
 }

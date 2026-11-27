@@ -18,4 +18,11 @@ public interface VersionAdapter {
      * Resolves a world by name or key, returning {@code null} if not found.
      */
     World resolveWorld(String name);
+    /** Bukkit has no keyed world lookup on some supported builds. */
+    default World worldByKey(org.bukkit.NamespacedKey key) {
+        for (World world : org.bukkit.Bukkit.getWorlds()) {
+            if (world.getKey().equals(key)) return world;
+        }
+        return null;
+    }
 }

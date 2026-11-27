@@ -30,7 +30,8 @@ public final class ConfigMigrator {
     // Only replace known bundled guides. A guide edited by an operator stays untouched.
     private static final Set<String> PREVIOUS_GUIDES = Set.of(
             "e96a547168b639674009857df9f6e5d8fbf6c65b7aeaad8f94d6dc2f694418dd",
-            "5fdc26662df27b460104aa19ec979edefbae71e45bb183318258934edfb060f8");
+            "5fdc26662df27b460104aa19ec979edefbae71e45bb183318258934edfb060f8",
+            "b4b68c1bb38d16c14af5766b829f8827656e5791353c089ee890708ccf014395");
 
     private ConfigMigrator() {}
 
@@ -43,7 +44,10 @@ public final class ConfigMigrator {
 
     /** Publishes validated YAML before archiving the legacy source. A failed attempt can run again at startup. */
     public static void migrate(JavaPlugin plugin) throws IOException, InvalidConfigurationException {
-        Path root = plugin.getDataFolder().toPath();
+        migrate(plugin.getDataFolder().toPath());
+    }
+
+    static void migrate(Path root) throws IOException, InvalidConfigurationException {
         Path legacy = root.resolve("config.yml");
         Path stage = root.resolve(STAGING);
         Path config = root.resolve("config");
@@ -66,7 +70,7 @@ public final class ConfigMigrator {
         writeTeleport(old, stage.resolve("teleport.yml").toFile());
         writeTpa(old, stage.resolve("tpa.yml").toFile());
         writeRtp(old, stage.resolve("rtp.yml").toFile());
-        writeHome(stage.resolve("home.yml").toFile());
+        writeHome(old, stage.resolve("home.yml").toFile());
         StorageManager.legacySpawn(old).save(stage.resolve("storage.yml").toFile());
 
         Files.createDirectories(config);
@@ -81,7 +85,7 @@ public final class ConfigMigrator {
         }
         Files.move(legacy, backup);
         Files.delete(stage);
-        plugin.getLogger().info("Migrated legacy configuration. Original saved as " + backup.getFileName());
+
     }
 
     /** Add missing switches and labels to older split files, retaining the owner's explicit choices. */
@@ -102,9 +106,9 @@ public final class ConfigMigrator {
     }
 
     /** Refresh unchanged guides shipped with 2.3.0 and 3.0.0 when upgrading an existing backend. */
-    public static void refreshBundledGuide(JavaPlugin plugin) throws IOException {
+    static void refreshBundledGuide(JavaPlugin plugin, Path data) throws IOException {
         String name = "config/WIKI.md";
-        Path guide = plugin.getDataFolder().toPath().resolve(name);
+        Path guide = data.resolve(name);
         try {
             var digest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(guide));
             if (!PREVIOUS_GUIDES.contains(HexFormat.of().formatHex(digest))) return;
@@ -171,8 +175,9 @@ public final class ConfigMigrator {
     private static YamlConfiguration readYaml(Path path) throws IOException, InvalidConfigurationException {
         var yaml = new YamlConfiguration();
         try {
+            com.telehop.common.config.ConfigYaml.read(path);
             yaml.load(path.toFile());
-        } catch (InvalidConfigurationException ex) {
+        } catch (IllegalArgumentException | InvalidConfigurationException ex) {
             // Parser messages can echo lines containing database credentials.
             throw new InvalidConfigurationException("Invalid YAML in " + path);
         }
@@ -197,6 +202,9 @@ public final class ConfigMigrator {
         cfg.set("messaging.dedupe-window-ms", old.getLong("messaging.dedupe-window-ms", 30000));
         cfg.set("messaging.request-timeout-ms", old.getLong("messaging.request-timeout-ms", 10000));
         cfg.set("audit.enabled", old.getBoolean("audit.enabled", false));
+        for (String group : List.of("regions", "multi-proxy", "audit", "messaging")) {
+            if (old.contains(group)) cfg.set(group, old.get(group));
+        }
         cfg.save(target);
     }
 
@@ -222,6 +230,8 @@ public final class ConfigMigrator {
     private static void writeTeleport(FileConfiguration old, File target) throws IOException {
         YamlConfiguration cfg = new YamlConfiguration();
         cfg.set("show-countdown", old.getBoolean("teleport.show-countdown", true));
+        if (old.contains("teleport.effects")) cfg.set("effects", old.get("teleport.effects"));
+        else if (old.contains("effects")) cfg.set("effects", old.get("effects"));
         cfg.save(target);
     }
 
@@ -258,22 +268,34 @@ public final class ConfigMigrator {
             }
         }
 
-        cfg.set("rtp.dimensions.overworld", old.getString("rtp.dimensions.overworld", "world"));
-        cfg.set("rtp.dimensions.nether", old.getString("rtp.dimensions.nether", "world_nether"));
-        cfg.set("rtp.dimensions.end", old.getString("rtp.dimensions.end", "world_the_end"));
+        if (old.contains("rtp.dimensions")) {
+            cfg.set("rtp.dimensions", old.get("rtp.dimensions"));
+        } else {
+            cfg.set("rtp.dimensions.overworld", "world");
+            cfg.set("rtp.dimensions.nether", "world_nether");
+            cfg.set("rtp.dimensions.end", "world_the_end");
+        }
 
         cfg.set("rtp.gui.region-menu.title", old.getString("rtp.gui.region-menu.title", "<dark_purple>Select Region</dark_purple>"));
         cfg.set("rtp.gui.region-menu.rows", old.getInt("rtp.gui.region-menu.rows", 3));
         cfg.set("rtp.gui.dimension-menu.title", old.getString("rtp.gui.dimension-menu.title", "<gold>Select Dimension</gold>"));
         cfg.set("rtp.gui.dimension-menu.rows", old.getInt("rtp.gui.dimension-menu.rows", 3));
+        // Earlier formats accepted arbitrary region and GUI keys. Carry those values into the new profile.
+        ConfigurationSection custom = old.getConfigurationSection("rtp");
+        if (custom != null) {
+            for (String key : custom.getKeys(true)) {
+                if (!custom.isConfigurationSection(key)) cfg.set("rtp." + key, custom.get(key));
+            }
+        }
         cfg.save(target);
     }
 
-    private static void writeHome(File target) throws IOException {
+    private static void writeHome(FileConfiguration old, File target) throws IOException {
         YamlConfiguration cfg = new YamlConfiguration();
         cfg.set("homes.max-slots", 5);
         cfg.set("homes.confirm-set", true);
         cfg.set("homes.gui-title", "<gradient:red:gold>Your Homes</gradient>");
+        if (old.isConfigurationSection("homes")) cfg.set("homes", old.get("homes"));
         cfg.save(target);
     }
 }

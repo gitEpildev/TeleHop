@@ -1,18 +1,18 @@
 package com.telehop.paper.service;
 
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.common.model.WarpRecord;
 import com.telehop.paper.config.StorageManager;
 import com.telehop.paper.version.VersionAdapter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
+import com.telehop.paper.config.RtpPolicy;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BooleanSupplier;
 import org.bukkit.entity.Player;
-import org.bukkit.plugin.java.JavaPlugin;
+import com.telehop.paper.NetworkPaperPlugin;
 
-import java.io.File;
-import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -21,7 +21,7 @@ import java.util.UUID;
  * Also stores the player's previous location for /back.
  */
 public final class TeleportService {
-    private final JavaPlugin plugin;
+    private final NetworkPaperPlugin plugin;
     private final PendingTeleportManager pendingManager;
     private final StorageManager storageManager;
     private final VersionAdapter versionAdapter;
@@ -32,7 +32,7 @@ public final class TeleportService {
     private BackLocationManager backManager;
     private String serverName;
 
-    public TeleportService(JavaPlugin plugin, PendingTeleportManager pendingManager,
+    public TeleportService(NetworkPaperPlugin plugin, PendingTeleportManager pendingManager,
                            StorageManager storageManager, VersionAdapter versionAdapter) {
         this.plugin = plugin;
         this.pendingManager = pendingManager;
@@ -50,6 +50,9 @@ public final class TeleportService {
         this.backManager = backManager;
         this.serverName = serverName;
     }
+
+    /** Apply the validated language catalogue to future teleport messages on the server thread. */
+    public void setMessageService(MessageService messages) { this.messageService = messages; }
 
     public void teleportToSpawn(Player player) {
         Location loc = storageManager.getSpawnLocation();
@@ -84,7 +87,7 @@ public final class TeleportService {
     public void executePendingTeleport(Player player) {
         Location location = pendingManager.take(player.getUniqueId());
         if (location != null) {
-            player.teleportAsync(location);
+            plugin.platform().teleport(player, location);
         }
     }
 
@@ -92,44 +95,25 @@ public final class TeleportService {
         pendingManager.take(playerUuid);
     }
 
-    public void executeLocalRtp(Player player, String region, String dimension) {
-        String worldName = resolveRtpWorldName(dimension);
-
-        File rtpFile = new File(plugin.getDataFolder(), "config/rtp.yml");
-        FileConfiguration rtpCfg = rtpFile.exists()
-                ? YamlConfiguration.loadConfiguration(rtpFile)
-                : plugin.getConfig();
-
-        int maxRadius = rtpCfg.getInt("rtp.max-radius", 25000);
-        int radius = Math.min(rtpCfg.getInt("rtp.regions." + region + ".radius", 25000), maxRadius);
-        World world = versionAdapter.resolveWorld(worldName);
-        if (world == null) {
-            player.sendMessage(messageService.format("rtp-failed"));
-            auditLogger.log("rtp-failed-world player=" + player.getName()
-                    + " region=" + region + " dimension=" + dimension + " worldName=" + worldName);
-            return;
+    /** Resolve safe ground on this backend and acknowledge only a completed teleport. */
+    public CompletableFuture<Boolean> executeLocalRtp(Player player, RtpPolicy.Choice choice, BooleanSupplier authorised) {
+        World world = versionAdapter.resolveWorld(choice.world());
+        if (world == null || !authorised.getAsBoolean()) {
+            PlatformText.send(player, messageService.format("rtp-failed"));
+            return CompletableFuture.completedFuture(false);
         }
-        auditLogger.log("rtp-start player=" + player.getName()
-                + " region=" + region + " dimension=" + dimension
-                + " world=" + versionAdapter.getWorldName(world) + " radius=" + radius);
-        player.sendMessage(messageService.format("rtp-searching"));
-        rtpManager.findSafeLocation(world, radius).thenAccept(location -> {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                if (location == null) {
-                    player.sendMessage(messageService.format("rtp-failed"));
-                    auditLogger.log("rtp-failed-safe-spot player=" + player.getName()
-                            + " world=" + versionAdapter.getWorldName(world));
-                    return;
-                }
-                player.sendMessage(messageService.format("rtp-teleporting"));
-                auditLogger.log("rtp-teleport player=" + player.getName()
-                        + " world=" + versionAdapter.getWorldName(world)
-                        + " x=" + location.getBlockX()
-                        + " y=" + location.getBlockY()
-                        + " z=" + location.getBlockZ());
-                doTeleport(player, location, "rtp");
-            });
-        });
+        auditLogger.log("rtp-start player=" + player.getName() + " region=" + choice.region() + " dimension=" + choice.dimension()
+                + " world=" + versionAdapter.getWorldName(world) + " radius=" + choice.radius());
+        PlatformText.send(player, messageService.format("rtp-searching"));
+        return rtpManager.findSafeLocation(world, choice.radius()).thenComposeAsync(location -> {
+            if (!player.isOnline()) return CompletableFuture.completedFuture(false);
+            if (location == null || !authorised.getAsBoolean()) {
+                PlatformText.send(player, messageService.format("rtp-failed"));
+                return CompletableFuture.completedFuture(false);
+            }
+            PlatformText.send(player, messageService.format("rtp-teleporting"));
+            return doTeleport(player, location, "rtp");
+        }, task -> Bukkit.getScheduler().runTask(plugin, task));
     }
 
     /**
@@ -144,7 +128,7 @@ public final class TeleportService {
         if (backManager != null && serverName != null) {
             backManager.saveLastTeleport(player.getUniqueId(), from, serverName);
         }
-        return player.teleportAsync(target).thenApply(success -> {
+        return plugin.platform().teleport(player, target).thenApply(success -> {
             if (success && effectPlayer != null) {
                 Bukkit.getScheduler().runTask(plugin, () -> effectPlayer.play(player, from, target, type));
             }
@@ -152,28 +136,4 @@ public final class TeleportService {
         });
     }
 
-    private String resolveRtpWorldName(String dimension) {
-        File rtpFile = new File(plugin.getDataFolder(), "config/rtp.yml");
-        FileConfiguration rtpCfg = rtpFile.exists()
-                ? YamlConfiguration.loadConfiguration(rtpFile)
-                : plugin.getConfig();
-
-        String key = "rtp.dimensions." + dimension;
-        String configured = rtpCfg.getString(key);
-        if (configured != null && versionAdapter.resolveWorld(configured) != null) {
-            return configured;
-        }
-        return switch (dimension.toLowerCase()) {
-            case "nether" -> firstWorldByEnvironment(World.Environment.NETHER).orElse("world_nether");
-            case "end" -> firstWorldByEnvironment(World.Environment.THE_END).orElse("world_the_end");
-            default -> firstWorldByEnvironment(World.Environment.NORMAL).orElse("world");
-        };
-    }
-
-    private Optional<String> firstWorldByEnvironment(World.Environment environment) {
-        return Bukkit.getWorlds().stream()
-                .filter(w -> w.getEnvironment() == environment)
-                .map(versionAdapter::getWorldName)
-                .findFirst();
-    }
 }

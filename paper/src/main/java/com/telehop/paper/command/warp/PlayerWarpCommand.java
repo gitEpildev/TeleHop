@@ -1,5 +1,6 @@
 package com.telehop.paper.command.warp;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.*;
 import com.telehop.common.PermissionNodes;
@@ -7,6 +8,8 @@ import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.PlayerWarpRecord;
 import com.telehop.paper.NetworkPaperPlugin;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.JoinConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -24,7 +27,7 @@ public class PlayerWarpCommand extends BaseCommand {
 
     private boolean checkFeature(Player player) {
         if (!plugin.isFeatureEnabled("player-warps")) {
-            player.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(player, plugin.msg("feature-disabled"));
             return false;
         }
         return true;
@@ -36,7 +39,7 @@ public class PlayerWarpCommand extends BaseCommand {
     public void set(Player player, String name) {
         if (!checkFeature(player)) return;
         if (!plugin.permissionService().has(player, PermissionNodes.PWARP)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
@@ -44,18 +47,19 @@ public class PlayerWarpCommand extends BaseCommand {
         int limit = getWarpLimit(player);
 
         if (limit == 0) {
-            player.sendMessage(plugin.msg("pwarp-no-permission"));
+            PlatformText.send(player, plugin.msg("pwarp-no-permission"));
             return;
         }
 
-        plugin.playerWarpService().countByOwner(uuid).thenAccept(count -> {
+        Location loc = player.getLocation();
+        plugin.playerWarpService().countByOwner(uuid).thenAcceptAsync(count -> {
+            if (!player.isOnline() || !player.hasPermission(PermissionNodes.PWARP)) return;
             if (limit > 0 && count >= limit) {
-                player.sendMessage(plugin.msg("pwarp-limit-reached",
+                PlatformText.send(player, plugin.msg("pwarp-limit-reached",
                         Map.of("limit", String.valueOf(limit))));
                 return;
             }
 
-            Location loc = player.getLocation();
             PlayerWarpRecord warp = new PlayerWarpRecord(
                     uuid, name,
                     plugin.settings().serverName(),
@@ -64,15 +68,12 @@ public class PlayerWarpCommand extends BaseCommand {
                     loc.getYaw(), loc.getPitch(),
                     false
             );
-            plugin.playerWarpService().upsert(warp).thenRun(() -> {
+            plugin.playerWarpService().upsert(warp).thenRunAsync(() -> {
                 int newCount = count + 1;
-                String limitStr = limit < 0 ? "unlimited" : String.valueOf(limit);
-                player.sendMessage(plugin.msg("pwarp-created",
-                        Map.of("name", name,
-                                "count", String.valueOf(newCount),
-                                "limit", limitStr)));
-            });
-        });
+                PlatformText.send(player, plugin.messageService().format("pwarp-created", Map.of("name", name,
+                        "count", String.valueOf(newCount)), Map.of("limit", limitText(limit))));
+            }, plugin::onMainThread);
+        }, plugin::onMainThread);
     }
 
     @Subcommand("del|delete|remove")
@@ -81,19 +82,19 @@ public class PlayerWarpCommand extends BaseCommand {
     public void del(Player player, String name) {
         if (!checkFeature(player)) return;
         if (!plugin.permissionService().has(player, PermissionNodes.PWARP)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         String uuid = player.getUniqueId().toString();
-        plugin.playerWarpService().find(uuid, name).thenAccept(opt -> {
+        plugin.playerWarpService().find(uuid, name).thenAcceptAsync(opt -> {
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", name)));
+                PlatformText.send(player, plugin.msg("pwarp-not-found", Map.of("name", name)));
                 return;
             }
-            plugin.playerWarpService().delete(uuid, name).thenRun(() ->
-                    player.sendMessage(plugin.msg("pwarp-deleted", Map.of("name", name))));
-        });
+            plugin.playerWarpService().delete(uuid, name).thenRunAsync(() ->
+                    PlatformText.send(player, plugin.msg("pwarp-deleted", Map.of("name", name))), plugin::onMainThread);
+        }, plugin::onMainThread);
     }
 
     @Subcommand("list")
@@ -101,31 +102,27 @@ public class PlayerWarpCommand extends BaseCommand {
     public void list(Player player) {
         if (!checkFeature(player)) return;
         if (!plugin.permissionService().has(player, PermissionNodes.PWARP)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         String uuid = player.getUniqueId().toString();
         int limit = getWarpLimit(player);
-        String limitStr = limit < 0 ? "unlimited" : String.valueOf(limit);
 
-        plugin.playerWarpService().listByOwner(uuid).thenAccept(warps -> {
+        plugin.playerWarpService().listByOwner(uuid).thenAcceptAsync(warps -> {
             if (warps.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-list-empty"));
+                PlatformText.send(player, plugin.msg("pwarp-list-empty"));
                 return;
             }
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < warps.size(); i++) {
-                PlayerWarpRecord w = warps.get(i);
-                if (i > 0) sb.append(", ");
-                sb.append(w.name());
-                if (w.isPublic()) sb.append(" &7[public]");
-            }
-            player.sendMessage(plugin.msg("pwarp-list-header",
-                    Map.of("warps", sb.toString(),
-                            "count", String.valueOf(warps.size()),
-                            "limit", limitStr)));
-        });
+            var messages = plugin.messageService();
+            var items = warps.stream().map(warp -> {
+                var name = Component.text(warp.name());
+                return warp.isPublic() ? name.appendSpace().append(messages.raw("warp-public-label")) : name;
+            }).toList();
+            var list = Component.join(JoinConfiguration.separator(Component.text(", ")), items);
+            PlatformText.send(player, messages.format("pwarp-list-header", Map.of("count", String.valueOf(warps.size())),
+                    Map.of("warps", list, "limit", limitText(limit))));
+        }, plugin::onMainThread);
     }
 
     @Subcommand("public|toggle")
@@ -134,21 +131,21 @@ public class PlayerWarpCommand extends BaseCommand {
     public void togglePublic(Player player, String name) {
         if (!checkFeature(player)) return;
         if (!plugin.permissionService().has(player, PermissionNodes.PWARP)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
         String uuid = player.getUniqueId().toString();
-        plugin.playerWarpService().find(uuid, name).thenAccept(opt -> {
+        plugin.playerWarpService().find(uuid, name).thenAcceptAsync(opt -> {
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", name)));
+                PlatformText.send(player, plugin.msg("pwarp-not-found", Map.of("name", name)));
                 return;
             }
             boolean newState = !opt.get().isPublic();
-            plugin.playerWarpService().setPublic(uuid, name, newState).thenRun(() ->
-                    player.sendMessage(plugin.msg(newState ? "pwarp-made-public" : "pwarp-made-private",
-                            Map.of("name", name))));
-        });
+            plugin.playerWarpService().setPublic(uuid, name, newState).thenRunAsync(() ->
+                    PlatformText.send(player, plugin.msg(newState ? "pwarp-made-public" : "pwarp-made-private",
+                            Map.of("name", name))), plugin::onMainThread);
+        }, plugin::onMainThread);
     }
 
     @Subcommand("admin del|admin delete|admin remove")
@@ -159,15 +156,14 @@ public class PlayerWarpCommand extends BaseCommand {
         @SuppressWarnings("deprecation")
         org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         String targetUuid = target.getUniqueId().toString();
-        plugin.playerWarpService().find(targetUuid, warpName).thenAccept(opt -> {
+        plugin.playerWarpService().find(targetUuid, warpName).thenAcceptAsync(opt -> {
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", warpName)));
+                PlatformText.send(player, plugin.msg("pwarp-not-found", Map.of("name", warpName)));
                 return;
             }
-            plugin.playerWarpService().delete(targetUuid, warpName).thenRun(() ->
-                    player.sendMessage(plugin.messageService().deserialize("<gold>Deleted warp <aqua>" + warpName +
-                            "</aqua> from player <aqua>" + targetName + "</aqua>.")));
-        });
+            plugin.playerWarpService().delete(targetUuid, warpName).thenRunAsync(() ->
+                    PlatformText.send(player, plugin.msg("forcedelwarp-deleted", Map.of("name", warpName, "player", targetName))), plugin::onMainThread);
+        }, plugin::onMainThread);
     }
 
     @Default
@@ -176,7 +172,7 @@ public class PlayerWarpCommand extends BaseCommand {
     public void teleport(Player player, String[] args) {
         if (!checkFeature(player)) return;
         if (!plugin.permissionService().has(player, PermissionNodes.PWARP)) {
-            player.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(player, plugin.msg("no-permission"));
             return;
         }
 
@@ -197,7 +193,7 @@ public class PlayerWarpCommand extends BaseCommand {
         plugin.playerWarpService().find(uuid, name).thenAccept(opt -> Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline()) return;
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", name)));
+                PlatformText.send(player, plugin.msg("pwarp-not-found", Map.of("name", name)));
                 return;
             }
             doTeleport(player, opt.get());
@@ -208,7 +204,7 @@ public class PlayerWarpCommand extends BaseCommand {
         @SuppressWarnings("deprecation")
         org.bukkit.OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         if (target.getUniqueId() == null) {
-            player.sendMessage(plugin.msg("pwarp-player-not-found", Map.of("player", targetName)));
+            PlatformText.send(player, plugin.msg("pwarp-player-not-found", Map.of("player", targetName)));
             return;
         }
 
@@ -216,7 +212,7 @@ public class PlayerWarpCommand extends BaseCommand {
         plugin.playerWarpService().findPublic(targetUuid, warpName).thenAccept(opt -> Bukkit.getScheduler().runTask(plugin, () -> {
             if (!player.isOnline()) return;
             if (opt.isEmpty()) {
-                player.sendMessage(plugin.msg("pwarp-not-yours", Map.of("name", warpName)));
+                PlatformText.send(player, plugin.msg("pwarp-not-yours", Map.of("name", warpName)));
                 return;
             }
             doTeleport(player, opt.get());
@@ -227,14 +223,14 @@ public class PlayerWarpCommand extends BaseCommand {
         if (warp.server().equalsIgnoreCase(plugin.settings().serverName())) {
             World world = plugin.versionAdapter().resolveWorld(warp.world());
             if (world == null) {
-                player.sendMessage(plugin.msg("pwarp-not-found", Map.of("name", warp.name())));
+                PlatformText.send(player, plugin.msg("pwarp-not-found", Map.of("name", warp.name())));
                 return;
             }
-            player.sendMessage(plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
+            PlatformText.send(player, plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
             Location loc = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
-            player.teleportAsync(loc);
+            plugin.platform().teleport(player, loc);
         } else {
-            player.sendMessage(plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
+            PlatformText.send(player, plugin.msg("pwarp-teleporting", Map.of("name", warp.name())));
             NetworkPacket packet = NetworkPacket.request(
                     PacketType.TRANSFER_PLAYER, plugin.settings().serverName(), "velocity")
                     .put("uuid", player.getUniqueId().toString())
@@ -244,6 +240,10 @@ public class PlayerWarpCommand extends BaseCommand {
                     .put("pwarpName", warp.name());
             plugin.messaging().send(player, packet);
         }
+    }
+
+    private Component limitText(int limit) {
+        return limit < 0 ? plugin.messageService().raw("pwarp-unlimited") : Component.text(limit);
     }
 
     private int getWarpLimit(Player player) {

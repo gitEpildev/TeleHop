@@ -1,5 +1,6 @@
 package com.telehop.paper.command.tpa;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -20,16 +21,16 @@ public class TpaCancelCommand extends BaseCommand {
     @Default
     public void execute(Player sender) {
         if (!plugin.isFeatureEnabled("tpa")) {
-            sender.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(sender, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(sender, PermissionNodes.TPA_CANCEL)) {
-            sender.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(sender, plugin.msg("no-permission"));
             return;
         }
         var outgoing = plugin.tpaRuntimeManager().getOutgoing(sender.getUniqueId()).orElse(null);
         if (outgoing == null) {
-            sender.sendMessage(plugin.msg("request-none-outgoing"));
+            PlatformText.send(sender, plugin.msg("request-none-outgoing"));
             return;
         }
         plugin.tpaRuntimeManager().removeOutgoing(sender.getUniqueId());
@@ -39,6 +40,6 @@ public class TpaCancelCommand extends BaseCommand {
                 .put("senderUuid", sender.getUniqueId().toString())
                 .put("targetUuid", outgoing.targetUuid().toString());
         plugin.messaging().send(packet);
-        sender.sendMessage(plugin.msg("request-cancelled"));
+        PlatformText.send(sender, plugin.msg("request-cancelled"));
     }
 }

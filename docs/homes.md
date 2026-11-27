@@ -85,7 +85,7 @@ The highest matching `telehop.homes.<N>` permission determines how many homes a 
 
 ## Configuration
 
-Full reference in `config/home.yml`:
+The active `config/<profile>/home.yml` accepts the following settings.
 
 ```yaml
 homes:

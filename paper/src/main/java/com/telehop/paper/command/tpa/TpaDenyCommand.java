@@ -1,5 +1,6 @@
 package com.telehop.paper.command.tpa;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -21,16 +22,16 @@ public class TpaDenyCommand extends BaseCommand {
     @Default
     public void execute(Player target) {
         if (!plugin.isFeatureEnabled("tpa")) {
-            target.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(target, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(target, PermissionNodes.TPA_DENY)) {
-            target.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(target, plugin.msg("no-permission"));
             return;
         }
         var requestOpt = plugin.tpaRuntimeManager().getIncoming(target.getUniqueId());
         if (requestOpt.isEmpty()) {
-            target.sendMessage(plugin.msg("request-none-pending"));
+            PlatformText.send(target, plugin.msg("request-none-pending"));
             return;
         }
         var request = requestOpt.get();
@@ -39,13 +40,13 @@ public class TpaDenyCommand extends BaseCommand {
 
         Player sender = Bukkit.getPlayer(request.senderUuid());
         if (sender != null) {
-            sender.sendMessage(plugin.msg("request-denied"));
+            PlatformText.send(sender, plugin.msg("request-denied"));
         } else {
             NetworkPacket packet = NetworkPacket.request(PacketType.TPA_DENY, plugin.settings().serverName(), "velocity")
                     .put("senderUuid", request.senderUuid().toString())
                     .put("targetUuid", request.targetUuid().toString());
             plugin.messaging().send(packet);
         }
-        target.sendMessage(plugin.msg("request-denied"));
+        PlatformText.send(target, plugin.msg("request-denied"));
     }
 }

@@ -4,32 +4,18 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.plugin.java.JavaPlugin;
+import com.telehop.paper.NetworkPaperPlugin;
 
-import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Finds safe random locations for death respawn - fully independent of {@link RtpManager}.
- *
- * <p>Key differences from {@code RtpManager}:
- * <ul>
- *   <li>Uses Paper's async chunk loading ({@code World#getChunkAtAsync}) instead of
- *       bouncing each check through {@code callSyncMethod().get()}, which eliminates
- *       the main-thread bottleneck that caused the race condition with fast respawns.</li>
- *   <li>No cooldowns, regions, dimensions, or GUI - single-purpose for respawn.</li>
- *   <li>Returns a {@link CompletableFuture} so the caller can handle both the "ready"
- *       and "still searching" states gracefully.</li>
- * </ul>
- */
+/** Searches a bounded set of prepared columns for a safe death respawn. */
 public final class RandomRespawnService {
 
     private static final int MAX_ATTEMPTS = 200;
 
-    private final JavaPlugin plugin;
-    private final Random random = new Random();
+    private final NetworkPaperPlugin plugin;
 
-    public RandomRespawnService(JavaPlugin plugin) {
+    public RandomRespawnService(NetworkPaperPlugin plugin) {
         this.plugin = plugin;
     }
 
@@ -39,36 +25,7 @@ public final class RandomRespawnService {
      * found within {@value #MAX_ATTEMPTS} attempts.
      */
     public CompletableFuture<Location> findSafeLocation(World world, int radius) {
-        CompletableFuture<Location> result = new CompletableFuture<>();
-        searchNext(world, radius, 0, result);
-        return result;
-    }
-
-    /**
-     * Recursive async search: pick a random X/Z, load the chunk asynchronously via
-     * Paper's API, then check the column on the main thread (chunk is guaranteed
-     * loaded at that point). If safe, complete the future; otherwise recurse.
-     */
-    private void searchNext(World world, int radius, int attempt, CompletableFuture<Location> result) {
-        if (attempt >= MAX_ATTEMPTS) {
-            result.complete(null);
-            return;
-        }
-
-        int x = random.nextInt(radius * 2 + 1) - radius;
-        int z = random.nextInt(radius * 2 + 1) - radius;
-
-        world.getChunkAtAsync(x >> 4, z >> 4).thenAccept(chunk -> {
-            Location safe = checkColumn(world, x, z);
-            if (safe != null) {
-                result.complete(safe);
-            } else {
-                searchNext(world, radius, attempt + 1, result);
-            }
-        }).exceptionally(ex -> {
-            searchNext(world, radius, attempt + 1, result);
-            return null;
-        });
+        return SafeColumnSearch.find(plugin, world, radius, MAX_ATTEMPTS, this::checkColumn);
     }
 
     /**
@@ -84,7 +41,8 @@ public final class RandomRespawnService {
         }
 
         int surfaceY = world.getHighestBlockYAt(x, z, org.bukkit.HeightMap.MOTION_BLOCKING);
-        if (surfaceY < 50) return null;
+        if (surfaceY < world.getMinHeight() || surfaceY + 2 >= world.getMaxHeight()) return null;
+        if (world.getEnvironment() == World.Environment.NORMAL && surfaceY < world.getSeaLevel() - 13) return null;
 
         Block floor = world.getBlockAt(x, surfaceY, z);
         Block feet = world.getBlockAt(x, surfaceY + 1, z);
@@ -104,8 +62,9 @@ public final class RandomRespawnService {
     }
 
     private Location checkColumnNether(World world, int x, int z) {
-        int minY = Math.max(world.getMinHeight() + 1, -63);
-        for (int y = 120; y >= minY; y--) {
+        int minY = world.getMinHeight() + 1;
+        int upper = Math.min(world.getMaxHeight() - 2, world.getMinHeight() + world.getLogicalHeight() - 8);
+        for (int y = upper; y >= minY; y--) {
             Block floor = world.getBlockAt(x, y - 1, z);
             Block feet = world.getBlockAt(x, y, z);
             Block head = world.getBlockAt(x, y + 1, z);
@@ -146,7 +105,7 @@ public final class RandomRespawnService {
         }
 
         if (world.getEnvironment() == World.Environment.NETHER) {
-            if (type == Material.BEDROCK || y > 120) return false;
+            if (type == Material.BEDROCK) return false;
         }
         return true;
     }

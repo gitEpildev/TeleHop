@@ -6,7 +6,8 @@ import re
 import subprocess
 import sys
 
-from compatibility import game_versions
+from compatibility import game_versions, platform_loaders
+from checksums import manifest
 from prepare import DIST, PLATFORMS, git, release_version, verify_jars
 
 CANONICAL = DIST / "github"
@@ -74,10 +75,31 @@ def github(version, channel):
             if (DIST / name).read_bytes() != (CANONICAL / name).read_bytes():
                 raise ValueError(f"GitHub download differs from the verified build: {name}")
     verify_jars(version, CANONICAL)
+    if int(version.split(".", 1)[0]) >= 4:
+        github_checksums(version, tag, existing["isDraft"], assets)
     (CANONICAL / "notes.md").write_text(existing["body"])
     if existing["isDraft"]:
         subprocess.run(["gh", "release", "edit", tag, "--draft=false"], check=True)
     print(f"GitHub release {tag} is ready with both JARs")
+
+
+def github_checksums(version, tag, draft, assets):
+    expected = manifest(CANONICAL, version)
+    path = DIST / "SHA256SUMS"
+    name = path.name
+    incomplete = assets.get(name, {}).get("state", "").lower() == "starter"
+    if name not in assets or incomplete:
+        if not draft:
+            raise ValueError(f"Published release {tag} is missing its checksum manifest")
+        if path.read_text() != expected:
+            raise ValueError("Build manifest differs from the verified release files")
+        args = ["gh", "release", "upload", tag, str(path)]
+        if incomplete:
+            args.append("--clobber")
+        subprocess.run(args, check=True)
+    subprocess.run(["gh", "release", "download", tag, "-p", name, "-D", str(CANONICAL), "--clobber"], check=True)
+    if (CANONICAL / name).read_text() != expected:
+        raise ValueError(f"GitHub checksum manifest differs from the published JARs for {tag}")
 
 
 def mod_api(route, *args):
@@ -108,9 +130,11 @@ def check_modrinth_versions(tags):
 
 
 def validate_mod(metadata, record, jar_hash, name):
-    for key in ("project_id", "version_number", "version_type", "name", "changelog", "loaders"):
+    for key in ("project_id", "version_number", "version_type", "name", "changelog"):
         if record.get(key) != metadata[key]:
             raise ValueError(f"Conflicting Modrinth {key} for {name}")
+    if set(record["loaders"]) != set(metadata["loaders"]):
+        raise ValueError(f"Conflicting Modrinth loaders for {name}")
     if set(record["game_versions"]) != set(metadata["game_versions"]):
         raise ValueError(f"Conflicting Modrinth game versions for {name}")
     if not any(f["primary"] and f["filename"] == name and f["hashes"]["sha512"] == jar_hash for f in record["files"]):
@@ -127,7 +151,7 @@ def modrinth(version, channel):
         digest = hashlib.sha512(jar.read_bytes()).hexdigest()
         metadata = {"project_id": project_id, "name": f"TeleHop {version} ({platform.title()})",
                     "version_number": version, "version_type": channel, "changelog": changelog,
-                    "loaders": [platform], "game_versions": game_versions(platform), "dependencies": [],
+                    "loaders": platform_loaders(platform), "game_versions": game_versions(platform), "dependencies": [],
                     "file_parts": ["jar"], "primary_file": "jar", "featured": False}
         matches = [v for v in records if v["version_number"] == version and platform in v["loaders"]]
         if len(matches) > 1:
@@ -147,6 +171,10 @@ if __name__ == "__main__":
         project_id = project()
         mod_api("user")
         check_modrinth_versions(mod_api("tag/game_version"))
+        available = {item["name"] for item in mod_api("tag/loader")}
+        for platform in PLATFORMS:
+            if not set(platform_loaders(platform)).issubset(available):
+                raise ValueError("A tested loader is missing from the Modrinth catalogue")
         if mod_api("project/" + project_id)["id"] != project_id:
             raise ValueError("MODRINTH_PROJECT_ID must be a project ID")
         # Stop before creating a GitHub release for a historical Modrinth-only version.

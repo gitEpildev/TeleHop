@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
@@ -33,7 +34,7 @@ public class AdminTeleportCommand extends BaseCommand {
                         @co.aikar.commands.annotation.Optional String arg3,
                         @co.aikar.commands.annotation.Optional String arg4) {
         if (!plugin.isFeatureEnabled("admin-tp")) {
-            sender.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(sender, plugin.msg("feature-disabled"));
             return;
         }
         boolean coordinates = arg3 != null;
@@ -45,7 +46,7 @@ public class AdminTeleportCommand extends BaseCommand {
             permission = self ? PermissionNodes.TP_PLAYER_SELF : PermissionNodes.TP_PLAYER_OTHERS;
         }
         if (!sender.hasPermission(permission)) {
-            sender.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(sender, plugin.msg("no-permission"));
             return;
         }
 
@@ -53,7 +54,7 @@ public class AdminTeleportCommand extends BaseCommand {
         if (arg4 != null) {
             Double x = parseDouble(arg2), y = parseDouble(arg3), z = parseDouble(arg4);
             if (x == null || y == null || z == null) {
-                sender.sendMessage(plugin.msg("invalid-coords"));
+                PlatformText.send(sender, plugin.msg("invalid-coords"));
                 return;
             }
             tpPlayerToCoords(sender, arg1, x, y, z);
@@ -65,12 +66,12 @@ public class AdminTeleportCommand extends BaseCommand {
             Double x = parseDouble(arg1), y = parseDouble(arg2), z = parseDouble(arg3);
             if (x != null && y != null && z != null) {
                 Location dest = new Location(sender.getWorld(), x, y, z);
-                sender.teleportAsync(dest);
+                plugin.platform().teleport(sender, dest);
                 plugin.auditLogger().log(sender.getName() + " tp -> " + x + " " + y + " " + z);
                 return;
             }
             // Not valid coords - fall through to show usage
-            sender.sendMessage(plugin.msg("invalid-coords"));
+            PlatformText.send(sender, plugin.msg("invalid-coords"));
             return;
         }
 
@@ -79,7 +80,7 @@ public class AdminTeleportCommand extends BaseCommand {
             Player player1 = Bukkit.getPlayerExact(arg1);
             Player player2 = Bukkit.getPlayerExact(arg2);
             if (player1 != null && player2 != null) {
-                player1.teleportAsync(player2.getLocation());
+                plugin.platform().teleport(player1, player2.getLocation());
                 plugin.auditLogger().log(sender.getName() + " tp " + player1.getName() + " -> " + player2.getName());
                 return;
             }
@@ -95,7 +96,7 @@ public class AdminTeleportCommand extends BaseCommand {
         // /tp <player>
         Player target = Bukkit.getPlayerExact(arg1);
         if (target != null) {
-            sender.teleportAsync(target.getLocation());
+            plugin.platform().teleport(sender, target.getLocation());
             plugin.auditLogger().log(sender.getName() + " tp -> " + target.getName());
             return;
         }
@@ -111,7 +112,7 @@ public class AdminTeleportCommand extends BaseCommand {
         Player target = Bukkit.getPlayerExact(playerName);
         if (target != null) {
             Location dest = new Location(sender.getWorld(), x, y, z);
-            target.teleportAsync(dest);
+            plugin.platform().teleport(target, dest);
             plugin.auditLogger().log(sender.getName() + " tp " + target.getName() + " -> " + x + " " + y + " " + z);
             return;
         }

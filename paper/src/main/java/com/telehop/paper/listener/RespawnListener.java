@@ -4,7 +4,6 @@ import com.telehop.paper.NetworkPaperPlugin;
 import com.telehop.paper.config.PaperSettings;
 import com.telehop.paper.service.RandomRespawnManager;
 import com.telehop.paper.service.RandomRespawnService;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -14,7 +13,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
-import org.bukkit.event.player.PlayerTeleportEvent;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -54,11 +52,12 @@ public final class RespawnListener implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onDeath(PlayerDeathEvent event) {
         Player player = event.getEntity();
+        respawnManager.clear(player.getUniqueId());
 
         if (!plugin.isFeatureEnabled("random-respawn")) return;
 
         PaperSettings settings = plugin.settings();
-        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
+        if (isNetworkHub(settings)) return;
 
         String deathWorld = plugin.versionAdapter().getWorldName(player.getWorld());
         if (settings.isRespawnExcludedWorld(deathWorld)) {
@@ -69,7 +68,8 @@ public final class RespawnListener implements Listener {
 
         plugin.getLogger().info("[RandomRespawn] " + player.getName() + " died - processing...");
 
-        World world = plugin.versionAdapter().resolveWorld(settings.respawnWorld());
+        String configuredWorld = settings.respawnWorld();
+        World world = configuredWorld.isBlank() ? player.getWorld() : plugin.versionAdapter().resolveWorld(configuredWorld);
         if (world == null) {
             plugin.getLogger().warning("[RandomRespawn] World '" + settings.respawnWorld()
                     + "' not found - falling back to default respawn.");
@@ -77,7 +77,7 @@ public final class RespawnListener implements Listener {
         }
 
         plugin.getLogger().info("[RandomRespawn] Starting async search for "
-                + player.getName() + " in world '" + settings.respawnWorld()
+                + player.getName() + " in world '" + plugin.versionAdapter().getWorldName(world)
                 + "' radius " + settings.respawnRadius());
         CompletableFuture<Location> future = respawnService.findSafeLocation(world, settings.respawnRadius());
         respawnManager.stage(player.getUniqueId(), future);
@@ -91,27 +91,31 @@ public final class RespawnListener implements Listener {
         if (!plugin.isFeatureEnabled("random-respawn")) return;
 
         PaperSettings settings = plugin.settings();
-        if (settings.serverName().equalsIgnoreCase(settings.hubServer())) return;
+        if (isNetworkHub(settings)) return;
 
         if (settings.respawnRespectBed() && event.isBedSpawn()) {
+            respawnManager.clear(player.getUniqueId());
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
                     + " has bed spawn - respecting bed.");
             return;
         }
         if (settings.respawnRespectAnchor() && event.isAnchorSpawn()) {
+            respawnManager.clear(player.getUniqueId());
             plugin.getLogger().info("[RandomRespawn] " + player.getName()
                     + " has anchor spawn - respecting anchor.");
             return;
         }
 
-        CompletableFuture<Location> future = respawnManager.consume(player.getUniqueId());
+        var playerId = player.getUniqueId();
+        CompletableFuture<Location> future = respawnManager.pending(playerId);
         if (future == null) {
             plugin.getLogger().warning("[RandomRespawn] No staged future for "
                     + player.getName() + " - falling back to default.");
             return;
         }
 
-        if (future.isDone() && !future.isCompletedExceptionally()) {
+        if (future.isDone()) {
+            if (!respawnManager.claim(playerId, future) || future.isCompletedExceptionally()) return;
             Location location = future.getNow(null);
             if (location != null) {
                 plugin.getLogger().info("[RandomRespawn] Applying location for "
@@ -124,16 +128,17 @@ public final class RespawnListener implements Listener {
         } else {
             plugin.getLogger().info("[RandomRespawn] Future still pending for "
                     + player.getName() + " - will teleport after respawn.");
-            future.thenAccept(location -> {
-                if (location != null && player.isOnline()) {
-                    Bukkit.getScheduler().runTask(plugin, () -> {
-                        plugin.getLogger().info("[RandomRespawn] Late teleport for "
-                                + player.getName() + ": " + formatLoc(location));
-                        player.teleportAsync(location, PlayerTeleportEvent.TeleportCause.PLUGIN);
-                    });
-                }
-            });
+            future.whenComplete((location, failure) -> plugin.onMainThread(() -> {
+                if (!respawnManager.claim(playerId, future) || location == null || !player.isOnline()) return;
+                plugin.getLogger().info("[RandomRespawn] Late teleport for "
+                        + player.getName() + ": " + formatLoc(location));
+                plugin.platform().teleport(player, location);
+            }));
         }
+    }
+
+    private boolean isNetworkHub(PaperSettings settings) {
+        return settings.serverName().equalsIgnoreCase(settings.hubServer()) && plugin.messaging().enabled();
     }
 
     private String formatLoc(Location loc) {

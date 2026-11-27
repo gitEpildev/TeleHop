@@ -1,0 +1,44 @@
+# Enable commands.custom-names.enabled in config.yml to use the names below.
+# Restart the backend after changing registered names or aliases.
+
+home:
+  custom-name:
+    enabled: false
+    name: home
+    aliases: []
+
+sethome:
+  custom-name:
+    enabled: false
+    name: sethome
+    aliases: []
+
+delhome:
+  custom-name:
+    enabled: false
+    name: delhome
+    aliases: []
+
+listhomes:
+  custom-name:
+    enabled: false
+    name: listhomes
+    aliases: []
+
+forcesethome:
+  custom-name:
+    enabled: false
+    name: forcesethome
+    aliases: []
+
+forcedelhome:
+  custom-name:
+    enabled: false
+    name: forcedelhome
+    aliases: []
+
+forcedelhome-confirm:
+  custom-name:
+    enabled: false
+    name: forcedelhome-confirm
+    aliases: []

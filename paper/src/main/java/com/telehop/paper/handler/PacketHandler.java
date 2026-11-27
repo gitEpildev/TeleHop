@@ -1,5 +1,6 @@
 package com.telehop.paper.handler;
 
+import com.telehop.paper.platform.PlatformText;
 import com.telehop.common.model.NetworkPacket;
 import com.telehop.common.model.PacketType;
 import com.telehop.common.model.TpaRequestRecord;
@@ -27,6 +28,11 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     public PacketHandler(NetworkPaperPlugin plugin, ServiceRegistry services) {
         this.plugin = plugin;
         this.services = services;
+    }
+
+    @Override
+    public java.util.concurrent.CompletableFuture<Boolean> handleVariant(NetworkPacket packet, Player carrier) {
+        return com.telehop.paper.service.VariantTravel.arrive(plugin, carrier, packet);
     }
 
     @Override
@@ -100,7 +106,11 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         if (player != null) {
             services.warpService().find(warpName)
                     .thenAccept(warp -> Bukkit.getScheduler().runTask(plugin, () -> {
-                        if (player.isOnline()) warp.ifPresent(w -> services.teleportService().teleportToWarp(player, w));
+                        if (player.isOnline() && plugin.isFeatureEnabled("warps") && plugin.permissionService().warp(player, warpName)) {
+                            warp.filter(w -> w.server().equalsIgnoreCase(plugin.settings().serverName())
+                                    && plugin.permissionService().warp(player, w, plugin.settings().serverName()))
+                                    .ifPresent(w -> services.teleportService().teleportToWarp(player, w));
+                        }
                     }));
         }
     }
@@ -137,9 +147,9 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         if (!packet.getOriginServer().equalsIgnoreCase(services.settings().serverName())) {
             Player target = Bukkit.getPlayer(targetUuid);
             if (target != null) {
-                target.sendMessage(plugin.msg(type == TpaType.TPA ? "request-received" : "request-received-here",
+                PlatformText.send(target, plugin.msg(type == TpaType.TPA ? "request-received" : "request-received-here",
                         Map.of("sender", packet.get("senderName"))));
-                target.sendMessage(services.messageService().raw("request-actions"));
+                PlatformText.send(target, services.messageService().raw("request-actions"));
             }
         }
     }
@@ -147,23 +157,22 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
     private void handleTpaDeny(NetworkPacket packet) {
         Player sender = Bukkit.getPlayer(UUID.fromString(packet.get("senderUuid")));
         if (sender != null) {
-            sender.sendMessage(plugin.msg("request-denied"));
+            PlatformText.send(sender, plugin.msg("request-denied"));
         }
     }
 
     private void handleTpaCancel(NetworkPacket packet) {
         Player target = Bukkit.getPlayer(UUID.fromString(packet.get("targetUuid")));
         if (target != null) {
-            target.sendMessage(plugin.msg("request-cancelled"));
+            PlatformText.send(target, plugin.msg("request-cancelled"));
         }
     }
 
     private void handleRtpRequest(NetworkPacket packet) {
         Player player = Bukkit.getPlayer(UUID.fromString(packet.get("uuid")));
         if (player != null) {
-            services.teleportService().executeLocalRtp(player,
-                    packet.getOrDefault("region", "default"),
-                    packet.getOrDefault("dimension", "overworld"));
+            new com.telehop.paper.service.RtpTravel(plugin).arrive(player, null,
+                    packet.get("region"), packet.get("dimension"));
         }
     }
 
@@ -171,7 +180,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         Player actor = Bukkit.getPlayer(UUID.fromString(packet.get("actorUuid")));
         Player target = Bukkit.getPlayer(UUID.fromString(packet.get("targetUuid")));
         if (actor != null && target != null) {
-            actor.teleportAsync(target.getLocation());
+            plugin.platform().teleport(actor, target.getLocation());
         }
     }
 
@@ -184,7 +193,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
                 Double.parseDouble(packet.get("x")),
                 Double.parseDouble(packet.get("y")),
                 Double.parseDouble(packet.get("z")));
-        target.teleportAsync(dest);
+        plugin.platform().teleport(target, dest);
     }
 
     private void handlePwarpTeleport(NetworkPacket packet) {
@@ -198,7 +207,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
             World world = plugin.versionAdapter().resolveWorld(warp.world());
             if (world != null) {
                 Location loc = new Location(world, warp.x(), warp.y(), warp.z(), warp.yaw(), warp.pitch());
-                player.teleportAsync(loc);
+                plugin.platform().teleport(player, loc);
             }
         })));
     }
@@ -212,7 +221,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
             if (!player.isOnline() || found.isEmpty()) return;
             if ("true".equals(packet.get("staffVisit")) && !player.hasPermission(
                     com.telehop.common.PermissionNodes.ADMIN_HOMES_VISIT)) {
-                player.sendMessage(plugin.msg("no-permission"));
+                PlatformText.send(player, plugin.msg("no-permission"));
                 return;
             }
             var home = found.get();
@@ -240,7 +249,7 @@ public final class PacketHandler implements com.telehop.paper.messaging.PaperMes
         Player sender = Bukkit.getPlayer(UUID.fromString(packet.get("senderUuid")));
         if (sender != null) {
             String targetName = packet.getOrDefault("senderTargetName", "Unknown");
-            sender.sendMessage(plugin.msg("player-tpa-disabled", Map.of("target", targetName)));
+            PlatformText.send(sender, plugin.msg("player-tpa-disabled", Map.of("target", targetName)));
         }
     }
 

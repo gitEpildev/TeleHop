@@ -42,6 +42,17 @@ public class NetworkPacket {
                 .put("uuid", traveller.toString());
     }
 
+    /** A peer must explicitly acknowledge V4 command variants before a player can transfer. */
+    public static NetworkPacket variantProbe(String origin, String target, UUID traveller) {
+        return request(PacketType.PING, origin, target)
+                .put("capability", com.telehop.common.NetworkConstants.VARIANT_CAPABILITY)
+                .put("uuid", traveller.toString());
+    }
+
+    public boolean supportsVariants() {
+        return com.telehop.common.NetworkConstants.VARIANT_CAPABILITY.equals(get("capability"));
+    }
+
     public boolean supportsSpawns() {
         return com.telehop.common.NetworkConstants.SPAWN_CAPABILITY.equals(get("capability"));
     }

@@ -1,0 +1,38 @@
+# Enable commands.custom-names.enabled in config.yml to use the names below.
+# Restart the backend after changing registered names or aliases.
+
+warp:
+  custom-name:
+    enabled: false
+    name: warp
+    aliases: []
+
+warps:
+  custom-name:
+    enabled: false
+    name: warps
+    aliases: []
+
+listwarps:
+  custom-name:
+    enabled: false
+    name: listwarps
+    aliases: []
+
+setwarp:
+  custom-name:
+    enabled: false
+    name: setwarp
+    aliases: []
+
+delwarp:
+  custom-name:
+    enabled: false
+    name: delwarp
+    aliases: []
+
+forcedelwarp:
+  custom-name:
+    enabled: false
+    name: forcedelwarp
+    aliases: []

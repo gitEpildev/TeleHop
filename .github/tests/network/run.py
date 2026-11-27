@@ -17,6 +17,7 @@ import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from server_smoke import SERVERS, mysql
+from runtime_download import download
 
 PLUGINS = {
     "LuckPerms.jar": ("https://cdn.modrinth.com/data/Vebnzrzj/versions/b0mk8uS6/LuckPerms-Bukkit-5.5.71.jar",
@@ -24,12 +25,6 @@ PLUGINS = {
     "Multiverse-Core.jar": ("https://cdn.modrinth.com/data/3wmN97b8/versions/de7TbcZG/multiverse-core-5.8.2.jar",
                             "792252b6bbcf17c94ab8385e595281c830d7a40c946aea1832d8a010702bb630"),
 }
-
-
-def download(destination, url, digest):
-    subprocess.run(["curl", "-fsSL", "--retry", "3", "-o", destination, url], check=True)
-    if hashlib.sha256(destination.read_bytes()).hexdigest() != digest:
-        raise ValueError(f"Checksum mismatch for {destination.name}")
 
 
 class Process:
@@ -61,7 +56,7 @@ class Process:
         raise AssertionError(f"{self.log}: expected {pattern!r}\n{log[-2200:]}")
 
     def command(self, text, expect):
-        if text.startswith(("/spawn", "/hub")):
+        if text.startswith(("/spawn", "/hub", "/gv")):
             time.sleep(1.1)  # Exercise distinct commands outside the player debounce window.
         mark = self.mark()
         self.send(text)
@@ -102,14 +97,58 @@ def entity_values_match(server, field, expected, player="ReviewMember"):
     return all(abs(value) <= 0.01 for value in delta)
 
 
+def regional_settings(radius, dimension="meadow"):
+    return (f"rtp:\n  max-radius: {radius}\n  cooldown-seconds: 0\n  delay-seconds: 0\n"
+            f"  default-dimension: {dimension}\n"
+            f"  dimensions: {{{dimension}: world, depths: world_nether, sky: world_the_end}}\n"
+            "  gui: {dimension-items: {depths: {material: NETHERRACK}, sky: {material: END_STONE}}}\n"
+            f"  regions:\n    mines: {{radius: {radius}, gui: {{material: RED_CONCRETE}}}}\n"
+            f"    port: {{radius: {radius}, gui: {{material: BLUE_CONCRETE}}}}\n")
+
+
+def configure_variants(plugin):
+    (plugin / "config.yml").write_text("config-version: 1\nmode: SINGLE\ncommands:\n"
+        "  custom-names: {enabled: true}\n  additional-commands: {enabled: true}\n")
+    root = plugin / "commands"
+    root.mkdir(exist_ok=True)
+    (root / "rtp.yml").write_text("""rtp:
+  additional-commands:
+    enabled: true
+    commands:
+      mines-trip:
+        enabled: true
+        name: minestrip
+        aliases: [minejump]
+        destination: {region: mines, dimension: meadow}
+        gui: {enabled: false}
+        settings: {inherit-defaults: true, overrides: {cooldown-seconds: 0, delay-seconds: 0, max-radius: 8}}
+        permissions: {require-command-permission: true}
+""")
+    (root / "spawn.yml").write_text("""spawn:
+  additional-commands:
+    enabled: true
+    commands:
+      garden-trip:
+        enabled: true
+        name: gardenvisit
+        aliases: [gv]
+        destination: {type: NAMED_SPAWN, target: gardens}
+        permissions: {require-command-permission: true}
+""")
+
+
 def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=None, rtp=None,
-          features=None, commands=None,
+          features=None, commands=None, variants=False,
           folder_name=None, plugin_jar=None, extra_plugins=PLUGINS):
     folder = root / (folder_name or name)
     folder.mkdir()
     template = args.paper
-    for world in ("world", "world_nether", "world_the_end"):
-        shutil.copytree(template / world, folder / world)
+    # Older servers save dimensions beside the primary world. Newer releases keep them inside it.
+    worlds = sorted(record.parent for record in template.glob("*/level.dat"))
+    if not worlds:
+        raise FileNotFoundError(f"No saved worlds in the smoke server at {template}")
+    for world in worlds:
+        shutil.copytree(world, folder / world.name)
     for shared in ("server.jar", "cache", "libraries", "versions"):
         (folder / shared).symlink_to((template / shared).resolve())
     shutil.copytree(template / "config", folder / "config")
@@ -129,6 +168,8 @@ def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=N
                               ("spawns.yml", spawns), ("rtp.yml", rtp)):
         if content is not None:
             (config / filename).write_text(content)
+    if variants:
+        configure_variants(config.parent)
     if storage:
         (config.parent / "storage.yml").write_text(storage)
     shutil.copy(plugin_jar or args.bundle / f"telehop-paper-{args.version}.jar", folder / "plugins")
@@ -138,7 +179,7 @@ def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=N
                                   "-jar", "server.jar", "--nogui"], "stop")
 
 
-def proxy(stack, args, root, ports, *, folder_name="proxy", settings="", plugin_jar=None):
+def proxy(stack, args, root, ports, *, folder_name="proxy", settings="", plugin_jar=None, server_names=None):
     folder = root / folder_name
     folder.mkdir()
     name, digest = SERVERS[args.proxy]
@@ -150,15 +191,17 @@ def proxy(stack, args, root, ports, *, folder_name="proxy", settings="", plugin_
     # All test clients connect from the same loopback address.
     toml = re.sub(r'^login-ratelimit = .*', 'login-ratelimit = 0', toml, flags=re.M)
     toml = re.sub(r'^player-info-forwarding-mode = .*', 'player-info-forwarding-mode = "NONE"', toml, flags=re.M)
-    backends = f'[servers]\nhub = "127.0.0.1:{ports[1]}"\n'
-    if len(ports) == 3:
-        backends += f'survival = "127.0.0.1:{ports[2]}"\n'
-    toml = re.sub(r'\[servers\].*?\[forced-hosts\]', backends + 'try = ["hub"]\n\n[forced-hosts]', toml, flags=re.S)
+    names = server_names or ("hub", "survival")[:len(ports) - 1]
+    backends = "[servers]\n" + "".join(f'{name} = "127.0.0.1:{port}"\n'
+                                         for name, port in zip(names, ports[1:], strict=True))
+    toml = re.sub(r'\[servers\].*?\[forced-hosts\]', backends + f'try = ["{names[0]}"]\n\n[forced-hosts]', toml, flags=re.S)
     toml = re.sub(r'\[forced-hosts\].*?(?=\n\[)', '[forced-hosts]\n', toml, flags=re.S)
     (folder / "velocity.toml").write_text(toml)
     (folder / "forwarding.secret").write_text(secrets.token_hex(32))
     config = folder / "plugins/telehop-velocity"
     config.mkdir(parents=True)
+    if not settings:
+        settings = f"servers.hub={names[0]}\nservers.backends=" + ",".join(names) + "\n"
     (config / "config.properties").write_text(
         f"mysql.host=127.0.0.1\nmysql.port={os.environ['MYSQL_PORT']}\nmysql.database=telehop_ci\n"
         "mysql.username=telehop\nmysql.password=ci-password\n" + settings)
@@ -227,14 +270,54 @@ def menu_travel(root, client, hub, survival):
     assert_entity_values(survival, "Pos", [21.5, 96, -11.5])
 
     return_to_hub()
-    general = root / "hub/plugins/TeleHop/config/general.yml"
-    general.write_text("server-name: hub\nhub-server: hub\nservers: {eu: hub, usa: survival}\n")
-    destination_rtp = root / "survival/plugins/TeleHop/config/rtp.yml"
-    destination_rtp.write_text("rtp:\n  max-radius: 32\n  regions: {usa: {radius: 32}}\n")
+    general = root / "hub/plugins/TeleHop/config/single/general.yml"
+    general.write_text("server-name: hub\nhub-server: hub\nservers: {port: hub, mines: survival}\n")
+    destination_rtp = root / "survival/plugins/TeleHop/config/single/rtp.yml"
+    destination_rtp.write_text(regional_settings(32))
+    survival.command("telehop reload", r"(?i)reloaded")
     survival.command("minecraft:forceload add -32 -32 32 32", r"(?i)marked .*chunk|already")
     survival.command("minecraft:fill -32 200 -32 32 200 32 minecraft:stone", r"(?i)filled|blocks")
     client.command("/telehop reload", r"(?i)reloaded")
     regional_rtp(client, "ReviewMember", survival, radius=32, landing_y=201)
+    # Source and destination use independent LuckPerms stores and evaluate the same stable variant ID.
+    return_to_hub()
+    hub.command("lp user ReviewMember permission set telehop.command.mines-trip false", "false")
+    client.command("/minejump", r"(?i)permission")
+    hub.command("lp user ReviewMember permission set telehop.command.mines-trip true", "true")
+    survival.command("lp user ReviewMember permission set telehop.command.mines-trip false", "false")
+    mark = survival.mark()
+    client.command("/minejump", r"(?i)destination is unavailable|permission")
+    survival.wait("ReviewMember joined the game", mark)
+    return_to_hub()
+    survival.command("lp user ReviewMember permission set telehop.command.mines-trip true", "true")
+    mark = survival.mark()
+    client.send("/minestrip")
+    survival.wait("ReviewMember joined the game", mark)
+    for _ in range(40):
+        x, y, z = entity_vector(survival, "Pos", "ReviewMember")
+        if -8 <= x < 9 and -8 <= z < 9 and abs(y - 201) < .01:
+            break
+        time.sleep(.2)
+    else:
+        raise AssertionError(f"Command variant missed its configured platform and radius: {(x, y, z)}")
+    # Return to a different server and use the named-spawn alias with its permission granted at each end.
+    return_to_hub()
+    for backend in (hub, survival):
+        backend.command("lp user ReviewMember permission set telehop.command.garden-trip true", "true")
+    client.command("/gv", r"Arrived at gardens")
+    assert_entity_values(survival, "Pos", [21.5, 96, -11.5])
+
+    # A global grant in training must yield to a denial scoped to the destination world.
+    survival.command("mv tp ReviewMember training", r"(?i)teleport")
+    survival.command("data get entity ReviewMember Dimension", "training")
+    survival.command("lp user ReviewMember permission set telehop.command.garden-trip false world=world", "false")
+    client.command("/gv", r"(?i)permission")
+    survival.command("data get entity ReviewMember Dimension", "training")
+    survival.command("lp user ReviewMember permission set telehop.command.garden-trip true world=world", "true")
+    client.command("/gv", r"Arrived at gardens")
+    survival.command("data get entity ReviewMember Dimension", r"minecraft:overworld")
+    assert_entity_values(survival, "Pos", [21.5, 96, -11.5])
+
 
 
 def regional_rtp(client, player, survival, *, radius, landing_y):
@@ -267,22 +350,24 @@ def run(args):
         features = "features: {spawn: true, hub: true}\n"
         routes = ("routing:\n  enabled: true\n  default: {server: hub}\n"
                   "  worlds: {training: {server: survival, spawn: gardens}}\n")
-        hub = paper(stack, args, "hub", ports[1], root, features=features, spawns="destinations: {}\n")
-        survival = paper(stack, args, "survival", ports[2], root, features=features,
-                         commands="hub: [lobby, hub]\n", spawns=routes)
+        topology = "hub-server: hub\nservers: {port: hub, mines: survival}\n"
+        hub = paper(stack, args, "hub", ports[1], root, features=features, spawns="destinations: {}\n",
+                    general="server-name: hub\n" + topology, rtp=regional_settings(32), variants=True)
+        survival = paper(stack, args, "survival", ports[2], root, features=features, general="server-name: survival\n" + topology,
+                         commands="hub: [lobby, hub]\n", spawns=routes, rtp=regional_settings(32), variants=True)
         bridge = proxy(stack, args, root, ports)
         for server in (hub, survival, bridge):
             server.wait(r"Done \(", seconds=180)
         client_dir = root / "client"
         client_dir.mkdir()
         client = Process(stack, client_dir, ["node", str(Path(__file__).with_name("client.cjs").resolve()), str(ports[0])], None)
-        client.wait("CLIENT_READY", seconds=45)
+        client.wait("CLIENT_READY", seconds=150)
         hub.command("op ReviewMember", r"operator|opped")
         client.command("/telehop spawn setdefault", "Saved the default spawn")
         client.command("/spawn", "Teleporting to spawn")
         assert mysql("SELECT default_world, routing_enabled, hub_command FROM spawn_backends WHERE server='hub'") == ["world\t0\t1"]
         # Registration and the shared directory must still describe the running Paper instance after a reload.
-        switches = root / "hub/plugins/TeleHop/config/features.yml"
+        switches = root / "hub/plugins/TeleHop/config/single/features.yml"
         original_switches = switches.read_text()
         switches.write_text("features: {spawn: true, hub: false}\n")
         client.command("/telehop reload", "Restart Paper to apply the hub command setting")
@@ -306,7 +391,7 @@ def run(args):
         client.command("/telehop spawn set staff-room restricted", "Saved staff-room")
         # This name is created exclusively by editing YAML while the servers are running.
         chosen = "orchard-" + secrets.token_hex(3)
-        settings = root / "survival/plugins/TeleHop/config/spawns.yml"
+        settings = root / "survival/plugins/TeleHop/config/single/spawns.yml"
         original = settings.read_text()
         marker = "\ndestinations:\n"
         assert marker in original
@@ -358,6 +443,7 @@ def run(args):
         client.command("/spawn missing-destination", "destination is unavailable")
         survival.command("lp user ReviewMember permission set telehop.spawn.destination.gardens false", "false")
         client.command("/spawn gardens", r"(?i)permission")
+        survival.command("lp user ReviewMember permission unset telehop.spawn.destination.gardens", r"(?i)unset|removed|no longer")
         survival.command("op ReviewMember", r"operator|opped")
         match = client.command("/telehop spawn delete staff-room", r"/telehop spawn delete staff-room ([0-9a-f-]{36})")
         client.command("/telehop spawn delete staff-room " + match[1], "Deleted staff-room")

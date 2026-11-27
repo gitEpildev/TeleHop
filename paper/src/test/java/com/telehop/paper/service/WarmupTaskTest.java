@@ -2,7 +2,6 @@ package com.telehop.paper.service;
 
 import com.telehop.paper.NetworkPaperPlugin;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.title.Title;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
@@ -10,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Method;
 import java.util.Map;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
@@ -31,10 +29,10 @@ class WarmupTaskTest {
         for (int i = 5; i > 0; i--) {
             verify(messages).rawFormat("countdown-title", Map.of("seconds", String.valueOf(i)));
         }
-        verify(player, times(5)).showTitle(any(Title.class));
-        verify(player, never()).sendMessage(any(Component.class));
-        verify(player, never()).sendActionBar(any(Component.class));
-        verify(player).clearTitle();
+        verify(player, times(5)).sendTitle("countdown", "", 0, 22, 0);
+        verify(player, never()).sendMessage(anyString());
+        verify(player, never()).spigot();
+        verify(player).resetTitle();
         verify(complete).run();
     }
 
@@ -47,9 +45,9 @@ class WarmupTaskTest {
         WarmupTask task = new WarmupTask(plugin, player, 1, false, false, () -> {}, null);
         tick(task);
         tick(task);
-        verify(player, never()).showTitle(any(Title.class));
-        verify(player, never()).clearTitle();
-        verify(player, never()).sendMessage(any(Component.class));
+        verify(player, never()).sendTitle(anyString(), anyString(), anyInt(), anyInt(), anyInt());
+        verify(player, never()).resetTitle();
+        verify(player, never()).sendMessage(anyString());
     }
 
     @Test
@@ -62,10 +60,10 @@ class WarmupTaskTest {
         when(player.isOnline()).thenReturn(true);
         WarmupTask task = new WarmupTask(plugin, player, 5, true, true, complete, cancel);
         tick(task);
-        verify(player).clearTitle();
+        verify(player).resetTitle();
         verify(cancel).run();
         verify(complete, never()).run();
-        verify(player, never()).showTitle(any(Title.class));
+        verify(player, never()).sendTitle(anyString(), anyString(), anyInt(), anyInt(), anyInt());
     }
 
     private static void tick(WarmupTask task) throws Exception {

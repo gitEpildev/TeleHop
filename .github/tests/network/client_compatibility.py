@@ -10,7 +10,9 @@ from server_smoke import COMPATIBILITY
 
 
 def run(args):
-    backend_version = COMPATIBILITY["velocity_client_backends"][args.client_version]
+    test = COMPATIBILITY["velocity_client_backends"][args.client_version]
+    backend_version = test["backend"]
+    args.proxy = "velocity-" + test["proxy"]
     digest = hashlib.sha256((args.paper / "server.jar").read_bytes()).hexdigest()
     if digest != COMPATIBILITY["paper"][backend_version]["sha256"]:
         raise ValueError(f"Expected the verified Paper {backend_version} smoke directory")
@@ -33,10 +35,10 @@ def run(args):
         directory = root / "client"
         directory.mkdir()
         client = Process(stack, directory, ["node", str(Path(__file__).with_name("client.cjs").resolve()),
-                                           str(ports[0]), name, args.client_version, backend_version], None)
+                                           str(ports[0]), name, args.client_version, test["schema"]], None)
         handshake = client.wait(r"LOGIN_HANDSHAKE ([\d.]+) (\d+)", seconds=30)
         assert handshake[1] == args.client_version
-        client.wait("CLIENT_READY")
+        client.wait("CLIENT_READY", seconds=150)
         backend.wait(name + " joined the game")
         # Support the starting position as well as the destination before moving the client.
         backend.command("minecraft:forceload add 7 8", r"(?i)marked .*chunk|already|no chunks")
@@ -56,5 +58,5 @@ if __name__ == "__main__":
     parser.add_argument("version")
     parser.add_argument("directory", type=Path)
     parser.add_argument("client_version", choices=COMPATIBILITY["velocity_client_backends"])
-    parser.set_defaults(proxy="velocity-3.5", proxy_java="java")
+    parser.set_defaults(proxy_java="java")
     run(parser.parse_args())

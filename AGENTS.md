@@ -84,27 +84,20 @@ homeService.find(uuid, slot).thenAccept(opt ->
 
 ## 6. Configuration
 
-### Paper (split config files)
-Config lives in `plugins/TeleHop/config/` as split YAML files:
+Both plugins use a root `config.yml` and a `SINGLE`, `MULTI` or `CUSTOM` deployment selector. `DeploymentConfig` selects one lower-case profile directory. Install templates for each mode on first use, validate only the selected profile and preserve operator edits to inactive profiles.
 
-| File | Content |
-| :--- | :--- |
-| `spawns.yml` | Named destinations and backend and world spawn routes |
-| `commands.yml` | Primary command labels and aliases, including the optional hub command |
-| `general.yml` | Server name, hub server, servers list, language, messaging, audit |
-| `database.yml` | MySQL connection details and pool size |
-| `features.yml` | Per-backend feature switches and startup registration of the optional hub command |
-| `teleport.yml` | Show-countdown, particle/sound effects per teleport type |
-| `tpa.yml` | TPA timeout, cooldown, delay, cancel-on-move |
-| `rtp.yml` | RTP cooldown, delay, max-radius, regions, dimensions, GUI |
-| `home.yml` | Max slots, GUI, bed materials, blocked servers, world/server colours |
+| Location | Backend | Velocity |
+| :--- | :--- | :--- |
+| Plugin directory | `plugins/TeleHop/` | `plugins/telehop-velocity/` |
+| `config/single/` | `general.yml`, `features.yml`, `spawns.yml`, `teleport.yml`, `tpa.yml`, `rtp.yml`, `respawn.yml`, `home.yml`. The general file holds messaging and regions. | `servers.yml` and `messaging.yml`. The servers file also holds the proxy section. |
+| `config/multi/`, `config/custom/` | The eight common files plus `messaging.yml` and `regions.yml`. | `proxy.yml`, `servers.yml`, `messaging.yml`. |
+| Shared configuration | `config/database.yml`, `config/WIKI.md`, `commands/` and `languages/` | `config/database.yml` and `config/redis.yml` |
+| Runtime storage and migration records | `storage.yml` and `migrations/` | `migrations/` |
 
-- `PaperSettings` is an **immutable record** loaded once at startup (and on `/telehop reload`).
-- Config templates with documentation comments live in `paper/src/main/resources/config/`.
-- Legacy `config.yml` is auto-migrated by `ConfigMigrator` on first boot.
-
-### Velocity
-Single `config.properties` file. Loaded by `VelocitySettings`.
+- Keep settings immutable. Validate reload candidates before publishing them.
+- `PaperProfiles` and `VelocityProfiles` use the shared transactional configuration migrator. Preserve backups, original settings and custom labels on upgrade.
+- Keep YAML defaults documented and keep the bundled backend guide consistent with the active paths. Cover fresh installation, legacy inputs, failed validation and repeated starts in tests.
+- Velocity uses the proxy API to check TeleHop's selected backend names. Velocity itself owns `velocity.toml`.
 
 ---
 

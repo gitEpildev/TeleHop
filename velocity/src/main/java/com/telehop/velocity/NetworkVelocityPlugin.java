@@ -3,6 +3,7 @@ package com.telehop.velocity;
 import com.telehop.velocity.service.VelocityServiceRegistry;
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.Subscribe;
+import com.velocitypowered.api.event.EventTask;
 import com.velocitypowered.api.event.connection.DisconnectEvent;
 import com.velocitypowered.api.event.connection.LoginEvent;
 import com.velocitypowered.api.event.player.ServerPostConnectEvent;
@@ -22,7 +23,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "telehop-velocity",
         name = "TeleHop-Velocity",
-        version = "3.0.1",
+        version = "4.0.0",
         url = "https://developer.epildevconnect.uk",
         description = "Cross-server teleportation proxy bridge for TeleHop",
         authors = {"Epildev"}
@@ -31,7 +32,7 @@ public class NetworkVelocityPlugin {
     private final ProxyServer proxy;
     private final Logger logger;
     private final Path dataDirectory;
-    private VelocityServiceRegistry services;
+    private volatile VelocityServiceRegistry services;
 
     @Inject
     public NetworkVelocityPlugin(ProxyServer proxy, Logger logger,
@@ -42,12 +43,15 @@ public class NetworkVelocityPlugin {
     }
 
     @Subscribe
-    public void onProxyInit(ProxyInitializeEvent event) {
-        try {
-            services = VelocityBootstrap.init(this, proxy, logger, dataDirectory);
-        } catch (Exception e) {
-            logger.error("Failed to initialize TeleHop-Velocity", e);
-        }
+    public EventTask onProxyInit(ProxyInitializeEvent event) {
+        // Velocity waits for initialisation while the JDBC migration runs outside the event thread.
+        return EventTask.async(() -> {
+            try {
+                services = VelocityBootstrap.init(this, proxy, logger, dataDirectory);
+            } catch (Exception failure) {
+                logger.error("TeleHop-Velocity startup failed. Check the configuration, database and migration history.", failure);
+            }
+        });
     }
 
     @Subscribe
@@ -74,6 +78,8 @@ public class NetworkVelocityPlugin {
     @Subscribe
     public void onDisconnect(DisconnectEvent event) {
         if (services == null) return;
+        var session = proxy.getPlayer(event.getPlayer().getUniqueId()).orElse(null);
+        if (session != null && session != event.getPlayer()) return;
         services.pendingActionManager().remove(event.getPlayer().getUniqueId());
         services.playerTracker().remove(event.getPlayer());
     }

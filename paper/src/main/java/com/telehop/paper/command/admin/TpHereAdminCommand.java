@@ -1,5 +1,6 @@
 package com.telehop.paper.command.admin;
 
+import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.CommandPermission;
@@ -24,16 +25,16 @@ public class TpHereAdminCommand extends BaseCommand {
     @co.aikar.commands.annotation.CommandCompletion("@networkplayers")
     public void execute(Player sender, String targetName) {
         if (!plugin.isFeatureEnabled("admin-tp")) {
-            sender.sendMessage(plugin.msg("feature-disabled"));
+            PlatformText.send(sender, plugin.msg("feature-disabled"));
             return;
         }
         if (!plugin.permissionService().has(sender, PermissionNodes.TPHERE)) {
-            sender.sendMessage(plugin.msg("no-permission"));
+            PlatformText.send(sender, plugin.msg("no-permission"));
             return;
         }
         Player target = Bukkit.getPlayerExact(targetName);
         if (target != null) {
-            target.teleportAsync(sender.getLocation());
+            plugin.platform().teleport(target, sender.getLocation());
             plugin.auditLogger().log(sender.getName() + " tphere <- " + target.getName());
             return;
         }
