@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -86,7 +87,7 @@ public final class CommandNames {
         return loadAt(plugin, plugin.getDataFolder().toPath(), settings, profile, custom, additional, hubRegistered);
     }
 
-    /** Stage command migration in a private directory before the profile transaction is committed. */
+    /** Read and validate the grouped files in a live or staged configuration without changing them. */
     public static CommandNames loadAt(JavaPlugin plugin, Path data, PaperSettings settings, File profile, boolean custom,
                                       boolean additional, boolean hubRegistered) {
         try {
@@ -95,26 +96,17 @@ public final class CommandNames {
             var variants = new LinkedHashMap<String, TravelVariant>();
             Path directory = data.resolve("commands");
             if (Files.isSymbolicLink(directory)) throw new IllegalArgumentException("Expected a command directory inside TeleHop");
-            Files.createDirectories(directory);
-            var source = data.resolve(LEGACY_INPUT).toFile();
-            boolean needsImport = GROUPS.stream().anyMatch(group -> !Files.exists(directory.resolve(group + ".yml")));
-            boolean importing = needsImport && source.isFile();
-            var legacy = importing ? read(source) : new YamlConfiguration();
-            var legacyDefaults = new YamlConfiguration();
-            if (importing) legacyDefaults.loadFromString(PaperProfiles.resource(plugin, LEGACY_TEMPLATE));
             var rtp = new RtpPolicy(read(new File(profile, "rtp.yml")), settings,
                     () -> plugin.getServer().getWorlds().stream().map(org.bukkit.World::getName).toList());
             for (String group : GROUPS) {
                 String name = group + ".yml";
-                String sourceText = PaperProfiles.resource(plugin, "commands/" + name);
                 var template = new YamlConfiguration();
-                template.loadFromString(sourceText);
+                template.loadFromString(PaperProfiles.resource(plugin, "commands/" + name));
                 var file = directory.resolve(name);
                 for (String id : template.getKeys(false)) {
                     var naming = TravelVariant.section(template, id + ".custom-name");
                     defaults.set(id, TravelVariant.labels(naming));
                 }
-                if (!Files.exists(file)) install(file, sourceText, template, legacyDefaults, legacy);
                 var configured = read(file.toFile());
                 TravelVariant.keys(configured, template.getKeys(false));
                 for (String id : template.getKeys(false)) {
@@ -146,9 +138,38 @@ public final class CommandNames {
         }
     }
 
+    static boolean incomplete(Path data) {
+        Path directory = data.resolve("commands");
+        return !Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS) || GROUPS.stream()
+                .anyMatch(group -> !Files.isRegularFile(directory.resolve(group + ".yml"), LinkOption.NOFOLLOW_LINKS));
+    }
+
+    /** Install missing groups in a private migration stage. Only the initial upgrade imports 3.x aliases. */
+    static void installMissing(JavaPlugin plugin, Path stage, boolean first) throws IOException, InvalidConfigurationException {
+        if (!incomplete(stage)) return;
+        Path directory = stage.resolve("commands");
+        if (Files.isSymbolicLink(directory)) throw new IOException("Expected a command directory inside TeleHop");
+        Files.createDirectories(directory);
+        Path source = stage.resolve(LEGACY_INPUT);
+        var legacy = new YamlConfiguration();
+        var defaults = new YamlConfiguration();
+        if (first && Files.isRegularFile(source, LinkOption.NOFOLLOW_LINKS)) {
+            legacy = read(source.toFile());
+            defaults.loadFromString(PaperProfiles.resource(plugin, LEGACY_TEMPLATE));
+        }
+        for (String group : GROUPS) {
+            Path file = directory.resolve(group + ".yml");
+            if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) continue;
+            String sourceText = PaperProfiles.resource(plugin, "commands/" + group + ".yml");
+            var template = new YamlConfiguration();
+            template.loadFromString(sourceText);
+            install(file, sourceText, template, defaults, legacy);
+        }
+    }
+
     private static YamlConfiguration read(File file) throws IOException, InvalidConfigurationException {
         var path = file.toPath();
-        if (!Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) || Files.size(path) > 2_000_000)
+        if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS) || Files.size(path) > 2_000_000)
             throw new IllegalArgumentException("Expected a regular configuration file of up to 2 MB at " + path);
         return PaperProfiles.yaml(path);
     }

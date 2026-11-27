@@ -45,7 +45,8 @@ def upgrade(root, bundle, version):
     previous = root / "released"
     previous_builds(previous, bundle)
     seed_legacy_homes()
-    for platform, build in (("paper", "paper-1.21.11"), ("velocity", "velocity-3.5")):
+    for build in ("paper-1.21.11", "velocity-3.5"):
+        platform, runtime_version = build.split("-", 1)
         work = root / platform
         work.mkdir()
         prepare_server(work, platform, *SERVERS[build])
@@ -71,7 +72,7 @@ def upgrade(root, bundle, version):
         old = work / "plugins" / filename(platform, PREVIOUS)
         old.rename(root / old.name)
         shutil.copyfile(bundle / filename(platform, version), work / "plugins" / filename(platform, version))
-        boot(work, platform, platform == "paper", game="1.21.11")
+        boot(work, platform, platform == "paper", game=runtime_version)
         assert config(data / "config.yml")["mode"] == "SINGLE"
         check_backups(data, saved)
         check_migration()
@@ -95,7 +96,7 @@ def upgrade(root, bundle, version):
             stock = guide.read_bytes()
             custom = stock + b"\nLocal setup notes from the server owner.\n"
             guide.write_bytes(custom)
-        boot(work, platform, platform == "paper", game="1.21.11")
+        boot(work, platform, platform == "paper", game=runtime_version)
         assert state == (data / "migrations/state.yml").read_bytes()
         assert history == (data / "migrations/history.log").read_bytes()
         if platform == "paper":
@@ -104,7 +105,7 @@ def upgrade(root, bundle, version):
             previous_guide = saved["config/WIKI.md"]
             assert previous_guide != stock
             guide.write_bytes(previous_guide)
-            boot(work, platform, True, game="1.21.11")
+            boot(work, platform, True, game=runtime_version)
             assert guide.read_bytes() == stock
             print("Verified stock guide refresh and administrator notes on an existing V4 installation.", flush=True)
         print(f"Verified {platform} {PREVIOUS} to {version}, backup integrity, preserved data and repeat startup.", flush=True)

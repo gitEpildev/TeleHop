@@ -22,22 +22,15 @@ public class TpaRuntimeManager {
         return Optional.ofNullable(incomingByTarget.get(targetUuid));
     }
 
-    public void removeIncoming(UUID targetUuid) {
-        TpaRequestRecord removed = incomingByTarget.remove(targetUuid);
-        if (removed != null) {
-            outgoingBySender.remove(removed.senderUuid());
-        }
+    /** Remove the observed request without consuming a newer request for either player. */
+    public boolean removeRequest(TpaRequestRecord request) {
+        boolean removed = incomingByTarget.remove(request.targetUuid(), request);
+        outgoingBySender.remove(request.senderUuid(), request);
+        return removed;
     }
 
     public Optional<TpaRequestRecord> getOutgoing(UUID senderUuid) {
         return Optional.ofNullable(outgoingBySender.get(senderUuid));
-    }
-
-    public void removeOutgoing(UUID senderUuid) {
-        TpaRequestRecord removed = outgoingBySender.remove(senderUuid);
-        if (removed != null) {
-            incomingByTarget.remove(removed.targetUuid());
-        }
     }
 
     public boolean onCooldown(UUID playerUuid) {

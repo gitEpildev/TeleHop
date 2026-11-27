@@ -19,6 +19,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ### Fixed
 
+- Accepting a teleport request uses the accepting player's proxy, including when a player on the same backend joined through a third proxy. Expired requests cannot move players, and expiry checks preserve newer requests between the same players.
+- An invalid regional hub setting now identifies the field to correct. A failed reload keeps the previous routes active.
+- Validating command settings leaves files on disk untouched. On restart, a missing command group uses the same migration and backup settings as other configuration repairs.
 - Proxy travel checks the player's current connection and the destination before applying a configured command. Duplicate forwarded requests are discarded and the player list collects replies from multiple proxies.
 - Fresh installations can search the world where a player died for a safe respawn. Upgrades retain existing world exclusions and destinations. A delayed result from an earlier death cannot move the player again.
 

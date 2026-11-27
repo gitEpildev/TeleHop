@@ -35,8 +35,8 @@ public class TpaDenyCommand extends BaseCommand {
             return;
         }
         var request = requestOpt.get();
-        plugin.tpaRuntimeManager().removeIncoming(target.getUniqueId());
-        plugin.tpaService().delete(request.senderUuid(), request.targetUuid());
+        plugin.tpaRuntimeManager().removeRequest(request);
+        plugin.tpaService().delete(request);
 
         Player sender = Bukkit.getPlayer(request.senderUuid());
         if (sender != null) {

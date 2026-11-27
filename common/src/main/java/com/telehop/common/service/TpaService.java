@@ -37,9 +37,9 @@ public class TpaService {
                 });
     }
 
-    public CompletableFuture<Void> delete(UUID sender, UUID target) {
-        cache.remove(sender, target);
-        return databaseManager.runAsync(() -> repository.delete(sender, target));
+    public CompletableFuture<Void> delete(TpaRequestRecord request) {
+        cache.remove(request);
+        return databaseManager.runAsync(() -> repository.delete(request));
     }
 
     /**

@@ -32,6 +32,7 @@ class TravelCommandsTest {
                 """);
         when(plugin.getResource(anyString())).thenAnswer(invocation ->
                 getClass().getClassLoader().getResourceAsStream(invocation.<String>getArgument(0)));
+        when(plugin.getDataFolder()).thenReturn(data.toFile());
         when(settings.servers()).thenReturn(Map.of("islands", "isle"));
         when(settings.regions()).thenReturn(Map.of());
         when(settings.serverName()).thenReturn("home");
@@ -39,11 +40,11 @@ class TravelCommandsTest {
     }
 
     private CommandNames load(boolean rename, boolean additional) {
-        return CommandNames.loadAt(plugin, data, settings, profile.toFile(), rename, additional, true);
+        return CommandNames.load(plugin, settings, profile.toFile(), rename, additional, true);
     }
 
     private void rtp(String variant) throws Exception {
-        load(true, false);
+        CommandNames.installMissing(plugin, data, true);
         Files.writeString(data.resolve("commands/rtp.yml"), """
                 rtp:
                   additional-commands:
@@ -54,7 +55,7 @@ class TravelCommandsTest {
     }
 
     @Test void freshCommandGroupsKeepTheirPackagedBytes() throws Exception {
-        load(false, false);
+        CommandNames.installMissing(plugin, data, true);
         for (String id : CommandNames.GROUPS) {
             String resource = "commands/" + id + ".yml";
             try (var expected = plugin.getResource(resource)) {
@@ -63,8 +64,25 @@ class TravelCommandsTest {
         }
     }
 
+    @Test void runtimeValidationReportsMissingGroupsWithoutInstallingDefaultsOrLegacyAliases() throws Exception {
+        Path directory = data.resolve("commands");
+        Files.writeString(data.resolve("config/commands.yml"), "hub: [lobby, hub]\n");
+        assertThrows(IllegalArgumentException.class, () -> load(true, true));
+        assertFalse(Files.exists(directory));
+
+        CommandNames.installMissing(plugin, data, true);
+        var snapshot = load(true, true);
+        var missing = directory.resolve("hub.yml");
+        Files.delete(missing);
+        var error = assertThrows(IllegalArgumentException.class, () -> load(true, true));
+        assertTrue(error.getMessage().contains("hub.yml"));
+        assertFalse(Files.exists(missing));
+        assertEquals("lobby", snapshot.primary("hub"));
+    }
+
     @Test void migrationRetainsEveryLegacyAliasAndOperatorEditsOnRestart() throws Exception {
         Files.writeString(data.resolve("config/commands.yml"), "tp: [travel, jumpto]\nspawn: [spawn]\n");
+        CommandNames.installMissing(plugin, data, true);
         assertEquals(List.of("travel", "jumpto"), load(true,false).labels().get("tp"));
         assertTrue(Files.readString(data.resolve("commands/teleport.yml")).contains("enabled: true"));
         try (var expected = plugin.getResource("commands/spawn.yml")) {
@@ -76,7 +94,7 @@ class TravelCommandsTest {
     }
 
     @Test void adminRecoveryLabelSurvivesCustomNamesAndCannotBeReassigned() throws Exception {
-        load(true,true);
+        CommandNames.installMissing(plugin, data, true);
         Files.writeString(data.resolve("commands/admin.yml"), "telehop: {custom-name: {enabled: true, name: network}}\n");
         assertEquals(List.of("network","telehop"), load(true,true).labels().get("telehop"));
         Files.writeString(data.resolve("commands/teleport.yml"), "tp: {custom-name: {enabled: true, name: telehop}}\n");
@@ -131,6 +149,7 @@ class TravelCommandsTest {
         when(server.getWorlds()).thenReturn(List.of(first, second));
         when(first.getName()).thenReturn("Harbour");
         when(second.getName()).thenReturn("Deep Mines");
+        CommandNames.installMissing(plugin, data, true);
         Files.writeString(profile.resolve("rtp.yml"), "rtp: {dimensions: {}, regions: {}}\n");
         var policy = load(true, true).rtp();
         assertFalse(policy.selectDimensionWithoutRegion());
@@ -203,6 +222,7 @@ class TravelCommandsTest {
         String before = "# Operator notes\nrtp: {}\n";
         Files.writeString(folder.resolve("rtp.yml"), before);
         Files.writeString(data.resolve("config/commands.yml"), "hub: [lobby, hub]\n");
+        CommandNames.installMissing(plugin, data, true);
         assertEquals(List.of("lobby","hub"), load(true, true).labels().get("hub"));
         assertEquals(before, Files.readString(folder.resolve("rtp.yml")));
         Files.writeString(data.resolve("config/commands.yml"), "orphan: [\n");
@@ -210,6 +230,7 @@ class TravelCommandsTest {
     }
 
     @Test void invalidYamlAndUnexpectedOptionsCannotChangeAnExistingSnapshot() throws Exception {
+        CommandNames.installMissing(plugin, data, true);
         var original = load(true,true);
         var file = data.resolve("commands/hub.yml");
         Files.writeString(file, "hub: {custom-name: {enabled: true, name: lobby}}\nhub: {}\n");
@@ -220,7 +241,7 @@ class TravelCommandsTest {
     }
 
     @Test void namedSpawnAndHubEachAcceptOnlyTheirOwnDestinationType() throws Exception {
-        load(true,true);
+        CommandNames.installMissing(plugin, data, true);
         var file = data.resolve("commands/spawn.yml");
         Files.writeString(file, """
                 spawn:

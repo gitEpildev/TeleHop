@@ -133,15 +133,27 @@ class TpaServiceTest {
         TpaRequestRecord request = request(TpaType.TPA);
         cache.put(request);
 
-        service.delete(senderUuid, targetUuid).get();
+        service.delete(request).get();
 
         assertTrue(cache.get(senderUuid, targetUuid).isEmpty());
-        verify(repository).delete(senderUuid, targetUuid);
+        verify(repository).delete(request);
     }
 
     @Test
     void deleteOnNonExistentEntryDoesNotThrow() {
-        assertDoesNotThrow(() -> service.delete(UUID.randomUUID(), UUID.randomUUID()).get());
+        assertDoesNotThrow(() -> service.delete(request(TpaType.TPA)).get());
+    }
+
+    @Test
+    void delayedRemovalLeavesAReplacementInTheCacheAndDeletesOnlyTheOldVersionInSql() {
+        var old = new TpaRequestRecord(senderUuid, targetUuid, TpaType.TPA, Instant.EPOCH);
+        var replacement = new TpaRequestRecord(senderUuid, targetUuid, TpaType.TPA, Instant.ofEpochMilli(10_000));
+        service.upsert(replacement).join();
+
+        service.delete(old).join();
+
+        assertEquals(Optional.of(replacement), service.find(senderUuid, targetUuid).join());
+        verify(repository).delete(old);
     }
 
     // ------------------------------------------------------------------

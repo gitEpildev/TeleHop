@@ -76,7 +76,7 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 | `telehop.admin.warps.delete` | Delete a global warp. |
 | `telehop.admin.playerwarps.delete` | Delete another player’s personal warp. |
 | `telehop.admin.playerinfo` | Inspect a player’s TeleHop data. |
-| `telehop.admin.reload` | Reload supported Paper settings, spawn routes and messages. |
+| `telehop.admin.reload` | Reload supported backend settings, spawn routes and messages. |
 | `telehop.admin.permissions` | View the in-game permission reference. |
 
 ## Additional home slots

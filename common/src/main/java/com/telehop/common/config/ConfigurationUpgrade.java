@@ -67,7 +67,8 @@ public final class ConfigurationUpgrade {
                 }
                 prepare.build(stage);
                 DeploymentConfig config = DeploymentConfig.read(stage);
-                boolean previous = !files(original).isEmpty();
+                List<Path> originals = files(original);
+                boolean previous = !originals.isEmpty();
                 boolean first = !Files.exists(migrations.resolve("state.yml"));
                 List<String> changed = new ArrayList<>();
                 for (Path path : files(stage)) {
@@ -77,13 +78,17 @@ public final class ConfigurationUpgrade {
                         changed.add(rel.toString());
                     }
                 }
-                for (Path path : files(original)) {
+                for (Path path : originals) {
                     Path rel = original.relativize(path);
                     if (!Files.exists(stage.resolve(rel))) changed.add(rel.toString());
                 }
                 if (!first && changed.isEmpty()) { remove(work); return; }
-                if (first && previous && !config.automaticMigration()) {
-                    throw new IOException("Automatic migration is disabled in config.yml. Enable it or restore the matching configuration");
+                // A new installation may supply only its selector and disable future upgrades ahead of first boot.
+                boolean initialInstall = first && (!previous || originals.equals(List.of(original.resolve("config.yml")))
+                        && !changed.contains("config.yml"));
+                if (!changed.isEmpty() && !initialInstall && !config.automaticMigration()) {
+                    throw new IOException("Automatic configuration migration is disabled. Set migration.automatic to true in config.yml "
+                            + "to apply this update, or supply the complete matching configuration");
                 }
                 String id = platform + "-" + Instant.now().toEpochMilli() + "-" + UUID.randomUUID();
                 Files.writeString(work.resolve("id"), id);

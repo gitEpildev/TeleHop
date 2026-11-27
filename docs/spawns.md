@@ -48,7 +48,7 @@ routing:
     training: {server: survival, spawn: gardens}
 ```
 
-TeleHop checks the exact namespaced world key, then the world name, then the backend default. If none matches, it uses the existing regional or network hub. A route with only a server name selects that server's saved default directly. World names are local to their owning backend. A missing named destination or unloaded destination world returns an error. A local trip uses Paper directly. A remote trip uses the player's current Velocity connection and checks the destination again after arrival. For multiple proxies sharing these backends, see the [multi-proxy setup guide](multi-proxy.md).
+TeleHop checks the exact namespaced world key, then the world name, then the backend default. If none matches, it uses the existing regional or network hub. A route with only a server name selects that server's saved default directly. World names are local to their owning backend. A missing named destination or unloaded destination world returns an error. A local trip uses the world operations selected for that backend. A remote trip uses the player's current Velocity connection and checks the destination again after arrival. For multiple proxies sharing these backends, see the [multi-proxy setup guide](multi-proxy.md).
 
 Reload after editing routes.
 
@@ -79,7 +79,7 @@ If you have edited the YAML outside the game, reload it before using the managem
 
 ## MySQL, upgrades and backups
 
-Install the matching 4.0.0 backend and Velocity JARs together. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. The backend creates a `spawns.yml` in each profile directory on first start.
+For proxy networks, install the backend and Velocity JARs from the same TeleHop release. Give each backend a unique `server-name` matching its Velocity registration. All instances must connect to the same database. Existing `storage.yml`, homes, warps and player data keep their existing formats. The backend creates a `spawns.yml` in each profile directory on first start.
 
 | MySQL table | Stored data |
 |---|---|

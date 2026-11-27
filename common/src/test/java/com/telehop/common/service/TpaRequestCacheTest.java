@@ -78,24 +78,26 @@ class TpaRequestCacheTest {
 
     @Test
     void removeDeletesEntry() {
-        cache.put(request(alice, bob, TpaType.TPA, Instant.now()));
-        cache.remove(alice, bob);
+        var request = request(alice, bob, TpaType.TPA, Instant.now());
+        cache.put(request);
+        cache.remove(request);
 
         assertTrue(cache.get(alice, bob).isEmpty());
     }
 
     @Test
     void removeDoesNotAffectOtherEntries() {
-        cache.put(request(alice, bob, TpaType.TPA, Instant.now()));
+        var request = request(alice, bob, TpaType.TPA, Instant.now());
+        cache.put(request);
         cache.put(request(bob, carol, TpaType.TPA, Instant.now()));
-        cache.remove(alice, bob);
+        cache.remove(request);
 
         assertTrue(cache.get(bob, carol).isPresent());
     }
 
     @Test
     void removeNonExistentEntryDoesNotThrow() {
-        assertDoesNotThrow(() -> cache.remove(UUID.randomUUID(), UUID.randomUUID()));
+        assertDoesNotThrow(() -> cache.remove(request(alice, bob, TpaType.TPA, Instant.EPOCH)));
     }
 
     // ------------------------------------------------------------------

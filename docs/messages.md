@@ -21,15 +21,15 @@ Set your language in `config/<profile>/general.yml`:
 language: "en"
 ```
 
-Change it and run `/telehop reload` -- no restart needed.
+After changing the language code, run `/telehop reload config`. To apply edits to the active translation, run `/telehop reload messages`.
 
 ### Fallback Behaviour
 
-In 3.0.0, the selected language file takes precedence over its bundled translation. If both lack a key, TeleHop checks the on-disk English file and then the bundled English translation. You can keep a partial translation and override individual keys in your own file.
+For the six supplied languages, the selected language file takes precedence over its bundled translation. If both lack a key, TeleHop checks the on-disk English file and then the bundled English translation. You can keep a partial translation and override individual keys in your own file.
 
 ### Custom Languages
 
-Copy `en.yml` to a new file (e.g. `fr.yml`), translate the values, set `language: "fr"`, and reload.
+Copy `en.yml` to a new file such as `fr.yml`. Translate the values, keep the placeholders, set `language: "fr"` and run `/telehop reload config`. A partial custom translation uses bundled English for missing keys.
 
 ## Quick Colour Reference
 

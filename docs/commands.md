@@ -46,6 +46,8 @@ Aliases: `/playerwarp`, `/pwarps`
 | `/tpadeny` | Deny an incoming request | `telehop.tpa.deny` |
 | `/tpacancel` | Cancel your outgoing request | `telehop.tpa.cancel` |
 
+The receiving backend checks the timeout from the active profile's `tpa.yml` when the player accepts. On a network with several proxies, the acceptance travels through that player's own connection. Expiry of an older request preserves a newer one between the same players.
+
 ## TPA Toggle
 
 | Command | Description | Permission |

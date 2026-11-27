@@ -343,13 +343,11 @@ public final class Bootstrap {
         }, 1L, 200L);
         Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, () ->
                 reg.tpaService().expiredNow(reg.settings().tpaTimeoutSeconds()).thenAccept(expired -> {
-                    for (var request : expired) {
-                        reg.tpaService().delete(request.senderUuid(), request.targetUuid());
-                        reg.tpaRuntimeManager().removeIncoming(request.targetUuid());
-                    }
-                    if (!expired.isEmpty()) {
+                    expired.forEach(reg.tpaService()::delete);
+                    var local = expired.stream().filter(reg.tpaRuntimeManager()::removeRequest).toList();
+                    if (!local.isEmpty()) {
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            for (var request : expired) {
+                            for (var request : local) {
                                 Player sender = Bukkit.getPlayer(request.senderUuid());
                                 if (sender != null) PlatformText.send(sender, plugin.msg("request-expired"));
                                 Player target = Bukkit.getPlayer(request.targetUuid());

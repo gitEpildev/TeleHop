@@ -29,7 +29,7 @@ The backend selects its Bukkit or native Paper operations and Minecraft adapter 
 
 ## Commands
 
-These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit the relevant file in `commands/` and restart Paper. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](docs/configuration.md#command-names-and-aliases)
+These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To rename a command, enable `commands.custom-names.enabled` in the root `config.yml`. In its group under `commands/`, enable `custom-name.enabled`, set the name and aliases, then restart the backend. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](docs/configuration.md#command-names-and-aliases)
 
 ### Spawn, homes and travel
 
@@ -94,8 +94,8 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 | `/telehop`, `/telehop help` | Display command help | Everyone |
 | `/telehop version`, `/telehop ver` | Display the backend plugin version | Everyone |
 | `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
-| `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
-| `/telehop reload config` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload` | Reload backend settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload config` | Reload backend settings, messages and spawn routes | `telehop.admin.reload` |
 | `/telehop reload messages` | Reload only the active language and its English fallback | `telehop.admin.reload` |
 | `/telehop commands list` | List the registered command labels | `telehop.admin.commands.list` |
 | `/telehop commands validate` | Validate grouped command files | `telehop.admin.commands.validate` |
@@ -206,7 +206,7 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 | `telehop.admin.warps.delete` | Delete a global warp. |
 | `telehop.admin.playerwarps.delete` | Delete another player’s personal warp. |
 | `telehop.admin.playerinfo` | Inspect a player’s TeleHop data. |
-| `telehop.admin.reload` | Reload supported Paper settings, spawn routes and messages. |
+| `telehop.admin.reload` | Reload supported backend settings, spawn routes and messages. |
 | `telehop.admin.permissions` | View the in-game permission reference. |
 
 ### Additional home slots

@@ -34,9 +34,12 @@ for (const file of files) {
 
 let checked = 0;
 for (const { file, line, href } of links) {
-  if (/^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) continue;
-  const [path, fragment] = href.split('#', 2);
-  const target = path ? resolve(dirname(file), decodeURIComponent(path)) : resolve(file);
+  // Modrinth needs public GitHub URLs. Check their destination in the proposed tree before it is published.
+  const repositoryLink = /^https:\/\/github\.com\/gitEpildev\/TeleHop\/(?:blob|tree)\/main\/(.+)$/i.exec(href);
+  if (!repositoryLink && /^(?:[a-z][a-z0-9+.-]*:|\/\/)/i.test(href)) continue;
+  const [path, fragment] = (repositoryLink?.[1] ?? href).split('#', 2);
+  const directory = repositoryLink ? '.' : dirname(file);
+  const target = path ? resolve(directory, decodeURIComponent(path)) : resolve(file);
   checked++;
   if (!existsSync(target) || (fragment && statSync(target).isFile() && extname(target) === '.md'
       && !anchors.get(target)?.has(decodeURIComponent(fragment)))) {
@@ -44,4 +47,4 @@ for (const { file, line, href } of links) {
     process.exitCode = 1;
   }
 }
-if (!process.exitCode) console.log(`Verified ${checked} local Markdown links and headings across ${files.length} files.`);
+if (!process.exitCode) console.log(`Verified ${checked} repository links and headings across ${files.length} Markdown files.`);

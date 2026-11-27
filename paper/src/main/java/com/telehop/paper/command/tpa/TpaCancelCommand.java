@@ -33,8 +33,8 @@ public class TpaCancelCommand extends BaseCommand {
             PlatformText.send(sender, plugin.msg("request-none-outgoing"));
             return;
         }
-        plugin.tpaRuntimeManager().removeOutgoing(sender.getUniqueId());
-        plugin.tpaService().delete(outgoing.senderUuid(), outgoing.targetUuid());
+        plugin.tpaRuntimeManager().removeRequest(outgoing);
+        plugin.tpaService().delete(outgoing);
 
         NetworkPacket packet = NetworkPacket.request(PacketType.TPA_CANCEL, plugin.settings().serverName(), "velocity")
                 .put("senderUuid", sender.getUniqueId().toString())

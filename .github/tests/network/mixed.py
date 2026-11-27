@@ -43,8 +43,8 @@ def backend(stack, args, root, name, port):
                  storage="spawn: {" + point_yaml(default) + "}\n")
 
 
-def start_proxy(stack, args, root, generation, ports, redis_port, *, legacy=None):
-    name = "legacy-2.3" if legacy else f"velocity-{generation}"
+def start_proxy(stack, args, root, generation, ports, redis_port, *, legacy=None, instance=None):
+    name = instance or ("legacy-2.3" if legacy else f"velocity-{generation}")
     run_args = argparse.Namespace(**vars(args))
     run_args.proxy = {3: "velocity-3.5", 4: "velocity-4.3.1"}[generation]
     run_args.proxy_java = "java" if generation == 3 else args.java25
@@ -77,12 +77,12 @@ def placement(server, player, point):
     assert_entity_values(server, "Rotation", point[3:], player)
 
 
-def move(bot, player, command, dest, *, arrived=None):
+def move(bot, player, command, dest, *, arrived=None, join_timeout=30):
     log_mark = dest.mark()
     time.sleep(1.1)  # The preceding command may have started TeleHop's per-player debounce.
     player_mark = bot.mark()
     bot.send(command)
-    dest.wait(re.escape(player) + " joined the game", log_mark, seconds=30)
+    dest.wait(re.escape(player) + " joined the game", log_mark, seconds=join_timeout)
     if arrived:
         bot.wait("Arrived at " + re.escape(arrived), player_mark, seconds=15)
 
@@ -169,6 +169,50 @@ def exercise(root, servers, request_port, observer_port, label, *, legacy=False)
     print(f"Passed {label}: checked real player placement, observer isolation and regional routing.", flush=True)
 
 
+def three_proxy_requests(root, servers, requester_port, accepter_port, observer_port):
+    hub, survival = servers
+    sender_name, accepter_name, observer_name = "TpaSender", "TpaRecipient", "TpaObserver"
+    hub_point = BACKENDS["hub"][1]
+    survival_point = BACKENDS["survival"][1]
+    with ExitStack() as clients:
+        observer = client(clients, root, observer_port, observer_name)
+        move(observer, observer_name, "/server survival", survival)
+        survival.command(f"minecraft:tp {observer_name} 19.5 260 -9.5", "Teleported")
+        accepter = client(clients, root, accepter_port, accepter_name)
+        move(accepter, accepter_name, "/server survival", survival)
+        survival.command(f"minecraft:tp {accepter_name} " + " ".join(map(str, survival_point)), "Teleported")
+        sender = client(clients, root, requester_port, sender_name)
+        check_players(survival, [observer_name, accepter_name])
+
+        notice = accepter.mark()
+        sender.command("/tpa " + accepter_name, "Teleport request sent")
+        accepter.wait(sender_name + " wants to teleport to you", notice)
+        arrival = survival.mark()
+        accepter.command("/tpaaccept", "Teleport request accepted")
+        survival.wait(sender_name + " joined the game", arrival, seconds=30)
+        placement(survival, sender_name, survival_point)
+        assert_entity_values(survival, "Pos", OBSERVER_POS, observer_name)
+
+        # Use a fresh requester so the second direction exercises the default cooldown.
+        return_name = "TpaHereSender"
+        return_sender = client(clients, root, requester_port, return_name)
+        hub.command(f"minecraft:tp {return_name} " + " ".join(map(str, hub_point)), "Teleported")
+        check_players(survival, [observer_name, accepter_name, sender_name])
+        notice = accepter.mark()
+        return_sender.command("/tpahere " + accepter_name, "Teleport request sent")
+        accepter.wait(return_name + " wants you to teleport to them", notice)
+        arrival = hub.mark()
+        accepter.command("/tpaaccept", "Teleport request accepted")
+        hub.wait(accepter_name + " joined the game", arrival, seconds=30)
+        placement(hub, accepter_name, hub_point)
+        assert_entity_values(survival, "Pos", OBSERVER_POS, observer_name)
+        departing = [server.mark() for server in servers]
+    hub.wait(accepter_name + " left the game", departing[0])
+    survival.wait(observer_name + " left the game", departing[1])
+    print("Passed three entry proxies: /tpa and /tpahere placed the correct players; the first bystander stayed put.",
+          flush=True)
+
+
 def subscribers(port, count):
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
@@ -188,7 +232,8 @@ def legacy_destination(stack, args, root, hub, target_port, entry_port, old_jar)
     old.wait(r"\[TeleHop\] Startup complete! Server: survival\b", seconds=2)
     name = "LegacyBackend"
     bot = client(stack, root, entry_port, name)
-    move(bot, name, "/server survival", old)
+    # This is the rollback backend's first client login after a cold boot.
+    move(bot, name, "/server survival", old, join_timeout=150)
     old.command("minecraft:forceload add 19 -10", r"(?i)marked chunk|already")
     old.command(f"minecraft:tp {name} 19.5 260 -9.5 12 5", "Teleported")
     old.command("minecraft:setblock 19 259 -10 minecraft:stone", r"(?i)changed|already|could not set")
@@ -237,6 +282,12 @@ def run(args):
         rtp_ground(servers[1])
         exercise(root, servers, v3, v4, "V3")
         exercise(root, servers, v4, v3, "V4")
+        with ExitStack() as witness_stack:
+            witness = start_proxy(witness_stack, args, root, 3, [old, hub, survival], redis, instance="observer-proxy")
+            witness.wait(r"Done \(", seconds=100)
+            subscribers(redis, 3)
+            three_proxy_requests(root, servers, v3, v4, old)
+        subscribers(redis, 2)
         with ExitStack() as old_proxy_stack:
             old_proxy = start_proxy(old_proxy_stack, args, root, 3, [old, hub, survival], redis, legacy=legacy["velocity"])
             old_proxy.wait(r"Done \(", seconds=100)

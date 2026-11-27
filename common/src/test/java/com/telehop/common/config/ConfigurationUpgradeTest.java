@@ -3,6 +3,7 @@ package com.telehop.common.config;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.PosixFilePermissions;
@@ -49,18 +50,80 @@ class ConfigurationUpgradeTest {
         assertEquals(1, Files.readAllLines(root.resolve("migrations/history.log")).size());
     }
 
+    @Test void emptyInstallationCanDisableAutomaticUpdatesFromItsFirstBoot() throws Exception {
+        ConfigurationUpgrade.run(root, "paper", stage -> Files.writeString(stage.resolve("config.yml"),
+                "mode: SINGLE\nmigration: {automatic: false}\n"));
+        assertTrue(ConfigurationUpgrade.tracked(root, "paper"));
+        assertFalse(DeploymentConfig.read(root).automaticMigration());
+    }
+
+    @Test void trackedRepairRequiresConsentButAnUnchangedConfigurationStillLoads() throws Exception {
+        String selector = "mode: MULTI\nmigration: {automatic: false}\n";
+        Files.writeString(root.resolve("config.yml"), selector);
+        Path proxy = Path.of("config/multi/proxy.yml");
+        Path servers = Path.of("config/multi/servers.yml");
+        ConfigurationUpgrade.run(root, "velocity", stage -> {
+            Files.createDirectories(stage.resolve(proxy).getParent());
+            Files.writeString(stage.resolve(proxy), "# Owner settings\nproxy: {}\n");
+        });
+        assertEquals(selector, Files.readString(root.resolve("config.yml")));
+        var state = Files.readString(root.resolve("migrations/state.yml"));
+        var history = Files.readString(root.resolve("migrations/history.log"));
+        var backups = root.resolve("migrations/backups");
+        long backupCount;
+        try (var entries = Files.list(backups)) { backupCount = entries.count(); }
+        ConfigurationUpgrade.run(root, "velocity", stage -> {});
+
+        var failure = assertThrows(IOException.class, () -> ConfigurationUpgrade.run(root, "velocity", stage -> {
+            Files.writeString(stage.resolve(proxy), "proxy: {}\n");
+            Files.writeString(stage.resolve(servers), "servers: {}\n");
+        }));
+        assertTrue(failure.getMessage().contains("migration.automatic"));
+        assertEquals(state, Files.readString(root.resolve("migrations/state.yml")));
+        assertEquals(history, Files.readString(root.resolve("migrations/history.log")));
+        assertEquals("# Owner settings\nproxy: {}\n", Files.readString(root.resolve(proxy)));
+        assertFalse(Files.exists(root.resolve(servers)));
+        assertFalse(Files.exists(root.resolve("migrations/work")));
+        try (var entries = Files.list(backups)) { assertEquals(backupCount, entries.count()); }
+
+        Files.writeString(root.resolve("config.yml"), "mode: MULTI\nmigration: {automatic: true}\n");
+        ConfigurationUpgrade.run(root, "velocity", stage -> Files.writeString(stage.resolve(servers), "servers: {}\n"));
+        assertEquals("servers: {}\n", Files.readString(root.resolve(servers)));
+        assertEquals(2, Files.readAllLines(root.resolve("migrations/history.log")).size());
+    }
+
+    @Test void untrackedExistingConfigurationStillRequiresConsentToMigrate() throws Exception {
+        Files.writeString(root.resolve("config.properties"), "owned");
+        Files.writeString(root.resolve("config.yml"), "mode: MULTI\nmigration: {automatic: false}\n");
+        assertThrows(IOException.class, () -> ConfigurationUpgrade.run(root, "velocity",
+                stage -> Files.delete(stage.resolve("config.properties"))));
+        assertEquals("owned", Files.readString(root.resolve("config.properties")));
+        assertFalse(Files.exists(root.resolve("migrations/state.yml")));
+    }
+
+    @Test void completeManuallyInstalledConfigurationCanBeAdoptedWithoutAutomaticUpdates() throws Exception {
+        Files.writeString(root.resolve("config.yml"), "mode: SINGLE\nmigration: {automatic: false}\n");
+        var commands = Files.createDirectories(root.resolve("commands")).resolve("spawn.yml");
+        Files.writeString(commands, "# Owner settings\n");
+        ConfigurationUpgrade.run(root, "paper", stage -> {});
+        assertTrue(ConfigurationUpgrade.tracked(root, "paper"));
+        assertEquals("# Owner settings\n", Files.readString(commands));
+    }
+
     @Test void replaysAnInterruptedCommitBeforeRebuilding() throws Exception {
         Path pending = Files.createDirectories(root.resolve("migrations/work"));
         Path original = Files.createDirectories(pending.resolve("original"));
         Path stage = Files.createDirectories(pending.resolve("next"));
-        Files.writeString(original.resolve("config.yml"), "mode: SINGLE");
-        Files.writeString(stage.resolve("config.yml"), "mode: CUSTOM");
-        Files.writeString(root.resolve("config.yml"), "mode: SINGLE");
+        String selector = "mode: SINGLE\nmigration: {automatic: false}\n";
+        Files.writeString(original.resolve("config.yml"), selector);
+        Files.writeString(stage.resolve("config.yml"), "mode: CUSTOM\nmigration: {automatic: false}\n");
+        Files.writeString(root.resolve("config.yml"), selector);
         Files.writeString(pending.resolve("changes"), "config.yml\n");
         Files.writeString(pending.resolve("id"), "paper-interruption-test");
         Files.createFile(pending.resolve("ready"));
         ConfigurationUpgrade.run(root, "paper", ignored -> fail("Sealed journal must be replayed"));
         assertEquals(DeploymentConfig.Mode.CUSTOM, DeploymentConfig.read(root).mode());
+        assertFalse(DeploymentConfig.read(root).automaticMigration());
         assertFalse(Files.exists(pending));
         assertTrue(Files.readString(root.resolve("migrations/state.yml")).contains("paper-interruption-test"));
     }

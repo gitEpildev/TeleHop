@@ -2,7 +2,7 @@
 
 ## A command is missing
 
-Check the Paper startup log for the TeleHop version and any configuration or database errors. Run `/telehop commands list` and inspect the appropriate group in `commands/`. Confirm the root custom-name switch and the group’s primary label and aliases. Restart Paper after changing registrations. If a command visibility plugin is installed, check its allowlist using the name registered on that backend.
+Check the backend startup log for the TeleHop version and any configuration or database errors. Run `/telehop commands list` and inspect the appropriate group in `commands/`. Confirm the root custom-name switch and the group’s primary label and aliases. Restart the backend after changing registrations. If a command visibility plugin is installed, check its allowlist using the name registered on that backend.
 
 For the V4 hub command, enable `features.hub` and `features.spawn` in `config/<profile>/features.yml`, check `commands/hub.yml` and restart the backend. In profile paths use the directory selected by the root `config.yml`, such as `single`. Players need `telehop.hub`. [Hub setup](spawns.md#enable-the-hub-command)
 
@@ -14,7 +14,7 @@ For `/spawn <name>`, use `/telehop spawn list` to check the owner and access pol
 
 ## Local spawns work but remote travel fails
 
-Check that the Paper and Velocity JARs are from the same TeleHop release. Each backend needs a unique `server-name`, matching the name registered on every proxy. Check `servers.backends` on each proxy and the shared database connection. For cross-proxy player lookups, also check `proxy.id`, Redis connectivity and the channel prefix. [Multi-proxy setup and partial upgrades](multi-proxy.md)
+Check that the Bukkit backend and Velocity proxy JARs are from the same TeleHop release. Each backend needs a unique `server-name`, matching the name registered on every proxy. Check `servers.backends` on each proxy and the shared database connection. For cross-proxy player lookups, also check `proxy.id`, Redis connectivity and the channel prefix. [Multi-proxy setup and partial upgrades](multi-proxy.md)
 
 ## A player cannot set or use a warp
 

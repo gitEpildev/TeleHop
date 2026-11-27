@@ -1,5 +1,6 @@
 package com.telehop.paper.config;
 
+import com.telehop.common.config.ConfigYaml;
 import com.telehop.common.config.DeploymentConfig;
 import com.telehop.common.db.DatabaseConfig;
 import org.bukkit.Material;
@@ -10,10 +11,12 @@ import org.bukkit.configuration.file.FileConfiguration;
 import java.nio.file.Path;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,7 +79,6 @@ public record PaperSettings(
         FileConfiguration database = PaperProfiles.yaml(root.resolve("config/database.yml"));
         boolean single = configuration.mode() == DeploymentConfig.Mode.SINGLE;
         FileConfiguration messaging = single ? general : loadYaml(configDir, "messaging.yml");
-        FileConfiguration regions = single ? general : loadYaml(configDir, "regions.yml");
         FileConfiguration featuresFile = loadYaml(configDir, "features.yml");
         FileConfiguration teleportFile = loadYaml(configDir, "teleport.yml");
         FileConfiguration tpaFile = loadYaml(configDir, "tpa.yml");
@@ -121,8 +123,9 @@ public record PaperSettings(
                 .map(String::toLowerCase).toList();
 
         boolean multiProxy = configuration.mode() == DeploymentConfig.Mode.MULTI
-                || configuration.mode() == DeploymentConfig.Mode.CUSTOM && general.getBoolean("multi-proxy.enabled", false);
-        Map<String, RegionConfig> regionMap = loadRegions(regions);
+                || configuration.mode() == DeploymentConfig.Mode.CUSTOM && customMultiProxy(root);
+        String regionFile = PaperProfiles.template(configuration.mode(), single ? "general.yml" : "regions.yml");
+        Map<String, RegionConfig> regionMap = loadRegions(root, regionFile);
         validate(general, database, featuresFile, messaging, homeFile, tpaFile, rtpFile, respawnFile);
 
         return new PaperSettings(
@@ -299,21 +302,51 @@ public record PaperSettings(
 
     // ── internal helpers ─────────────────────────────────────────────
 
-    private static Map<String, RegionConfig> loadRegions(FileConfiguration cfg) {
-        Map<String, RegionConfig> map = new LinkedHashMap<>();
-        ConfigurationSection sec = cfg.getConfigurationSection("regions");
-        if (sec == null) return map;
-        for (String key : sec.getKeys(false)) {
-            ConfigurationSection region = sec.getConfigurationSection(key);
-            if (region == null) continue;
-            List<String> servers = region.getStringList("servers");
-            String hub = region.getString("hub", "");
-            if (!hub.isBlank() && !servers.isEmpty()) {
-                map.put(key.toLowerCase(), new RegionConfig(
-                        Collections.unmodifiableList(new ArrayList<>(servers)), hub));
+    private static Map<String, Object> profileDocument(Path root, String file) {
+        try { return ConfigYaml.read(root.resolve(file)); }
+        catch (IOException ex) { throw new IllegalArgumentException("Cannot read " + file, ex); }
+    }
+
+    private static boolean customMultiProxy(Path root) {
+        String file = PaperProfiles.template(DeploymentConfig.Mode.CUSTOM, "general.yml");
+        var settings = profileDocument(root, file);
+        try { return ConfigYaml.flag(settings, "multi-proxy.enabled", false); }
+        catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(file + ": multi-proxy.enabled must be true or false");
+        }
+    }
+
+    private static Map<String, RegionConfig> loadRegions(Path root, String file) {
+        Object value = profileDocument(root, file).getOrDefault("regions", Map.of());
+        if (!(value instanceof Map<?, ?> regions)) {
+            throw new IllegalArgumentException(file + ": regions must be a mapping; use {} for no regional routes");
+        }
+        Map<String, RegionConfig> routes = new LinkedHashMap<>();
+        for (var entry : regions.entrySet()) {
+            String key = (String) entry.getKey();
+            String field = file + ": regions." + key;
+            if (key.isBlank()) throw new IllegalArgumentException(file + ": regions must use non-empty region names");
+            if (!(entry.getValue() instanceof Map<?, ?> region)) {
+                throw new IllegalArgumentException(field + " must be a mapping with hub and servers");
+            }
+            if (!(region.get("hub") instanceof String hub) || hub.isBlank()) {
+                throw new IllegalArgumentException(field + ".hub must be a non-empty backend name");
+            }
+            if (!(region.get("servers") instanceof List<?> members) || members.isEmpty()) {
+                throw new IllegalArgumentException(field + ".servers must be a non-empty list of backend names");
+            }
+            List<String> servers = new ArrayList<>();
+            for (Object member : members) {
+                if (!(member instanceof String server) || server.isBlank()) {
+                    throw new IllegalArgumentException(field + ".servers must contain only non-empty backend names");
+                }
+                servers.add(server);
+            }
+            if (routes.putIfAbsent(key.toLowerCase(Locale.ROOT), new RegionConfig(List.copyOf(servers), hub)) != null) {
+                throw new IllegalArgumentException(field + " duplicates another region name when case is ignored");
             }
         }
-        return map;
+        return routes;
     }
 
     private static FileConfiguration loadYaml(File dir, String name) {

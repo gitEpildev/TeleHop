@@ -23,8 +23,8 @@ public class TpaRequestCache {
         return Optional.ofNullable(cache.get(key(sender, target)));
     }
 
-    public void remove(UUID sender, UUID target) {
-        cache.remove(key(sender, target));
+    public void remove(TpaRequestRecord request) {
+        cache.remove(key(request.senderUuid(), request.targetUuid()), request);
     }
 
     public List<TpaRequestRecord> expired(long timeoutSeconds) {

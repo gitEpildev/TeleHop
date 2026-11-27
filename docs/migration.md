@@ -19,9 +19,13 @@ Each instance determines its own profile from its existing multi-proxy switch. A
 
 When automatic backups are enabled, recognised flat configuration files are retired after their archive has been written. Existing files in the selected profile take precedence. A pre-existing inactive directory is preserved. The plugin creates missing profile directories with installation defaults. Network IDs, access policies, coordinates and player data are never inferred from examples.
 
+Check any existing regional routes before upgrading. Each entry under `regions` needs a non-empty `hub` backend name and a non-empty `servers` list of backend names. Use `regions: {}` when you want every backend to use the global hub. In CUSTOM, set `multi-proxy.enabled` to an unquoted YAML boolean in `config/custom/general.yml`. Omitting it disables regional routing. A malformed route or switch stops the candidate from loading. The error identifies the active file and the invalid field, and a running backend keeps its current settings after a rejected reload.
+
 ## Recovery
 
 On startup, TeleHop replaces a missing `config/WIKI.md` or an exact copy of a recognised earlier bundled guide with the guide from the installed JAR. An administrator's edited guide stays in place. The original short V4 root selector also gains the setup instructions when it still matches the generated text. Its selected mode and command-name switch are preserved. User-edited selectors retain their contents.
+
+To manage configuration upgrades yourself, set `migration.automatic: false` in the root `config.yml`. An empty installation can still create its initial files, including when you supply only a V4 selector with the switch already off. An existing installation can start with a complete, current configuration. If startup detects a required upgrade or repair, including a bundled guide refresh, it stops before publishing any changes. Correct the files manually or enable automatic migration and restart. A previously sealed migration still finishes on restart.
 
 TeleHop stages and validates the candidate before publishing it. The `migrations/state.yml` file records the platform, completed migration identifier and configuration schema. `migrations/history.log` records successful changes. A sealed `migrations/work/` journal is replayed after an interrupted commit. Restart after correcting a disk or permissions error. If an administrator changed a target while a migration was pending, compare the staged, original and live copies before restarting.
 

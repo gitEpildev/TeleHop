@@ -58,12 +58,15 @@ public class TpaRepository {
         }
     }
 
-    public void delete(UUID sender, UUID target) {
-        String sql = "DELETE FROM tpa_requests WHERE sender_uuid = ? AND target_uuid = ?";
+    /** Remove only the observed request. A later request can reuse the same pair of players. */
+    public void delete(TpaRequestRecord request) {
+        String sql = "DELETE FROM tpa_requests WHERE sender_uuid = ? AND target_uuid = ? AND sent_at = ? AND type = ?";
         try (var connection = dataSource.getConnection();
              PreparedStatement ps = connection.prepareStatement(sql)) {
-            ps.setString(1, sender.toString());
-            ps.setString(2, target.toString());
+            ps.setString(1, request.senderUuid().toString());
+            ps.setString(2, request.targetUuid().toString());
+            ps.setLong(3, request.sentAt().toEpochMilli());
+            ps.setString(4, request.type().name());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Failed to delete tpa request", e);

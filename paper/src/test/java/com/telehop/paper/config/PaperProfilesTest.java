@@ -56,6 +56,43 @@ class PaperProfilesTest {
         }
     }
 
+    @Test void startupRepairsMissingCommandsOnlyWhenAutomaticMigrationIsEnabled() throws Exception {
+        var plugin = plugin();
+        var settings = mock(PaperSettings.class);
+        when(settings.language()).thenReturn("en");
+        when(plugin.getServer()).thenReturn(mock(org.bukkit.Server.class));
+        when(plugin.getLogger()).thenReturn(java.util.logging.Logger.getAnonymousLogger());
+        try (var loader = mockStatic(PaperSettings.class)) {
+            loader.when(() -> PaperSettings.load(any(Path.class), any(DeploymentConfig.class))).thenReturn(settings);
+            PaperProfiles.initialise(plugin);
+            Path selector = dir.resolve("config.yml");
+            String enabled = Files.readString(selector);
+            Files.writeString(selector, enabled.replace("automatic: true", "automatic: false"));
+            Path missing = dir.resolve("commands/hub.yml");
+            Files.delete(missing);
+            Path existing = dir.resolve("commands/back.yml");
+            String edited = "# site settings\nback: {}\n";
+            Files.writeString(existing, edited);
+            // A retained 3.x file must never resurrect an old command after migration.
+            Files.writeString(dir.resolve("config/commands.yml"), "hub: [obsolete]\n");
+            Path history = dir.resolve("migrations/history.log");
+            var original = Files.readAllLines(history);
+
+            var error = assertThrows(IllegalStateException.class, () -> PaperProfiles.initialise(plugin));
+            assertTrue(error.getMessage().contains("migration.automatic"), error::getMessage);
+            assertFalse(Files.exists(missing));
+            assertEquals(original, Files.readAllLines(history));
+            Files.writeString(selector, enabled);
+            PaperProfiles.initialise(plugin);
+            assertEquals(PaperProfiles.resource(plugin, "commands/hub.yml"), Files.readString(missing));
+            assertEquals(edited, Files.readString(existing));
+            var repaired = Files.readAllLines(history);
+            assertEquals(original.size() + 1, repaired.size());
+            PaperProfiles.initialise(plugin);
+            assertEquals(repaired, Files.readAllLines(history));
+        }
+    }
+
     @ParameterizedTest
     @EnumSource(DeploymentConfig.Mode.class)
     void everyInstalledProfileUsesItsPackagedTemplates(DeploymentConfig.Mode active) throws Exception {

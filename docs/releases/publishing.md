@@ -23,7 +23,7 @@ The default public notes include the reviewed changelog entry and group commits 
 
 ## Checks before publication
 
-To reproduce the downloaded-bundle check locally, run `python3 .github/release/prepare.py verify-bundle DIRECTORY VERSION` with the directory containing the two distribution JARs, command probe and checksum file. The public download directory contains only the two production JARs and their checksums.
+The downloaded Actions bundle contains both production JARs, their checksum file and the test command probe. The public GitHub release provides the two production JARs and their checksums. The local commands below stage the same four files that Actions checks. [Reproduce validation locally](#reproduce-validation-locally)
 
 ### Changelog requirements
 
@@ -64,14 +64,30 @@ From the repository root, with Node.js 22.12 or later, Python 3.11 or later, Mav
 ```sh
 npm ci --prefix .github/release --ignore-scripts --no-audit --no-fund
 python3 .github/release/prepare.py check
-REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
+python3 .github/release/prepare.py prepare
 python3 -m unittest discover -v -s .github/release
 mvn -B -ntp clean verify
 bash .github/tests/bundle.sh
 ```
 
+After building, copy the current files into a fresh directory and verify the exact contents. This works when the checkout also holds release notes and JARs from earlier builds.
 
-With Docker running, install the network test client and PyYAML into a local virtual environment. Supply the absolute paths to both Java executables and a new output directory. This starts temporary servers and databases on loopback, collects their logs and removes successful test worlds. To keep the worlds, add `--keep-worlds`.
+```sh
+(
+  set -eu
+  version=$(python3 .github/release/prepare.py version)
+  bundle_dir=$(mktemp -d)
+  cp "release-bundle/telehop-bukkit-$version.jar" \
+     "release-bundle/telehop-velocity-$version.jar" \
+     release-bundle/command-probe.jar release-bundle/SHA256SUMS "$bundle_dir/"
+  python3 .github/release/prepare.py verify-bundle "$bundle_dir" "$version"
+  printf 'Verified bundle in %s\n' "$bundle_dir"
+)
+```
+
+For the network tests, start Docker and make `curl`, `redis-server` and `redis-cli` available on the host's `PATH`. The mixed-proxy fixture starts its own Redis process on a free loopback port and uses the CLI to check subscriptions. Docker provides the disposable MySQL and MariaDB instances and their clients. Set `JAVA21_HOME` and `JAVA25_HOME` to the JDK installation directories.
+
+Install the Node.js test client and use a Python virtual environment for PyYAML. Choose a new output directory for each run. The runner collects the logs and removes successful test worlds. Add `--keep-worlds` to retain them.
 
 ```sh
 npm ci --prefix .github/tests/network --ignore-scripts

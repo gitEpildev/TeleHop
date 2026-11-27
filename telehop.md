@@ -53,7 +53,7 @@ Save this in `plugins/TeleHop/config/<profile>/spawns.yml` and run `/telehop rel
 
 ### Network spawn and random teleport
 
-Use `/spawn` for the configured hub, or `/spawn <name>` for a named destination. Regional routing can take European players to `lobby-eu` and US players to `lobby-usa`. Choose the names and destinations for your own network.
+Use `/spawn` for the configured hub, or `/spawn <name>` for a named destination. Regional routing uses the player’s current backend. For example, backends in your EU group can share `lobby-eu` and backends in your US group can share `lobby-usa`. You choose the group membership and hub names.
 
 Open `/rtp` to pick a region and dimension. The menu can show a live, colour-coded ping estimate. Selecting a destination starts the cooldown and safe-landing search. A pending trip prevents repeated clicks from stacking warmups. Enable the centred countdown and movement cancellation in your configuration.
 
@@ -85,7 +85,7 @@ Staff can inspect player records, manage homes and warps, publish spawn destinat
 
 ## 📋 Complete command reference
 
-These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To change a root command or its aliases, edit the relevant file in `commands/` and restart Paper. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
+These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To rename a command, enable `commands.custom-names.enabled` in the root `config.yml`. In its group under `commands/`, enable `custom-name.enabled`, set the name and aliases, then restart the backend. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
 
 ### Spawn, homes and travel
 
@@ -150,8 +150,8 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 | `/telehop`, `/telehop help` | Display command help | Everyone |
 | `/telehop version`, `/telehop ver` | Display the backend plugin version | Everyone |
 | `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
-| `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
-| `/telehop reload config` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload` | Reload backend settings, messages and spawn routes | `telehop.admin.reload` |
+| `/telehop reload config` | Reload backend settings, messages and spawn routes | `telehop.admin.reload` |
 | `/telehop reload messages` | Reload only the active language and its English fallback | `telehop.admin.reload` |
 | `/telehop commands list` | List the registered command labels | `telehop.admin.commands.list` |
 | `/telehop commands validate` | Validate grouped command files | `telehop.admin.commands.validate` |
@@ -262,7 +262,7 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 | `telehop.admin.warps.delete` | Delete a global warp. |
 | `telehop.admin.playerwarps.delete` | Delete another player’s personal warp. |
 | `telehop.admin.playerinfo` | Inspect a player’s TeleHop data. |
-| `telehop.admin.reload` | Reload supported Paper settings, spawn routes and messages. |
+| `telehop.admin.reload` | Reload supported backend settings, spawn routes and messages. |
 | `telehop.admin.permissions` | View the in-game permission reference. |
 
 ### Additional home slots

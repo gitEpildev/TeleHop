@@ -55,6 +55,7 @@ public final class PaperProfiles {
                 var selected = DeploymentConfig.read(data);
                 Path profile = selected.profileDirectory(data);
                 needsRepair = files(selected.mode()).stream().anyMatch(name -> !Files.isRegularFile(profile.resolve(name)))
+                        || CommandNames.incomplete(data)
                         || LanguageFiles.incomplete(plugin, data)
                         || !Files.isRegularFile(data.resolve("config/database.yml")) || ConfigMigrator.needsGuideUpdate(data)
                         || previousSelector(data.resolve("config.yml"), selected);
@@ -75,6 +76,7 @@ public final class PaperProfiles {
         LanguageFiles.complete(plugin, data);
         LanguageFiles.load(data, "en", plugin);
         LanguageFiles.load(data, settings.language(), plugin);
+        CommandNames.installMissing(plugin, data, first);
         CommandNames.loadAt(plugin, data, settings, active.toFile(), config.customNames(), config.additionalCommands(),
                 settings.isFeatureEnabled("hub"));
         if (first && config.backups()) {

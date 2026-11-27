@@ -40,8 +40,15 @@ public class TpaAcceptCommand extends BaseCommand {
             return;
         }
         var request = requestOpt.get();
-        plugin.tpaRuntimeManager().removeIncoming(target.getUniqueId());
-        plugin.tpaService().delete(request.senderUuid(), request.targetUuid());
+        if (!plugin.tpaRuntimeManager().removeRequest(request)) {
+            PlatformText.send(target, plugin.msg("request-none-pending"));
+            return;
+        }
+        plugin.tpaService().delete(request);
+        if (request.isExpired(plugin.settings().tpaTimeoutSeconds())) {
+            PlatformText.send(target, plugin.msg("request-expired"));
+            return;
+        }
         PlatformText.send(target, plugin.msg("request-accepted"));
 
         int delay = plugin.settings().tpaDelaySeconds();
@@ -72,7 +79,8 @@ public class TpaAcceptCommand extends BaseCommand {
                     .put("targetUuid", request.targetUuid().toString())
                     .put("type", request.type().name())
                     .put("targetServer", plugin.settings().serverName());
-            plugin.messaging().send(packet);
+            // The accepter's proxy can route both TPA directions, even when a bystander uses a third proxy.
+            plugin.messaging().send(target, packet);
         }
     }
 }

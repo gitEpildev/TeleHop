@@ -52,7 +52,7 @@ Use `/telehop config validate` to check the candidate and `/telehop reload` or `
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `features.hub` | boolean | `false` | Register the hub command and its configured aliases on this backend after a Paper restart |
+| `features.hub` | boolean | `false` | Register the hub command and its configured aliases on this backend after the backend restarts |
 | `features.spawn` | boolean | `true` | Enable/disable `/spawn` |
 | `features.rtp` | boolean | `true` | Enable/disable `/rtp` |
 | `features.tpa` | boolean | `true` | Enable/disable TPA commands |
