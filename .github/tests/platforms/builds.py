@@ -3,8 +3,22 @@ import argparse
 import json
 from pathlib import Path
 import subprocess
+import xml.etree.ElementTree as ET
 
 INVENTORY = Path(__file__).resolve().parents[2] / "release/compatibility.json"
+
+
+def write_maven_settings(destination):
+    # BuildTools starts its own Maven outside our reactor. Give it the same repositories and checksum rules.
+    pom = Path(__file__).resolve().parents[3] / "pom.xml"
+    profile = ET.parse(pom).find("./m:profiles/m:profile[m:id='github-actions']", {"m": "http://maven.apache.org/POM/4.0.0"})
+    if profile is None:
+        raise ValueError("Missing github-actions repository profile in the root POM")
+    for node in profile.iter():
+        node.tag = node.tag.split("}")[-1]
+    settings = ET.Element("settings")
+    ET.SubElement(settings, "profiles").append(profile)
+    ET.ElementTree(settings).write(destination, encoding="utf-8", xml_declaration=True)
 
 
 def matrix():
@@ -27,9 +41,13 @@ def verify_sources(root, game):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--verify", nargs=2, metavar=("BUILD_DIRECTORY", "GAME"))
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--verify", nargs=2, metavar=("BUILD_DIRECTORY", "GAME"))
+    mode.add_argument("--maven-settings", type=Path, metavar="FILE")
     args = parser.parse_args()
     if args.verify:
         verify_sources(Path(args.verify[0]), args.verify[1])
+    elif args.maven_settings:
+        write_maven_settings(args.maven_settings)
     else:
         print(json.dumps(matrix(), separators=(",", ":")))

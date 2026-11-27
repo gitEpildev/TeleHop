@@ -66,6 +66,8 @@ jobs:
           REVISION: ${{ matrix.revision }}
           GAME: ${{ matrix.game }}
         run: |
+          python3 .github/tests/platforms/builds.py --maven-settings "$RUNNER_TEMP/buildtools-settings.xml"
+          export MAVEN_ARGS="--settings $RUNNER_TEMP/buildtools-settings.xml"
           mkdir tools
           cd tools
           curl -fsSL --retry 3 https://hub.spigotmc.org/jenkins/job/BuildTools/201/artifact/target/BuildTools.jar -o BuildTools.jar
