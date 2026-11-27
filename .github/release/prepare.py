@@ -9,8 +9,10 @@ import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 
 import paper_layout
+import version_sources
 from artefacts import PLATFORMS, filename
-from changelog import VERSION, check_update, checked_notes, current_entry
+from checksums import manifest
+from changelog import VERSION, check_update, checked_notes, newest_entry
 
 DIST = Path("release-bundle")
 SECTIONS = {"feat": "New features", "fix": "Bug fixes", "perf": "Performance improvements",
@@ -63,28 +65,14 @@ def notes(version):
     return "\n\n".join(f"### {k}\n" + "\n".join(v) for k, v in groups.items() if v) or "No new commits since the preceding release."
 
 
-def source_versions(root, version):
-    errors = []
-    def check(where, actual):
-        if actual != version:
-            errors.append(f"{where}: declares {actual!r}, expected {version}.")
-    check("pom.xml", root.findtext("{*}version"))
-    for module in root.findall("{*}modules/{*}module"):
-        path = Path(module.text, "pom.xml")
-        project = ET.parse(path).getroot()
-        check(f"{path} parent", project.findtext("{*}parent/{*}version"))
-        check(f"{path} project", project.findtext("{*}version", version))
-    paths = {
-        "paper/src/main/resources/plugin.yml": r"(?m)^version:\s*([^\s#]+)\s*$",
-        "velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java":
-            r'(?s)@Plugin\s*\([^)]*?\bversion\s*=\s*"([^"]+)"'
-    }
-    for name, pattern in paths.items():
-        values = re.findall(pattern, Path(name).read_text())
-        if values != [version]:
-            errors.append(f"{name}: found {values}, expected one version {version}.")
-    if errors:
-        raise ValueError("\n".join(errors))
+def changelog_release(expected=None):
+    version, entry = newest_entry(Path("CHANGELOG.md").read_text(), expected)
+    release_version(version, "")
+    return version, entry
+
+
+def source_versions(version):
+    version_sources.apply(version)
 
 
 def check_product_changes(base, entry):
@@ -97,16 +85,19 @@ def check_product_changes(base, entry):
 
 
 def prepare(publishing):
-    root = ET.parse("pom.xml").getroot()
-    requested = os.getenv("REQUEST_VERSION", "") if publishing else root.findtext("{*}version")
+    requested = os.getenv("REQUEST_VERSION", "") if publishing else ""
     if publishing and os.getenv("TAG_NAME"):
         tag = os.environ["TAG_NAME"]
         if not tag.startswith("v") or requested and requested != tag[1:]:
             raise ValueError(f"Selected tag {tag} disagrees with the release request {requested!r}.")
         requested = tag[1:]
-    version, channel = release_version(requested, os.getenv("REQUEST_CHANNEL") if publishing else "")
-    entry = current_entry(Path("CHANGELOG.md").read_text(), version)
-    source_versions(root, version)
+        if not VERSION.fullmatch(requested):
+            raise ValueError(f"Invalid release tag {tag}")
+    version, entry = changelog_release(requested or None)
+    release, channel = release_version(version, os.getenv("REQUEST_CHANNEL") if publishing else "")
+    if release != version:
+        raise ValueError(f"The selected channel requires {release}, but the newest changelog entry declares {version}.")
+    source_versions(version)
 
     base = os.getenv("CHANGE_BASE")
     if base == "0" * 40:
@@ -130,9 +121,7 @@ def prepare(publishing):
 def verify_reactor(version):
     root = ET.parse("pom.xml").getroot()
     modules = {Path(module.text) for module in root.findall("{*}modules/{*}module")}
-    required = {Path(name) for name in ("common", "paper", "velocity", "paper-versions/paper-version-api",
-                                        "paper-versions/paper.1.21.x", "paper-versions/paper.26.1.x")}
-    if missing := required - modules:
+    if missing := version_sources.MODULES - modules:
         raise ValueError(f"Required Maven modules missing from reactor: {', '.join(map(str, sorted(missing)))}.")
     for module in sorted(modules):
         pom = ET.parse(module / "pom.xml").getroot()
@@ -186,7 +175,8 @@ def verify_jars(version, directory=None):
             if jar.testzip():
                 raise ValueError(f"Invalid production JAR: {path}")
             if platform == "paper":
-                matches = re.findall(r"(?m)^version: (.+)$", jar.read("plugin.yml").decode())
+                descriptor = jar.read("plugin.yml")
+                matches = [descriptor[start:end].decode() for start, end in version_sources.backend_version(descriptor)]
             else:
                 matches = [json.loads(jar.read("velocity-plugin.json"))["version"]]
             if matches != [version]:
@@ -204,16 +194,38 @@ def verify_jars(version, directory=None):
         print(f"Verified {path}")
 
 
+def verify_bundle(directory, version):
+    """Check the complete downloaded Actions bundle before starting the live servers."""
+    expected = {filename(platform, version) for platform in PLATFORMS} | {"SHA256SUMS", "command-probe.jar"}
+    contents = {path.name for path in directory.iterdir()}
+    if expected != contents:
+        raise ValueError(f"Unexpected bundle contents. Missing {sorted(expected - contents)}, extra {sorted(contents - expected)}")
+    if (directory / "SHA256SUMS").read_text(encoding="ascii") != manifest(directory, version):
+        raise ValueError("The two downloaded distribution files differ from the build manifest")
+    verify_jars(version, directory)
+
+
 if __name__ == "__main__":
     try:
-        if len(sys.argv) == 3 and sys.argv[1] == "reactor":
+        if sys.argv[1:] == ["version"]:
+            print(changelog_release()[0])
+        elif sys.argv[1:] == ["sync-version"]:
+            version, _ = changelog_release()
+            changed = version_sources.apply(version, write=True)
+            if changed:
+                print(f"Synchronised TeleHop {version} in " + ", ".join(map(str, changed)))
+            else:
+                print(f"All TeleHop release fields already match {version}.")
+        elif len(sys.argv) == 3 and sys.argv[1] == "reactor":
             verify_reactor(sys.argv[2])
             verify_test_reports()
         elif len(sys.argv) == 3 and sys.argv[1] == "verify":
             verify_jars(sys.argv[2])
+        elif len(sys.argv) == 4 and sys.argv[1] == "verify-bundle":
+            verify_bundle(Path(sys.argv[2]), sys.argv[3])
         elif sys.argv[1:] in (["check"], ["prepare"]):
             prepare(sys.argv[1] == "prepare")
         else:
-            sys.exit("Use check, prepare, reactor VERSION or verify VERSION.")
+            sys.exit("Use version, sync-version, check, prepare, reactor VERSION, verify VERSION or verify-bundle DIRECTORY VERSION.")
     except (ValueError, OSError, BadZipFile, ET.ParseError) as error:
         sys.exit(str(error))

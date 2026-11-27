@@ -4,7 +4,6 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-import xml.etree.ElementTree as ET
 from zipfile import ZipFile, ZipInfo
 
 import changelog
@@ -84,21 +83,6 @@ class ChangelogTests(unittest.TestCase):
 
 
 class BuildTests(unittest.TestCase):
-    def test_source_checks_reject_child_or_descriptor_drift_without_rewriting_files(self):
-        with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
-            root = ET.fromstring("<project><version>2.4.0</version><modules><module>common</module></modules></project>")
-            files = {"common/pom.xml": "<project><parent><version>2.2.0</version></parent><version>2.3.0</version></project>",
-                     "paper/src/main/resources/plugin.yml": "version: 2.2.0\n",
-                     "velocity/src/main/java/com/telehop/velocity/NetworkVelocityPlugin.java": '@Plugin(version = "2.2.0")'}
-            for name, value in files.items():
-                Path(name).parent.mkdir(parents=True)
-                Path(name).write_text(value)
-            with self.assertRaises(ValueError) as failure:
-                prepare.source_versions(root, "2.4.0")
-            for name, original in files.items():
-                self.assertIn(name, str(failure.exception))
-                self.assertEqual(Path(name).read_text(), original)
-
     def test_missing_skipped_failing_and_empty_suites_fail(self):
         with tempfile.TemporaryDirectory() as tmp, chdir(tmp):
             xml = '<testsuite tests="1" errors="0" failures="0" skipped="0"/>'
@@ -140,7 +124,7 @@ class BuildTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
             with ZipFile(directory / "telehop-bukkit-4.0.0.jar", "w") as jar:
-                jar.writestr("plugin.yml", "version: 4.0.0")
+                jar.writestr("plugin.yml", 'name: TeleHop\r\nversion: "4.0.0"  # backend release\r\napi-version: "1.21"\r\n')
             with self.assertRaisesRegex(ValueError, r"lacks required runtime files:.*commands/hub.yml"):
                 prepare.verify_jars("4.0.0", directory)
 

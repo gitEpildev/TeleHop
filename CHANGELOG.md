@@ -14,7 +14,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 - Browse the backend configuration in the same folders used on the server. The root configuration and bundled setup guide explain which files to edit. Upgrades refresh earlier stock guides and preserve local edits.
 - Configure command names by category and define additional random teleport, named spawn and hub commands. A command can require permissions for its own identifier and its destination. Global warp lists honour individual warp permissions.
 - Inspect the detected platform, validate configuration and view migration details in game. The backend selects available teleport and chunk operations at startup.
-- Release checks exercise the published previous version, multiple database engines and a network containing different backend implementations. The release includes a checksum for each plugin file.
+- Release checks cover upgrades from the previous published version, multiple database engines and networks with different backend implementations. Each plugin file has a checksum.
+- Maintainers can update both plugin versions from the dated changelog entry with one command.
 
 ### Fixed
 

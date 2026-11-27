@@ -8,7 +8,7 @@ TeleHop supports **single-proxy and multi-proxy Velocity networks**. Use homes, 
 
 ## ✨ New in 4.0.0
 
-The `telehop-bukkit-4.0.0.jar` download detects the backend platform on startup, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
+The `telehop-bukkit-<version>.jar` download detects the backend platform on startup, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
 
 ## Named spawns in 3.0.0
 
@@ -311,11 +311,11 @@ The moderator in this example can inspect a home list. Grant `telehop.admin.home
 
 ## 📥 Requirements and compatibility
 
-| Install location | TeleHop 4.0.0 file | Supported platform |
+| Install location | File for your release | Supported platform |
 |---|---|---|
-| Each Paper backend’s `plugins/` folder | `telehop-bukkit-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
-| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-bukkit-4.0.0.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
-| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-4.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
+| Each Paper backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
+| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
+| Each Velocity proxy’s `plugins/` folder | `telehop-velocity-<version>.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
 
 Minecraft 1.21.2 clients passed a login and named teleport through Velocity 3.5 to Paper 1.21.3. Minecraft 26.1 clients passed the same checks through Velocity 4.3.1 to Paper 26.1.2. TeleHop 4.0.0 also passed two-player network tests with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
 
@@ -416,7 +416,7 @@ Use Java 21 for Maven and configure the Java 25 toolchain for the newer Paper ad
 mvn clean verify
 ```
 
-Installable outputs are `paper/target/telehop-bukkit-4.0.0.jar` and `velocity/target/telehop-velocity-4.0.0.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-bukkit-<version>.jar` and `velocity/target/telehop-velocity-<version>.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
 
 ## 👤 Author and company
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-version=$1
+version=${1:-$(python3 .github/release/prepare.py version)}
 python3 .github/release/prepare.py reactor "$version"
 python3 .github/release/prepare.py verify "$version"
 python3 .github/release/package_jars.py "$version" release-bundle

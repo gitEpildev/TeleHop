@@ -12,6 +12,8 @@ import time
 NETWORK = Path(__file__).resolve().parents[1] / "network"
 sys.path.insert(0, str(NETWORK.parent))
 sys.path.insert(0, str(NETWORK))
+sys.path.insert(0, str(NETWORK.parents[1] / "release"))
+from paper_layout import verify_install
 from run import Process, assert_entity_values, entity_vector
 from platform_detection import signature
 
@@ -86,6 +88,7 @@ def run(args):
     if first.proc.returncode != 0:
         raise AssertionError(f"{args.platform} stopped with exit status {first.proc.returncode}")
     first.log.rename(root / "boot-1.log")
+    verify_install(root / "plugins/TeleHop", args.plugin)
     with ExitStack() as stack:
         server = boot(stack, root)
         console_checks(server, backend, args.platform, args.game)

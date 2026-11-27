@@ -10,11 +10,13 @@ Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`
 
 ## Installation
 
+Replace `<version>` with the release you downloaded. Use the same TeleHop version across the network.
+
 | Where | Install in `plugins/` | Platform and Java |
 |---|---|---|
-| Each Paper backend | `telehop-bukkit-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25+ |
-| Each supported CraftBukkit, Spigot or Purpur backend | `telehop-bukkit-4.0.0.jar` | See the [exact implementation, Minecraft and Java combinations](docs/version-compatibility.md) |
-| Each Velocity proxy | `telehop-velocity-4.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
+| Each Paper backend | `telehop-bukkit-<version>.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25+ |
+| Each supported CraftBukkit, Spigot or Purpur backend | `telehop-bukkit-<version>.jar` | See the [exact implementation, Minecraft and Java combinations](docs/version-compatibility.md) |
+| Each Velocity proxy | `telehop-velocity-<version>.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
 
 Two additional client versions passed a login and named teleport through Velocity. Minecraft 1.21.2 joined Paper 1.21.3 on Velocity 3.5, and Minecraft 26.1 joined Paper 26.1.2 on Velocity 4.3.1. Each pair shares a wire protocol.
 
@@ -287,14 +289,17 @@ plugins/telehop-velocity/
 
 ## Building and releases
 
+The backend starts in the `paper/` module, which produces the Bukkit JAR. The proxy starts in `velocity/`. Both use `common/` for storage, packet formats and services. [Source map and entry points](CONTRIBUTING.md#where-the-code-lives)
+
 Configure Maven toolchains for JDK 21 and JDK 25, then run the full build from the repository root.
 
 ```sh
+npm ci --prefix .github/release --ignore-scripts
 mvn clean verify
-bash .github/tests/bundle.sh 4.0.0
+bash .github/tests/bundle.sh
 ```
 
-The packaging step writes the two distributable files, `telehop-bukkit-4.0.0.jar` and `telehop-velocity-4.0.0.jar`, to `release-bundle/` alongside `SHA256SUMS`. Install the first on each supported backend and the second on each Velocity proxy. CI checks command and language resources, release versions, the changelog and runtime compatibility before publishing to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
+The packaging step writes the two distributable files, `telehop-bukkit-<version>.jar` and `telehop-velocity-<version>.jar`, to `release-bundle/` alongside `SHA256SUMS`. Install the first on each supported backend and the second on each Velocity proxy. CI checks command and language resources, release versions, the changelog and runtime compatibility before publishing to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
 
 ## Further reading
 

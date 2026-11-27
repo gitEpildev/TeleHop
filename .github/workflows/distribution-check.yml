@@ -28,4 +28,4 @@ jobs:
       - name: Verify filenames, embedded versions, adapters, templates and checksums
         env:
           VERSION: ${{ inputs.version }}
-        run: python3 .github/release/verify_bundle.py bundle "$VERSION"
+        run: python3 .github/release/prepare.py verify-bundle bundle "$VERSION"

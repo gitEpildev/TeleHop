@@ -162,6 +162,11 @@ def boot(directory, platform, second, *, game=None):
                 expected = "Platform detection completed: " + signature("Paper", game)
                 if not re.search(expected, content):
                     raise AssertionError(f"{log}: incorrect platform, version adapter, travel provider or chat bridge for Paper {game}")
+            elif platform == "velocity" and game is not None:
+                major = game.split(".", 1)[0]
+                expected = rf"Using Velocity {major} shared messaging API \(runtime {re.escape(game)}(?=[.)\s-])"
+                if not re.search(expected, content):
+                    raise AssertionError(f"{log}: missing Velocity {game} runtime and API selection")
             proc.communicate("telehop help\nstop\n" if paper else "shutdown\n", timeout=60)
             content = ANSI.sub("", log.read_text(errors="replace"))
             if paper:
@@ -211,6 +216,16 @@ def main():
         check_migration()
         if platform == "paper":
             verify_install(directory / "plugins/TeleHop", args.bundle / filename("paper", args.version))
+        else:
+            data = directory / "plugins/telehop-velocity"
+            config = data / "config"
+            assert {p.name for p in config.iterdir()} == {"database.yml", "redis.yml", "single", "multi", "custom"}
+            for profile in ("single", "multi", "custom"):
+                expected = {"servers.yml", "messaging.yml"}
+                if profile != "single":
+                    expected.add("proxy.yml")
+                assert {p.name for p in (config / profile).iterdir()} == expected, profile
+            assert all((data / file).is_file() for file in ("config.yml", "migrations/state.yml", "migrations/history.log"))
         if legacy:
             check_legacy_paper_config(directory, legacy)
     print(f"{args.server}: both startups, shutdowns and legacy home migration checks passed")

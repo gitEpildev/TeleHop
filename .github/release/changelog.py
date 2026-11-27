@@ -40,7 +40,7 @@ def check_content(source, text, bullets):
         raise ValueError(f"{source}: replace unfinished placeholder text with the actual change.")
 
 
-def current_entry(text, version):
+def newest_entry(text, expected=None):
     source = "CHANGELOG.md"
     parsed = markdown(source, text)
     headings = [h for h in parsed["headings"] if h["root"] and h["level"] == 2]
@@ -61,15 +61,21 @@ def current_entry(text, version):
         if entries and (version_key(value) >= version_key(entries[-1][0]) or released > entries[-1][1]):
             raise ValueError(f"{where}: dates and unique versions must be in descending release order.")
         entries.append((value, released, heading["line"]))
-    if not entries or entries[0][0] != version:
-        actual = entries[0][0] if entries else "no dated entry"
-        raise ValueError(f"{source}: requested {version}, latest dated entry is {actual}. Update the newest entry.")
+    if not entries:
+        raise ValueError(f"{source}: no dated entry. Add a release heading and describe the changes.")
+    version = entries[0][0]
+    if expected is not None and version != expected:
+        raise ValueError(f"{source}: requested {expected}, latest dated entry is {version}. Update the newest entry.")
     start = entries[0][2]
     end = entries[1][2] - 1 if len(entries) > 1 else len(text.splitlines())
     body = "\n".join(text.splitlines()[start:end]).strip()
     body = re.sub(r"\n---\s*$", "", body).rstrip()
     check_content(f"{source}:{start}", body, [b for b in parsed["bullets"] if start < b["line"] <= end])
-    return body
+    return version, body
+
+
+def current_entry(text, version):
+    return newest_entry(text, expected=version)[1]
 
 
 def check_update(previous, current):

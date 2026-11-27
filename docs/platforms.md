@@ -1,6 +1,6 @@
 # Backend platforms
 
-Install the same `telehop-bukkit-4.0.0.jar` in the `plugins` directory of each supported game server. Install `telehop-velocity-4.0.0.jar` on each Velocity proxy in a network. A standalone backend needs its database and its selected configuration profile. [Setup](setup.md) · [Configuration](configuration.md)
+Install the same `telehop-bukkit-<version>.jar` in the `plugins` directory of each supported game server. Install `telehop-velocity-<version>.jar` on each Velocity proxy in a network. A standalone backend needs its database and its selected configuration profile. [Setup](setup.md) · [Configuration](configuration.md)
 
 | Implementation | Verified scope | Backend behaviour |
 | --- | --- | --- |
@@ -15,9 +15,11 @@ Bukkit is an API. The CraftBukkit test exercises the implementation built from t
 
 ## Detection and travel
 
-On Spigot, `/telehop platform info` reports Spigot, the Minecraft version, the world-name adapter, Bukkit main-thread teleport and chunks, and the Spigot component bridge. Paper and Purpur select native asynchronous operations when the server exposes both required methods.
+With the default `logging.platform-detection: true`, startup prints the selected implementation and adapters. Run `/telehop platform info` to read the same details again. For example, on Spigot 1.21.11 the diagnostic reported Minecraft 1.21.11, Java 21, `Paper121Adapter`, Bukkit main-thread travel and Spigot component chat. The adapter name identifies the Minecraft world lookup code.
 
-The startup log reports the implementation, game and Bukkit API versions, Java runtime, world-name adapter, teleport and chunk provider, and message bridge. Select a deployment profile in `config.yml` to describe your topology. The server chooses its platform adapter independently. The distinction matters on a fork that supplies some Paper APIs. TeleHop checks for both required asynchronous methods before selecting the native operations.
+All supported game servers generate the backend layout in `plugins/TeleHop/`. A Velocity proxy generates its own layout in `plugins/telehop-velocity/`. A new installation starts with the SINGLE profile. Operators select MULTI for several proxies or CUSTOM for their own topology. The platform detector runs independently on every instance. [Backend setup](configuration.md) · [Proxy setup](velocity.md)
+
+The startup log reports the implementation, game and Bukkit API versions, Java runtime, world-name adapter, teleport and chunk provider, and message bridge. On a fork that supplies some Paper APIs, TeleHop checks for both required asynchronous methods before selecting the native operations.
 
 The main backend compiles against Spigot API. A separate class in the existing Paper adapter module contains the calls to native asynchronous methods. TeleHop packages MiniMessage and its Adventure text dependencies privately. Chat, titles, inventory names and lore therefore work on servers without native Adventure.
 

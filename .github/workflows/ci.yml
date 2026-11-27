@@ -115,10 +115,11 @@ jobs:
         run: mvn -B -ntp clean verify
       - name: Verify and bundle runtime test artifacts
         id: bundle
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
-          version=$(sed -n 's/^version: //p' paper/src/main/resources/plugin.yml)
-          bash .github/tests/bundle.sh "$version"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
+          bash .github/tests/bundle.sh "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "name=test-bundle-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_OUTPUT"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

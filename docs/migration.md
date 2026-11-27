@@ -1,6 +1,6 @@
 # Upgrading to TeleHop 4
 
-On each stopped backend, move the previous `telehop-paper-*.jar` out of `plugins/` before installing `telehop-bukkit-4.0.0.jar`. Both files identify the same TeleHop plugin and use the existing `plugins/TeleHop/` data folder. Replace the proxy JAR with the matching Velocity build.
+On each stopped backend, move the previous `telehop-paper-*.jar` out of `plugins/` before installing `telehop-bukkit-<version>.jar`. Both files identify the same TeleHop plugin and use the existing `plugins/TeleHop/` data folder. Replace the proxy JAR with the matching Velocity build.
 
 Stop player traffic, back up the shared database and retain each instance's plugin JAR and data folder. Upgrade the Velocity proxies first, then each backend. Complete the upgrade before enabling command variants or depending on V4 permission checks across servers. A production rollback needs the JAR, configuration and database backup from the same deployment.
 

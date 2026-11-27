@@ -11,17 +11,19 @@
 
 ## Run a release
 
-For a stable release, open the [Release workflow](https://github.com/gitEpildev/TeleHop/actions/workflows/release.yml) and select **Run workflow**, select the source branch and enter the version, for example `4.0.0`. Leave **Release type** set to **release**. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. Run the workflow once.
+Open the Release workflow, select **Run workflow** and choose the source branch. Leave **Version** empty and **Release type** set to **auto**. The workflow reads the newest dated changelog entry and treats a plain version such as `4.0.0` as a full release. An explicitly entered version or channel must agree with the entry. Optional Markdown replaces the generated release body and passes the same spelling, punctuation and content checks. [Open the Release workflow](https://github.com/gitEpildev/TeleHop/actions/workflows/release.yml)
 
 You can also push a stable tag such as `v4.0.0` at the intended commit. Choose one trigger per release. Alpha and beta channels are available for explicitly requested prereleases.
 
-Prepare the version in source control first. The requested version, newest dated entry in `CHANGELOG.md`, root POM, each module's parent and project version, Paper descriptor and Velocity annotation must agree. A tag must identify that same version. Pushing a branch commit runs CI for the exact SHA the release will use.
+Before committing, add the newest dated release heading and its user-facing notes to `CHANGELOG.md`. Install the checker with `npm ci --prefix .github/release --ignore-scripts`, then run `python3 .github/release/prepare.py sync-version` once. It updates the TeleHop Maven coordinates and both plugin descriptors. Review and commit those changes together. The release checks require every version to agree. A tag must identify that same version. Pushing a branch commit runs CI for the exact SHA the release will use.
 
 GitHub receives the Bukkit backend and Velocity proxy JARs and their SHA-256 manifest. CI and release runs download the built bundle again and check its exact files, versions, included adapters, templates and checksums before starting the runtime suite. Modrinth receives one entry per JAR using the verified GitHub assets and release notes. One Modrinth entry applies each loader tag to every version listed on it. The backend entry includes an additional loader only when the corresponding runtime checks cover the entire advertised range. The Bukkit backend entry uses the intersection verified for its published loader tags. The Velocity entry covers 17 Minecraft releases. Its two additional client versions share a protocol with a published Paper server. The live login and placement tests pair client 1.21.2 with Paper 1.21.3 and client 26.1 with Paper 26.1.2. [Platform table](../../README.md#installation)
 
 The default public notes include the reviewed changelog entry and group commits since the nearest reachable previous version tag. Push and pull request CI checks the spelling and formatting of these generated notes before the release is started. For the first release, history starts after the standalone 2.2.0 reconciliation. Use conventional commit subjects such as `fix(paper): respect the self-coordinate permission`. A `!` or `BREAKING CHANGE:` footer places the change in the breaking changes section.
 
 ## Checks before publication
+
+To reproduce the downloaded-bundle check locally, run `python3 .github/release/prepare.py verify-bundle DIRECTORY VERSION` with the directory containing the two distribution JARs, command probe and checksum file. The public download directory contains only the two production JARs and their checksums.
 
 ### Changelog requirements
 
@@ -62,10 +64,10 @@ From the repository root, with Node.js 22.12 or later, Python 3.11 or later, Mav
 ```sh
 npm ci --prefix .github/release --ignore-scripts --no-audit --no-fund
 python3 .github/release/prepare.py check
-REQUEST_VERSION=4.0.0 REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
+REQUEST_CHANNEL=release python3 .github/release/prepare.py prepare
 python3 -m unittest discover -v -s .github/release
 mvn -B -ntp clean verify
-bash .github/tests/bundle.sh 4.0.0
+bash .github/tests/bundle.sh
 ```
 
 
