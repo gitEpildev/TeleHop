@@ -13,6 +13,19 @@ class SpawnConfigFileTest {
     @TempDir Path root;
 
     @Test
+    void dataDirectoryCallsResolveTheSelectedProfileEvenWhenAnOldFlatFileExists() throws Exception {
+        var selected = Files.createDirectories(root.resolve("config/custom")).resolve("spawns.yml");
+        Files.writeString(selected, "destinations: {}\n");
+        var retired = root.resolve("config/spawns.yml");
+        Files.writeString(retired, "# Original operator file\n");
+        Files.writeString(root.resolve("config.yml"), "mode: CUSTOM\n");
+        var point = new SpawnPoint("gardens", 7, 61, 50, 0, 0, false);
+        SpawnConfigFile.edit(root.toFile(), "arrival", point).write(false);
+        assertEquals(point, SpawnRoutes.load(root.toFile()).destinations().get("arrival"));
+        assertEquals("# Original operator file\n", Files.readString(retired));
+    }
+
+    @Test
     void savingAndRemovingAnOperatorChosenNameRoundTripsAllFields() throws Exception {
         Files.createDirectories(root.resolve("config"));
         Files.writeString(root.resolve("config/spawns.yml"), "destinations: {}\n");

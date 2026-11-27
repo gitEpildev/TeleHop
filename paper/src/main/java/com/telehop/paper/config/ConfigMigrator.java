@@ -9,11 +9,14 @@ import org.bukkit.plugin.java.JavaPlugin;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
+import java.security.DigestInputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.List;
@@ -27,19 +30,28 @@ public final class ConfigMigrator {
     private static final List<String> SPLIT_FILES = List.of(
             "database.yml", "features.yml", "teleport.yml", "tpa.yml", "rtp.yml", "home.yml", "general.yml");
 
-    // Only replace known bundled guides. A guide edited by an operator stays untouched.
+    private static final String GUIDE = "config/WIKI.md";
+    // Historical distribution bytes identify our guide even on installations with no ownership metadata.
     private static final Set<String> PREVIOUS_GUIDES = Set.of(
+            "5f203d5fcf734268cfc24d21ff36a453fbac0435aca2a33f0d7a82d6132cf2b9",
+            "58f6cf2b28d7993168fa222a2906f866db0b24c0eee4f8e60f7d5e05910c589b",
+            "d4afdc564020fee21cbfc214b4f62811a8123b098a84ab62af11a6012f03be3c",
             "e96a547168b639674009857df9f6e5d8fbf6c65b7aeaad8f94d6dc2f694418dd",
             "5fdc26662df27b460104aa19ec979edefbae71e45bb183318258934edfb060f8",
-            "b4b68c1bb38d16c14af5766b829f8827656e5791353c089ee890708ccf014395");
+            "b4b68c1bb38d16c14af5766b829f8827656e5791353c089ee890708ccf014395",
+            "4da481a533217850aa850846b2870e0c1c01775770ebc8693ecf7927c5708378",
+            "e525fb181e8282bf181ebf9a04e7d038f836e3ce0d9dce36e40d9fe5c37f552f");
 
     private ConfigMigrator() {}
 
     /** A staging directory marks an interrupted migration, even after general.yml was published. */
     public static boolean needsMigration(JavaPlugin plugin) {
         Path root = plugin.getDataFolder().toPath();
-        return Files.exists(root.resolve(STAGING))
-                || Files.exists(root.resolve("config.yml")) && !Files.isRegularFile(root.resolve("config/general.yml"));
+        if (Files.exists(root.resolve(STAGING))) return true;
+        if (!Files.exists(root.resolve("config.yml")) || Files.isRegularFile(root.resolve("config/general.yml"))) return false;
+        try { return PaperProfiles.operationalDirectory(root).equals(root.resolve("config")); }
+        catch (IllegalArgumentException ex) { return true; } // The caller must correct the invalid configuration before it can be classified.
+        catch (IOException ex) { throw new IllegalArgumentException("Cannot inspect config.yml for migration", ex); }
     }
 
     /** Publishes validated YAML before archiving the legacy source. A failed attempt can run again at startup. */
@@ -63,6 +75,11 @@ public final class ConfigMigrator {
         }
 
         var old = readYaml(legacy);
+        if (PaperProfiles.isSelector(old.getValues(false))) {
+            com.telehop.common.config.DeploymentConfig.read(root);
+            if (Files.exists(stage)) throw new IOException("Legacy staging and an active profile selector both exist. Review " + stage);
+            return;
+        }
         Files.createDirectories(stage);
         writeGeneral(old, stage.resolve("general.yml").toFile());
         writeDatabase(old, stage.resolve("database.yml").toFile());
@@ -92,31 +109,42 @@ public final class ConfigMigrator {
     public static void completeCommandSettings(JavaPlugin plugin, boolean legacyHub)
             throws IOException, InvalidConfigurationException {
         for (String name : List.of("config/features.yml", "config/commands.yml")) {
-            var resource = plugin.getResource(name);
-            if (resource == null) throw new IOException("Missing bundled " + name);
+            boolean features = name.equals("config/features.yml");
+            String template = features ? PaperProfiles.template(com.telehop.common.config.DeploymentConfig.Mode.SINGLE, "features.yml")
+                    : CommandNames.LEGACY_TEMPLATE;
+            var resource = plugin.getResource(template);
+            if (resource == null) throw new IOException("Missing bundled " + template);
             var defaults = new YamlConfiguration();
             try (var reader = new InputStreamReader(resource, StandardCharsets.UTF_8)) {
                 defaults.load(reader);
             }
-            boolean features = name.equals("config/features.yml");
             if (features) defaults.set("features.hub", legacyHub);
             Path target = plugin.getDataFolder().toPath().resolve(name);
             completeSettings(target, defaults, features);
         }
     }
 
-    /** Refresh unchanged guides shipped with 2.3.0 and 3.0.0 when upgrading an existing backend. */
-    static void refreshBundledGuide(JavaPlugin plugin, Path data) throws IOException {
-        String name = "config/WIKI.md";
-        Path guide = data.resolve(name);
+    /** A missing guide or an unchanged previously shipped edition can be replaced safely. */
+    static boolean needsGuideUpdate(Path data) throws IOException {
+        Path guide = data.resolve(GUIDE);
+        if (Files.notExists(guide, LinkOption.NOFOLLOW_LINKS)) return true;
+        if (!Files.isRegularFile(guide, LinkOption.NOFOLLOW_LINKS)) throw new IOException("Expected a regular file at " + guide);
         try {
-            var digest = MessageDigest.getInstance("SHA-256").digest(Files.readAllBytes(guide));
-            if (!PREVIOUS_GUIDES.contains(HexFormat.of().formatHex(digest))) return;
+            var digest = MessageDigest.getInstance("SHA-256");
+            try (var input = new DigestInputStream(Files.newInputStream(guide), digest)) {
+                input.transferTo(OutputStream.nullOutputStream());
+            }
+            return PREVIOUS_GUIDES.contains(HexFormat.of().formatHex(digest.digest()));
         } catch (NoSuchAlgorithmException ex) {
             throw new IllegalStateException(ex);
         }
-        try (var bundled = plugin.getResource(name)) {
-            if (bundled == null) throw new IOException("Missing bundled " + name);
+    }
+
+    static void refreshBundledGuide(JavaPlugin plugin, Path data) throws IOException {
+        if (!needsGuideUpdate(data)) return;
+        Path guide = data.resolve(GUIDE);
+        try (var bundled = plugin.getResource(GUIDE)) {
+            if (bundled == null) throw new IOException("Missing bundled " + GUIDE);
             Path temporary = Files.createTempFile(guide.getParent(), ".telehop-guide-", ".tmp");
             try {
                 Files.copy(bundled, temporary, StandardCopyOption.REPLACE_EXISTING);

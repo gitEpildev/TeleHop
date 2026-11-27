@@ -8,7 +8,7 @@ TeleHop supports **single-proxy and multi-proxy Velocity networks**. Use homes, 
 
 ## ✨ New in 4.0.0
 
-One backend JAR detects compatible platforms, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
+The `telehop-bukkit-4.0.0.jar` download detects the backend platform on startup, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
 
 ## Named spawns in 3.0.0
 
@@ -93,7 +93,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` and Paper has restarted | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` after the backend restarts | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
 | `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
@@ -148,7 +148,7 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 | Command | Action | Permission |
 |---|---|---|
 | `/telehop`, `/telehop help` | Display command help | Everyone |
-| `/telehop version`, `/telehop ver` | Display the Paper plugin version | Everyone |
+| `/telehop version`, `/telehop ver` | Display the backend plugin version | Everyone |
 | `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
 | `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
 | `/telehop reload config` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
@@ -181,7 +181,7 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 
 ## 🔐 Complete permission reference
 
-The command tables above show which action each permission unlocks. The tables below give the default for every permission declared in the Paper JAR. A permissions manager such as LuckPerms can grant or deny individual nodes.
+The command tables above show which action each permission unlocks. The tables below give the default for every permission declared in the backend JAR. A permissions manager such as LuckPerms can grant or deny individual nodes.
 
 ### Member permissions
 
@@ -313,8 +313,8 @@ The moderator in this example can inspect a home list. Grant `telehop.admin.home
 
 | Install location | TeleHop 4.0.0 file | Supported platform |
 |---|---|---|
-| Each Paper backend’s `plugins/` folder | `telehop-paper-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
-| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-paper-4.0.0.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
+| Each Paper backend’s `plugins/` folder | `telehop-bukkit-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
+| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-bukkit-4.0.0.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
 | Each Velocity proxy’s `plugins/` folder | `telehop-velocity-4.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
 
 Minecraft 1.21.2 clients passed a login and named teleport through Velocity 3.5 to Paper 1.21.3. Minecraft 26.1 clients passed the same checks through Velocity 4.3.1 to Paper 26.1.2. TeleHop 4.0.0 also passed two-player network tests with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
@@ -325,7 +325,7 @@ Standalone Bukkit-compatible backends can run local travel, including named dest
 
 1. Install matching TeleHop JARs on every proxy and backend. Start the instances once to generate their configuration.
 2. Connect all instances to the same MySQL 8.0+ or MariaDB 10.5+ database. TeleHop creates and upgrades its database tables on startup.
-3. Give each Paper backend a unique `server-name` matching its Velocity registration. Set `hub-server` to the backend that owns the global hub.
+3. Give each backend a unique `server-name` matching its Velocity registration. Set `hub-server` to the backend that owns the global hub.
 4. For a multi-proxy network, register the same backends on every proxy, give each proxy a unique `proxy.id` in its active profile and configure the shared Redis service. Redis supports TLS, certificate and hostname verification and a custom CA certificate.
 5. Restart the proxies and backends, then test a home, a named spawn and a regional RTP destination as a member.
 
@@ -416,7 +416,7 @@ Use Java 21 for Maven and configure the Java 25 toolchain for the newer Paper ad
 mvn clean verify
 ```
 
-Installable outputs are `paper/target/telehop-paper-4.0.0.jar` and `velocity/target/telehop-velocity-4.0.0.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-bukkit-4.0.0.jar` and `velocity/target/telehop-velocity-4.0.0.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
 
 ## 👤 Author and company
 

@@ -5,7 +5,7 @@ from pathlib import Path
 import socket
 
 from boot import boot, prepare, ready, NETWORK
-from run import Process, assert_entity_values, proxy
+from run import Process, assert_entity_values, proxy, distribution_name
 
 
 def run(args):
@@ -21,13 +21,13 @@ def run(args):
     with ExitStack() as stack:
         servers = {}
         for (name, (platform, jar)), port in zip(platforms.items(), ports[1:], strict=True):
-            prepare(root / name, port, name, "inlet", args.bundle / f"telehop-paper-{args.version}.jar", jar,
+            prepare(root / name, port, name, "inlet", args.bundle / distribution_name("paper", args.version), jar,
                     args.cache if platform == "Paper" else None)
             servers[name] = boot(stack, root / name)
         bridge = proxy(stack, args, root, ports, server_names=tuple(platforms))
         bridge.wait(r"Done \(", seconds=150)
         for name, server in servers.items():
-            ready(server, name, platforms[name][0])
+            ready(server, name, platforms[name][0], "1.21.11")
             server.command("minecraft:forceload add 4 8", r"(?i)marked chunk|already|no chunks")
             server.command("minecraft:fill 3 219 7 8 219 11 minecraft:stone", r"(?i)filled|no blocks")
         client_dir = root / "client"

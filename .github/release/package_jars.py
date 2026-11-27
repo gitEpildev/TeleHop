@@ -5,8 +5,9 @@ import sys
 import tempfile
 from zipfile import ZIP_DEFLATED, ZIP_STORED, ZipFile, ZipInfo
 
+from artefacts import PLATFORMS, filename
 from checksums import manifest
-from prepare import PLATFORMS, verify_jars
+from prepare import verify_jars
 
 
 def package(source, destination):
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     version, destination = sys.argv[1], Path(sys.argv[2])
     destination.mkdir(parents=True, exist_ok=True)
     for platform in PLATFORMS:
-        name = f"telehop-{platform}-{version}.jar"
+        name = filename(platform, version)
         package(Path(platform, "target", name), destination / name)
     verify_jars(version, destination)
     (destination / "SHA256SUMS").write_text(manifest(destination, version), encoding="ascii")

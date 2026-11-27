@@ -1,0 +1,37 @@
+# TeleHop backend configuration
+# Start here, then open config/WIKI.md for the setup steps and file reference.
+config-version: 1
+
+# SINGLE: a standalone server, multiple Multiverse worlds, or any number of
+# backends behind one Velocity proxy. Edit config/single/general.yml.
+# MULTI: multiple Velocity proxies sharing backends, SQL and Redis.
+# Edit config/multi/general.yml and config/multi/regions.yml.
+# CUSTOM: choose the topology yourself in config/custom/general.yml.
+# Stop the backend before changing profiles. Other profiles retain their settings.
+mode: SINGLE
+
+# The backend detects its platform, Minecraft version and available APIs at startup.
+platform:
+  detection: AUTO
+
+# Set connection details in config/database.yml for every deployment.
+# Command rules are shared across profiles. Enable a switch here and in the
+# relevant file under commands/. Restart after changing registered labels.
+commands:
+  custom-names:
+    enabled: false
+  additional-commands:
+    enabled: false
+
+# Keep recovery copies of earlier configuration when upgrading.
+# Back up your database separately.
+migration:
+  automatic: true
+  backup-before-update: true
+  backup-retention: 5
+
+logging:
+  debug: false
+  configuration-validation: true
+  migration: true
+  platform-detection: true

@@ -1,0 +1,53 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  TeleHop - Feature Toggles
+# ═══════════════════════════════════════════════════════════════════════
+#  Enable or disable entire modules on this server.
+#
+#  Most disabled features keep their commands and display a "feature disabled" message.
+#  Turning off hub leaves its names available for other plugins after the next restart.
+#
+#  Example: set "rtp: false" on the lobby server if you only want RTP
+#  available on survival servers.
+#
+#  Most switches reload with /telehop reload. Changing hub registration requires a backend restart.
+
+features:
+  # /hub - register direct travel to the global hub. Restart the backend after changing this switch.
+  # Set the label and aliases in commands/hub.yml. Spawn travel must also be enabled.
+  hub: false
+
+  # /spawn and /spawn <name> - enable spawn travel
+  spawn: true
+
+  # /rtp - random teleport with region/dimension picker
+  rtp: true
+
+  # /tpa, /tpahere, /tpaaccept, /tpadeny, /tpacancel
+  tpa: true
+
+  # /warp, /setwarp, /delwarp, /warps - admin warps
+  warps: true
+
+  # /pwarp - player-created personal warps
+  player-warps: true
+
+  # /tp, /tphere - admin teleport commands
+  admin-tp: true
+
+  # /home, /sethome - player homes with GUI
+  homes: true
+
+  # /back, /back death - return to previous location
+  back: true
+
+  # /tpatoggle - let players block incoming TPA requests
+  tpa-toggle: true
+
+  # Random respawn on death - teleports players to a random safe
+  # location in the configured world instead of the world spawn point.
+  # Applies to all players unconditionally (no bypass).
+  random-respawn: true
+
+  # /lastlocation, /lastloc, /backlast - persistent logout location tracking.
+  # Saves the player's position when they quit and lets them return to it.
+  last-location: true

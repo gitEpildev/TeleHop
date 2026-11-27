@@ -1,0 +1,5 @@
+# Trust messages from a correctly configured Velocity proxy. Disable on a standalone backend.
+messaging:
+  network-enabled: true
+  dedupe-window-ms: 30000
+  request-timeout-ms: 10000

@@ -3,11 +3,13 @@ import hashlib
 from pathlib import Path
 import sys
 
+from artefacts import PLATFORMS, filename
+
 
 def manifest(directory, version):
     lines = []
-    for loader in ("paper", "velocity"):
-        name = f"telehop-{loader}-{version}.jar"
+    for platform in PLATFORMS:
+        name = filename(platform, version)
         with (directory / name).open("rb") as handle:
             lines.append(f"{hashlib.file_digest(handle, 'sha256').hexdigest()}  {name}\n")
     return "".join(lines)

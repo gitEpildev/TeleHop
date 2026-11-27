@@ -1,0 +1,22 @@
+# Backend identity and player-facing language for this profile.
+# On first installation TeleHop fills in the server and hub names from the server folder.
+# Behind Velocity set server-name to this backend's registered name and hub-server to your hub.
+language: en
+server-name: ""
+hub-server: ""
+# Optional labels mapped to registered backend names.
+servers: {}
+# SINGLE selects the local topology. Switch the root mode to enable regional routing.
+multi-proxy:
+  enabled: false
+audit:
+  enabled: false
+
+# Trust messages from a correctly configured Velocity proxy. Disable on a standalone backend.
+messaging:
+  network-enabled: true
+  dedupe-window-ms: 30000
+  request-timeout-ms: 10000
+
+# Reserved regional mappings stay available when importing older settings.
+regions: {}

@@ -6,9 +6,10 @@ import re
 import subprocess
 import sys
 
+from artefacts import PLATFORMS, filename, modrinth_title
 from compatibility import game_versions, platform_loaders
 from checksums import manifest
-from prepare import DIST, PLATFORMS, git, release_version, verify_jars
+from prepare import DIST, git, release_version, verify_jars
 
 CANONICAL = DIST / "github"
 
@@ -60,8 +61,13 @@ def github(version, channel):
 
     CANONICAL.mkdir(parents=True, exist_ok=True)
     assets = {asset["name"]: asset for asset in existing["assets"]}
+    if int(version.split(".", 1)[0]) >= 4:
+        expected = {filename(platform, version) for platform in PLATFORMS}
+        extra = sorted(name for name in assets if name.endswith(".jar") and name not in expected)
+        if extra:
+            raise ValueError(f"Unexpected release JARs on {tag}: {', '.join(extra)}. Review the existing release before retrying.")
     for platform in PLATFORMS:
-        name = f"telehop-{platform}-{version}.jar"
+        name = filename(platform, version)
         incomplete = name in assets and assets[name].get("state", "").lower() == "starter"
         if name not in assets or incomplete:
             if not existing["isDraft"]:
@@ -137,6 +143,10 @@ def validate_mod(metadata, record, jar_hash, name):
         raise ValueError(f"Conflicting Modrinth loaders for {name}")
     if set(record["game_versions"]) != set(metadata["game_versions"]):
         raise ValueError(f"Conflicting Modrinth game versions for {name}")
+    if int(metadata["version_number"].split(".", 1)[0]) >= 4:
+        jars = [file["filename"] for file in record["files"] if file["filename"].endswith(".jar")]
+        if jars != [name]:
+            raise ValueError(f"Unexpected Modrinth JARs for {name}: {jars}")
     if not any(f["primary"] and f["filename"] == name and f["hashes"]["sha512"] == jar_hash for f in record["files"]):
         raise ValueError(f"Modrinth primary JAR differs from GitHub: {name}")
 
@@ -146,14 +156,15 @@ def modrinth(version, channel):
     records = mod_api(f"project/{project_id}/version")
     changelog = (CANONICAL / "notes.md").read_text()
     for platform in PLATFORMS:
-        name = f"telehop-{platform}-{version}.jar"
+        name = filename(platform, version)
         jar = CANONICAL / name
         digest = hashlib.sha512(jar.read_bytes()).hexdigest()
-        metadata = {"project_id": project_id, "name": f"TeleHop {version} ({platform.title()})",
+        loaders = platform_loaders(platform)
+        metadata = {"project_id": project_id, "name": modrinth_title(platform, version, loaders),
                     "version_number": version, "version_type": channel, "changelog": changelog,
-                    "loaders": platform_loaders(platform), "game_versions": game_versions(platform), "dependencies": [],
+                    "loaders": loaders, "game_versions": game_versions(platform), "dependencies": [],
                     "file_parts": ["jar"], "primary_file": "jar", "featured": False}
-        matches = [v for v in records if v["version_number"] == version and platform in v["loaders"]]
+        matches = [v for v in records if v["version_number"] == version and set(loaders).intersection(v["loaders"])]
         if len(matches) > 1:
             raise ValueError(f"Multiple Modrinth entries already exist for {version} ({platform})")
         if matches:
@@ -162,7 +173,7 @@ def modrinth(version, channel):
             record = mod_api("version", "--form-string", "data=" + json.dumps(metadata),
                              "--form", f"jar=@{jar};type=application/java-archive")
         validate_mod(metadata, record, digest, name)
-        print(f"Verified Modrinth {platform} version {record['id']} ({name})")
+        print(f"Verified Modrinth version {record['id']}: {metadata['name']} ({name})")
 
 
 if __name__ == "__main__":

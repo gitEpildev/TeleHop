@@ -11,6 +11,7 @@ CodeQL
 config
 cooldown
 cooldowns
+CraftBukkit
 customisation
 customisations
 deduplication
@@ -21,6 +22,7 @@ LuckPerms
 Modrinth
 MySQL
 PEM
+Purpur
 README
 Redis
 respawn

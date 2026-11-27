@@ -84,11 +84,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Check for target/ directories in the index
+      - name: Check the index for JARs and generated build outputs
         run: |
-          BAD=$(git ls-files | grep -E '^[^/]+/target/' || true)
+          BAD=$(git ls-files -- '*.jar' ':(glob)**/target/**' 'dist/**' 'release-bundle/**')
           if [ -n "$BAD" ]; then
-            echo "::error::Committed build artifacts detected - remove target/ files from version control:"
+            echo "::error::Committed build artifacts detected - remove generated files from version control:"
             echo "$BAD"
             exit 1
           fi

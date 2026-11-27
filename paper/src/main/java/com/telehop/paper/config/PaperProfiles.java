@@ -12,17 +12,38 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.UUID;
 
 /** Installs or upgrades only the selected backend profile. Player storage remains shared. */
 public final class PaperProfiles {
-    private static final List<String> NETWORK_FILES = List.of("general.yml", "features.yml", "teleport.yml", "tpa.yml",
-            "rtp.yml", "home.yml", "spawns.yml", "respawn.yml", "messaging.yml", "regions.yml");
+    private static final List<String> SINGLE_FILES = List.of("general.yml", "features.yml", "teleport.yml", "tpa.yml",
+            "rtp.yml", "home.yml", "spawns.yml", "respawn.yml");
+    private static final List<String> NETWORK_FILES = java.util.stream.Stream.concat(SINGLE_FILES.stream(),
+            java.util.stream.Stream.of("messaging.yml", "regions.yml")).toList();
 
     private PaperProfiles() {}
 
     private static List<String> files(DeploymentConfig.Mode mode) {
-        return mode == DeploymentConfig.Mode.SINGLE ? NETWORK_FILES.subList(0, 8) : NETWORK_FILES;
+        return mode == DeploymentConfig.Mode.SINGLE ? SINGLE_FILES : NETWORK_FILES;
+    }
+
+    static String template(DeploymentConfig.Mode mode, String file) {
+        return "config/" + mode.name().toLowerCase(Locale.ROOT) + "/" + file;
+    }
+
+    static boolean isSelector(Map<String, Object> root) {
+        return root.containsKey("mode") || root.containsKey("config-version") || root.containsKey("platform") || root.containsKey("migration");
+    }
+
+    /** Resolve the operational directory for integrations that pass the plugin data folder. */
+    static Path operationalDirectory(Path data) throws IOException {
+        Path selector = data.resolve("config.yml");
+        if (Files.exists(selector)) {
+            var root = ConfigYaml.read(selector);
+            if (isSelector(root)) return DeploymentConfig.parse(root).profileDirectory(data);
+        }
+        return data.resolve("config");
     }
 
     public static DeploymentConfig initialise(JavaPlugin plugin) {
@@ -35,7 +56,8 @@ public final class PaperProfiles {
                 Path profile = selected.profileDirectory(data);
                 needsRepair = files(selected.mode()).stream().anyMatch(name -> !Files.isRegularFile(profile.resolve(name)))
                         || LanguageFiles.incomplete(plugin, data)
-                        || !Files.isRegularFile(data.resolve("config/database.yml")) || !Files.isRegularFile(data.resolve("config/WIKI.md"));
+                        || !Files.isRegularFile(data.resolve("config/database.yml")) || ConfigMigrator.needsGuideUpdate(data)
+                        || previousSelector(data.resolve("config.yml"), selected);
             }
             if (needsRepair) ConfigurationUpgrade.run(data, "paper", stage -> prepare(stage, plugin, !tracked));
             var current = DeploymentConfig.read(data);
@@ -67,9 +89,7 @@ public final class PaperProfiles {
         Path legacy = data.resolve("config");
         Files.createDirectories(legacy);
         Map<String, Object> root = Files.exists(selector) ? ConfigYaml.read(selector) : Map.of();
-        boolean selectorFormat = root.containsKey("mode") || root.containsKey("config-version")
-                || root.containsKey("platform") || root.containsKey("migration");
-        if (Files.exists(data.resolve(".telehop-legacy-migration")) || Files.exists(selector) && !selectorFormat) {
+        if (Files.exists(data.resolve(".telehop-legacy-migration")) || Files.exists(selector) && !isSelector(root)) {
             ConfigMigrator.migrate(data);
         }
         if (!Files.exists(selector)) {
@@ -77,18 +97,20 @@ public final class PaperProfiles {
             var mode = ConfigYaml.flag(old, "multi-proxy.enabled", false) ? DeploymentConfig.Mode.MULTI : DeploymentConfig.Mode.SINGLE;
             boolean custom = false;
             if (Files.exists(legacy.resolve("commands.yml"))) {
-                var defaults = ConfigYaml.parse(resource(plugin, "config/commands.yml"), "bundled command defaults");
+                var defaults = ConfigYaml.parse(resource(plugin, CommandNames.LEGACY_TEMPLATE), "bundled command defaults");
                 custom = ConfigYaml.read(legacy.resolve("commands.yml")).entrySet().stream()
                         .anyMatch(entry -> !entry.getValue().equals(defaults.get(entry.getKey())));
             }
-            Files.writeString(selector, DeploymentConfig.initial(mode, custom));
+            installSelector(plugin, selector, mode, custom);
+        } else {
+            var selected = DeploymentConfig.read(data);
+            if (previousSelector(selector, selected)) installSelector(plugin, selector, selected.mode(), selected.customNames());
         }
         DeploymentConfig config = DeploymentConfig.read(data);
         Path active = config.profileDirectory(data);
         Files.createDirectories(active);
-        for (String name : List.of("database.yml", "WIKI.md")) {
-            if (!Files.exists(legacy.resolve(name))) Files.writeString(legacy.resolve(name), resource(plugin, "config/" + name));
-        }
+        Path database = legacy.resolve("database.yml");
+        if (Files.notExists(database)) Files.writeString(database, resource(plugin, "config/database.yml"));
         ConfigMigrator.refreshBundledGuide(plugin, data);
         boolean newGeneral = Files.notExists(active.resolve("general.yml")) && (!first || !Files.exists(legacy.resolve("general.yml")));
         for (String name : files(config.mode())) {
@@ -106,42 +128,45 @@ public final class PaperProfiles {
                     }
                 }
             } else if (!name.equals("messaging.yml") && !name.equals("regions.yml") && !name.equals("features.yml")) {
-                Files.writeString(active.resolve(name), resource(plugin, "config/" + name));
+                Files.writeString(active.resolve(name), resource(plugin, template(config.mode(), name)));
             }
         }
         YamlConfiguration general = yaml(active.resolve("general.yml"));
         for (String field : List.of("messaging", "regions")) {
-            Path target = config.mode() == DeploymentConfig.Mode.SINGLE ? active.resolve("general.yml") : active.resolve(field + ".yml");
-            YamlConfiguration targetYaml = target.equals(active.resolve("general.yml")) ? general
-                    : Files.exists(target) ? yaml(target) : new YamlConfiguration();
+            String name = field + ".yml";
+            boolean inline = config.mode() == DeploymentConfig.Mode.SINGLE;
+            Path target = active.resolve(inline ? "general.yml" : name);
+            Path old = legacy.resolve(name);
+            boolean oldSeparate = first && Files.isRegularFile(old);
+            if (!inline && !Files.exists(target) && !general.contains(field)) {
+                Files.writeString(target, resource(plugin, template(config.mode(), name)));
+            }
+            var targetYaml = inline ? general : Files.exists(target) ? yaml(target) : new YamlConfiguration();
+            boolean importIntoFreshGeneral = inline && newGeneral && oldSeparate;
             boolean changed = false;
-            if (!targetYaml.contains(field)) {
-                YamlConfiguration inherited = general.contains(field) ? general : new YamlConfiguration();
-                if (!inherited.contains(field)) {
-                    Path old = legacy.resolve(field + ".yml");
-                    inherited.loadFromString(first && Files.isRegularFile(old) ? ConfigYaml.readText(old) : resource(plugin, "config/" + field + ".yml"));
-                }
+            if (!targetYaml.contains(field) || importIntoFreshGeneral) {
+                var defaults = new YamlConfiguration();
+                String fallback = template(config.mode(), inline ? "general.yml" : name);
+                defaults.loadFromString(oldSeparate ? ConfigYaml.readText(old) : resource(plugin, fallback));
+                var inherited = !inline && general.contains(field) ? general : defaults;
                 targetYaml.set(field, inherited.get(field));
                 targetYaml.setComments(field, inherited.getComments(field));
                 changed = true;
             }
             if (!targetYaml.isConfigurationSection(field)) throw new IllegalArgumentException(target.getFileName() + ": " + field + " must be a mapping");
             if (field.equals("messaging") && !targetYaml.contains("messaging.network-enabled")) {
-                targetYaml.set("messaging.network-enabled", true);
+                var defaults = new YamlConfiguration();
+                defaults.loadFromString(resource(plugin, template(config.mode(), inline ? "general.yml" : name)));
+                targetYaml.set("messaging.network-enabled", defaults.getBoolean("messaging.network-enabled"));
                 changed = true;
             }
             if (changed) targetYaml.save(target.toFile());
-            if (targetYaml != general && general.contains(field)) {
+            if (!inline && general.contains(field)) {
                 general.set(field, null);
                 general.save(active.resolve("general.yml").toFile());
             }
         }
-        if (newGeneral) {
-            general.set("server-name", defaultIdentity(plugin));
-            general.set("hub-server", defaultIdentity(plugin));
-            general.set("multi-proxy.enabled", config.mode() == DeploymentConfig.Mode.MULTI);
-            general.save(active.resolve("general.yml").toFile());
-        }
+        if (newGeneral) personaliseIdentity(plugin, general, active.resolve("general.yml"));
         if (!newGeneral && first && Files.isRegularFile(legacy.resolve("general.yml"))
                 && (!general.contains("server-name") || !general.contains("hub-server"))) {
             // Capture 3.x implicit defaults once when importing an incomplete legacy file.
@@ -154,8 +179,10 @@ public final class PaperProfiles {
         String oldKey = SpawnRoutes.path("hub-command/enabled");
         if (routes.contains(oldKey) && !routes.isBoolean(oldKey)) throw new IllegalArgumentException("spawns.yml: hub-command.enabled must be true or false");
         var features = new YamlConfiguration();
-        features.loadFromString(resource(plugin, "config/features.yml"));
-        features.set("features.hub", routes.getBoolean(oldKey));
+        String featureTemplate = resource(plugin, template(config.mode(), "features.yml"));
+        features.loadFromString(featureTemplate);
+        if (routes.contains(oldKey)) features.set("features.hub", routes.getBoolean(oldKey));
+        else if (Files.notExists(active.resolve("features.yml"))) Files.writeString(active.resolve("features.yml"), featureTemplate);
         ConfigMigrator.completeSettings(active.resolve("features.yml"), features, true);
         if (routes.contains(oldKey)) {
             routes.set(oldKey, null);
@@ -165,6 +192,25 @@ public final class PaperProfiles {
         SpawnRoutes.parse(routes);
         if (first) installInactiveDefaults(data, plugin, config);
         return config;
+    }
+
+    private static boolean previousSelector(Path selector, DeploymentConfig config) throws IOException {
+        // Only upgrade an exact selector generated by the first V4 build. Operator comments are user data.
+        String previous = DeploymentConfig.initial(config.mode(), config.customNames());
+        return Files.size(selector) == previous.getBytes(StandardCharsets.UTF_8).length && Files.readString(selector).equals(previous);
+    }
+
+    private static void installSelector(JavaPlugin plugin, Path selector, DeploymentConfig.Mode mode, boolean customNames) throws Exception {
+        String template = resource(plugin, "config.yml");
+        if (mode == DeploymentConfig.Mode.SINGLE && !customNames) {
+            Files.writeString(selector, template);
+            return;
+        }
+        var yaml = new YamlConfiguration();
+        yaml.loadFromString(template);
+        yaml.set("mode", mode.name());
+        yaml.set("commands.custom-names.enabled", customNames);
+        yaml.save(selector.toFile());
     }
 
     /** Persist the old implicit selectors before switching to V4 loaded-world discovery. */
@@ -197,23 +243,25 @@ public final class PaperProfiles {
                 ? folder.getFileName().toString().replaceAll("[^A-Za-z0-9_-]", "_") : UUID.randomUUID().toString();
     }
 
+    private static void personaliseIdentity(JavaPlugin plugin, YamlConfiguration general, Path path) throws IOException {
+        String name = defaultIdentity(plugin);
+        for (String key : List.of("server-name", "hub-server")) {
+            if (general.getString(key, "").isBlank()) general.set(key, name);
+        }
+        general.save(path.toFile());
+    }
+
     private static void installInactiveDefaults(Path data, JavaPlugin plugin, DeploymentConfig selected) throws IOException {
         for (var mode : DeploymentConfig.Mode.values()) {
-            Path profile = data.resolve("config").resolve(mode.name().toLowerCase(java.util.Locale.ROOT));
+            Path profile = data.resolve("config").resolve(mode.name().toLowerCase(Locale.ROOT));
             if (mode == selected.mode() || Files.exists(profile)) continue;
             Files.createDirectories(profile);
             for (String name : files(mode)) {
-                String content = resource(plugin, "config/" + name);
-                if (name.equals("general.yml")) {
-                    if (mode == DeploymentConfig.Mode.SINGLE) {
-                        content += "\n" + resource(plugin, "config/messaging.yml") + "\n" + resource(plugin, "config/regions.yml");
-                    }
-                    String id = defaultIdentity(plugin);
-                    content = content.replace("server-name: \"\"", "server-name: \"" + id + "\"")
-                            .replace("hub-server: \"\"", "hub-server: \"" + id + "\"");
-                }
-                Files.writeString(profile.resolve(name), content);
+                String contents = resource(plugin, template(mode, name));
+                Files.writeString(profile.resolve(name), contents);
             }
+            Path general = profile.resolve("general.yml");
+            personaliseIdentity(plugin, yaml(general), general);
         }
     }
 

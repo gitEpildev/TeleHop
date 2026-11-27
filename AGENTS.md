@@ -11,8 +11,10 @@ TeleHop is a multi-module Maven project. Module boundaries are strict.
 | Module | Role | Constraint |
 | :--- | :--- | :--- |
 | `common` | Shared code - DB, models, services, messaging | No Paper or Velocity API imports. Platform-agnostic only. |
-| `paper` | Paper backend plugin | May import `common` and Paper API. Never import Velocity. |
+| `paper` | Bukkit-compatible backend with Paper as its primary platform | The main backend targets Spigot API. Native Paper calls belong in the Paper adapter. Never import Velocity. |
 | `velocity` | Velocity proxy plugin | May import `common` and Velocity API. Never import Paper. |
+
+V4 distributes the backend module as `telehop-bukkit-<version>.jar`. The internal Maven module and Java packages retain their Paper names.
 
 If code is needed by both `paper` and `velocity`, it goes in `common`.
 
@@ -97,6 +99,7 @@ Both plugins use a root `config.yml` and a `SINGLE`, `MULTI` or `CUSTOM` deploym
 - Keep settings immutable. Validate reload candidates before publishing them.
 - `PaperProfiles` and `VelocityProfiles` use the shared transactional configuration migrator. Preserve backups, original settings and custom labels on upgrade.
 - Keep YAML defaults documented and keep the bundled backend guide consistent with the active paths. Cover fresh installation, legacy inputs, failed validation and repeated starts in tests.
+- Store editable backend defaults in `paper/src/main/resources/` at their installed paths. When revising `config/WIKI.md`, register the SHA-256 of the previous stock edition in `ConfigMigrator` so existing installations can adopt the new guide while preserving edited copies.
 - Velocity uses the proxy API to check TeleHop's selected backend names. Velocity itself owns `velocity.toml`.
 
 ---

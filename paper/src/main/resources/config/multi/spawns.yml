@@ -1,0 +1,16 @@
+# Routing applies to /spawn on this backend. Empty routes use the configured regional or global hub.
+routing:
+  enabled: false
+  # Example: default: {server: survival}
+  default: {}
+  # Quote world keys containing punctuation and destination names.
+  # Example: worlds: {"minecraft:overworld": {server: survival, spawn: gardens}}
+  worlds: {}
+
+# Enable /hub with features.hub in features.yml. Its aliases belong in commands/hub.yml.
+
+# Choose your own names. An empty mapping defines no extra destinations.
+# Example entry to place under destinations:
+#   gardens: {world: world, x: 12.5, y: 70, z: -4.5, yaw: 90, pitch: 0, access: public}
+# Use public or restricted. Save the file and run /telehop reload.
+destinations: {}

@@ -6,8 +6,8 @@ server-name: ""
 hub-server: ""
 # Optional labels mapped to registered backend names.
 servers: {}
-# CUSTOM honours this flag. SINGLE and MULTI select their own network topology.
+# MULTI selects regional routing. Edit regions.yml to choose the hubs.
 multi-proxy:
-  enabled: false
+  enabled: true
 audit:
   enabled: false

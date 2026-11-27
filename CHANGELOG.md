@@ -10,6 +10,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Added
 
 - Choose a standalone, multi-proxy or custom deployment profile. Both plugins use YAML and keep database credentials separate from the active profile. Existing settings have a migration history and private recovery copies.
+- The Bukkit backend file installs on supported Paper, Spigot, CraftBukkit and Purpur servers. Replace the previous backend file when upgrading. The proxy still uses the matching Velocity file.
+- Browse the backend configuration in the same folders used on the server. The root configuration and bundled setup guide explain which files to edit. Upgrades refresh earlier stock guides and preserve local edits.
 - Configure command names by category and define additional random teleport, named spawn and hub commands. A command can require permissions for its own identifier and its destination. Global warp lists honour individual warp permissions.
 - Inspect the detected platform, validate configuration and view migration details in game. The backend selects available teleport and chunk operations at startup.
 - Release checks exercise the published previous version, multiple database engines and a network containing different backend implementations. The release includes a checksum for each plugin file.

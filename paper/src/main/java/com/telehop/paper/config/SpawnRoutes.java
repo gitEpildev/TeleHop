@@ -35,8 +35,10 @@ public record SpawnRoutes(boolean enabled, boolean legacyHubCommand, SpawnRoute 
     }
 
     static YamlConfiguration read(File folder) {
-        try { return decode(Files.readString(new File(folder, "config/spawns.yml").toPath())); }
-        catch (Exception ex) { throw new IllegalArgumentException("Cannot load config/spawns.yml: " + ex.getMessage(), ex); }
+        try {
+            var path = PaperProfiles.operationalDirectory(folder.toPath()).resolve("spawns.yml");
+            return decode(Files.readString(path));
+        } catch (Exception ex) { throw new IllegalArgumentException("Cannot load the backend spawn configuration", ex); }
     }
 
     static YamlConfiguration decode(String text) throws org.bukkit.configuration.InvalidConfigurationException {

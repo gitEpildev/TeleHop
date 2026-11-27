@@ -8,7 +8,7 @@ import shutil
 import yaml
 
 from runtime_download import download, prepare_server
-from server_smoke import SERVERS, boot, check_migration, configure, mysql, seed_legacy_homes
+from server_smoke import SERVERS, boot, check_migration, configure, mysql, seed_legacy_homes, verify_install, filename
 
 
 PREVIOUS = "3.0.1"
@@ -23,9 +23,9 @@ def config(path):
 def previous_builds(directory, bundle):
     directory.mkdir()
     for platform, checksum in PUBLISHED.items():
-        filename = f"telehop-{platform}-{PREVIOUS}.jar"
-        url = f"https://github.com/gitEpildev/TeleHop/releases/download/v{PREVIOUS}/{filename}"
-        download(directory / filename, url, checksum)
+        name = filename(platform, PREVIOUS)
+        url = f"https://github.com/gitEpildev/TeleHop/releases/download/v{PREVIOUS}/{name}"
+        download(directory / name, url, checksum)
     shutil.copyfile(bundle / "command-probe.jar", directory / "command-probe.jar")
 
 
@@ -53,12 +53,13 @@ def upgrade(root, bundle, version):
         boot(work, platform, False)
         data = work / "plugins" / ("TeleHop" if platform == "paper" else "telehop-velocity")
         if platform == "paper":
+            # These files belong to the running published 3.0.1 JAR. V4 must import them.
             (data / "config/commands.yml").write_text("tp: [networktp, ntp]\nhub: [lobby, hub]\n")
             (data / "config/features.yml").write_text("features: {hub: true, rtp: false}\n")
             (data / "config/general.yml").write_text("server-name: preservation\nhub-server: preservation\n")
             with (data / "languages/en.yml").open("a") as language:
                 language.write("\nowner-welcome: Welcome aboard!\n")
-            files = ["config/commands.yml", "config/features.yml", "config/database.yml", "languages/en.yml"]
+            files = ["config/WIKI.md", "config/commands.yml", "config/features.yml", "config/database.yml", "languages/en.yml"]
         else:
             with (data / "config.properties").open("a") as properties:
                 properties.write("\nredis.ssl=true\nredis.ssl-verify=false\nredis.ssl-ca-cert=pki/custom-chain.pem\nproxy.id=existing-proxy\n")
@@ -67,16 +68,15 @@ def upgrade(root, bundle, version):
         # The released plugin backfills absent feature keys and command labels on startup.
         # These are the actual input bytes V4 must archive.
         saved = {name: (data / name).read_bytes() for name in files}
-        old = work / "plugins" / f"telehop-{platform}-{PREVIOUS}.jar"
+        old = work / "plugins" / filename(platform, PREVIOUS)
         old.rename(root / old.name)
-        shutil.copyfile(bundle / f"telehop-{platform}-{version}.jar", work / "plugins" / f"telehop-{platform}-{version}.jar")
-        boot(work, platform, platform == "paper")
+        shutil.copyfile(bundle / filename(platform, version), work / "plugins" / filename(platform, version))
+        boot(work, platform, platform == "paper", game="1.21.11")
         assert config(data / "config.yml")["mode"] == "SINGLE"
         check_backups(data, saved)
         check_migration()
         if platform == "paper":
-            assert {f.name for f in (data / "config/single").iterdir()} == {
-                "general.yml", "features.yml", "home.yml", "rtp.yml", "spawns.yml", "teleport.yml", "tpa.yml", "respawn.yml"}
+            verify_install(data, bundle / filename("paper", version))
             assert config(data / "config/single/general.yml")["messaging"]["network-enabled"]
             settings = config(data / "config/single/features.yml")["features"]
             assert settings["hub"] and not settings["rtp"]
@@ -90,9 +90,23 @@ def upgrade(root, bundle, version):
             assert {f.name for f in (data / "config/single").iterdir()} == {"servers.yml", "messaging.yml"}
         state = (data / "migrations/state.yml").read_bytes()
         history = (data / "migrations/history.log").read_bytes()
-        boot(work, platform, platform == "paper")
+        if platform == "paper":
+            guide = data / "config/WIKI.md"
+            stock = guide.read_bytes()
+            custom = stock + b"\nLocal setup notes from the server owner.\n"
+            guide.write_bytes(custom)
+        boot(work, platform, platform == "paper", game="1.21.11")
         assert state == (data / "migrations/state.yml").read_bytes()
         assert history == (data / "migrations/history.log").read_bytes()
+        if platform == "paper":
+            assert guide.read_bytes() == custom
+            # A tracked V4 directory can still contain an earlier distributed copy of the guide.
+            previous_guide = saved["config/WIKI.md"]
+            assert previous_guide != stock
+            guide.write_bytes(previous_guide)
+            boot(work, platform, True, game="1.21.11")
+            assert guide.read_bytes() == stock
+            print("Verified stock guide refresh and administrator notes on an existing V4 installation.", flush=True)
         print(f"Verified {platform} {PREVIOUS} to {version}, backup integrity, preserved data and repeat startup.", flush=True)
 
 

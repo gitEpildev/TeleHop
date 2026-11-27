@@ -8,10 +8,11 @@ import sys
 import xml.etree.ElementTree as ET
 from zipfile import BadZipFile, ZipFile
 
+import paper_layout
+from artefacts import PLATFORMS, filename
 from changelog import VERSION, check_update, checked_notes, current_entry
 
 DIST = Path("release-bundle")
-PLATFORMS = ("paper", "velocity")
 SECTIONS = {"feat": "New features", "fix": "Bug fixes", "perf": "Performance improvements",
             "refactor": "Internal changes", "docs": "Documentation", "chore": "Maintenance"}
 BASELINE = "046b39e650df749c8033eedcb4d5894fc1f46aa5"  # Last pre-automation release, 2.2.0
@@ -136,7 +137,8 @@ def verify_reactor(version):
     for module in sorted(modules):
         pom = ET.parse(module / "pom.xml").getroot()
         if pom.findtext("{*}packaging", "jar") == "jar":
-            artefact = module / "target" / f"{pom.findtext('{*}artifactId')}-{version}.jar"
+            name = filename(module.name, version) if module.name in PLATFORMS else f"{pom.findtext('{*}artifactId')}-{version}.jar"
+            artefact = module / "target" / name
             if not artefact.is_file():
                 raise ValueError(f"Missing reactor output {artefact}. Run the full clean verify build.")
 
@@ -162,9 +164,9 @@ def check_paper_bytecode(jar):
             with jar.open(entry) as stream:
                 header = stream.read(8)
             if len(header) != 8 or header[:4] != bytes.fromhex("cafebabe"):
-                raise ValueError(f"Invalid class file in Paper JAR: {entry.filename}")
+                raise ValueError(f"Invalid class file in backend JAR: {entry.filename}")
             if int.from_bytes(header[6:8], "big") > 65:
-                raise ValueError(f"Class exceeds the Java 21 limit in the shared Paper JAR: {entry.filename}")
+                raise ValueError(f"Class exceeds the Java 21 limit in the shared backend JAR: {entry.filename}")
 
 
 def verify_jars(version, directory=None):
@@ -174,15 +176,12 @@ def verify_jars(version, directory=None):
         "paper": shared | {"com/telehop/paper/NetworkPaperPlugin.class", "com/telehop/paper/version/VersionAdapter.class",
                            "com/telehop/paper/v1_21/Paper121Adapter.class", "com/telehop/paper/v26_1/Paper261Adapter.class",
                            "com/telehop/paper/platform/BackendPlatform.class", "com/telehop/paper/config/PaperProfiles.class",
-                           "config/spawns.yml", "config/regions.yml", "config/messaging.yml"}
-                 | {f"commands/{group}.yml" for group in ("spawn", "hub", "rtp", "tpa", "homes", "teleport", "warps",
-                                                          "player-warps", "playerinfo", "back", "lastlocation", "admin")}
-                 | {f"languages/{language}.yml" for language in ("en", "de", "es", "nl", "zh", "pl")},
+                           "plugin.yml"} | paper_layout.PACKAGED,
         "velocity": shared | {"com/telehop/velocity/NetworkVelocityPlugin.class", "com/telehop/velocity/config/VelocityProfiles.class",
                               "com/telehop/velocity/lib/redis/jedis/Jedis.class", "com/telehop/velocity/lib/yaml/Yaml.class"}
     }
     for platform in PLATFORMS:
-        path = (directory or Path(platform, "target")) / f"telehop-{platform}-{version}.jar"
+        path = (directory or Path(platform, "target")) / filename(platform, version)
         with ZipFile(path) as jar:
             if jar.testzip():
                 raise ValueError(f"Invalid production JAR: {path}")
@@ -200,6 +199,7 @@ def verify_jars(version, directory=None):
             if any(name.startswith(forbidden) and name.endswith(".class") for name in entries):
                 raise ValueError(f"{path} bundles an external platform API or the other plugin")
             if platform == "paper":
+                paper_layout.verify_jar(jar)
                 check_paper_bytecode(jar)
         print(f"Verified {path}")
 

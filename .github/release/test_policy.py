@@ -139,7 +139,7 @@ class BuildTests(unittest.TestCase):
     def test_backend_with_missing_runtime_resources_cannot_be_published(self):
         with tempfile.TemporaryDirectory() as tmp:
             directory = Path(tmp)
-            with ZipFile(directory / "telehop-paper-4.0.0.jar", "w") as jar:
+            with ZipFile(directory / "telehop-bukkit-4.0.0.jar", "w") as jar:
                 jar.writestr("plugin.yml", "version: 4.0.0")
             with self.assertRaisesRegex(ValueError, r"lacks required runtime files:.*commands/hub.yml"):
                 prepare.verify_jars("4.0.0", directory)

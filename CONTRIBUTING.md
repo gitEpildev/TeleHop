@@ -4,6 +4,8 @@ TeleHop welcomes clear reports and small, verifiable changes. Include Paper, Vel
 
 The server-specific spawn request and follow-up about delegated staff permissions came from [@InvisibleT4rget](https://github.com/InvisibleT4rget). The public discussion explains why operators want local spawn defaults on one backend and a shared hub on another. Operator-defined destination names extend that use case. [Issue 1](https://github.com/gitEpildev/TeleHop/issues/1) · [Issue 2](https://github.com/gitEpildev/TeleHop/issues/2)
 
+The `paper/` Maven module produces `telehop-bukkit-<version>.jar` for supported game servers. The `velocity/` module produces the separate proxy JAR. The package checks inspect both files and their checksums, and a live server must report the expected world adapter, travel provider and chat bridge. [Compatibility matrix](docs/version-compatibility.md)
+
 ## Working on a change
 
 - Keep shared records, SQL and messaging in `common/`, backend commands in `paper/`, proxy routing in `velocity/`, and Minecraft-specific behaviour in `paper-versions/`.

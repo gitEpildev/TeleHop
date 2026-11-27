@@ -32,12 +32,14 @@ def point_yaml(point):
 def backend(stack, args, root, name, port):
     identifier, coords, default = BACKENDS[name]
     general = (f"server-name: {name}\nhub-server: survival\nservers: {{port: hub, mines: survival}}\n"
-               "multi-proxy: {enabled: true}\nregions: {review: {servers: [hub, survival], hub: hub}}\n"
-               f"messaging: {{request-timeout-ms: {TIMEOUT_MS}}}\n")
-    spawns = ("hub-command: {enabled: true}\nrouting: {enabled: false}\n"
+               "multi-proxy: {enabled: true}\n")
+    spawns = ("routing: {enabled: false}\n"
               f"destinations:\n  {identifier}: {{{point_yaml(coords)}, access: public}}\n")
     rtp = regional_settings(8, dimension="overworld")
     return paper(stack, args, name, port, root, general=general, spawns=spawns, rtp=rtp,
+                 profile="multi", features="features: {hub: true, spawn: true}\n",
+                 regions="regions: {review: {servers: [hub, survival], hub: hub}}\n",
+                 messaging=f"messaging: {{request-timeout-ms: {TIMEOUT_MS}}}\n",
                  storage="spawn: {" + point_yaml(default) + "}\n")
 
 

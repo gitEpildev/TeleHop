@@ -177,7 +177,7 @@ class ConfigMigratorTest {
         Path commands = config.resolve("commands.yml");
         Files.writeString(features, "# Operator's settings\nfeatures: {rtp: false}\n");
         Files.writeString(commands, "tp: [networktp, ntp]\n");
-        for (String resource : List.of("config/features.yml", "config/commands.yml")) {
+        for (String resource : List.of("config/single/features.yml", "internal/legacy/commands.yml")) {
             when(plugin.getResource(resource)).thenAnswer(call -> getClass().getResourceAsStream("/" + resource));
         }
 
@@ -200,7 +200,7 @@ class ConfigMigratorTest {
         Path config = Files.createDirectories(root.resolve("config"));
         Files.writeString(config.resolve("features.yml"), "features: {hub: false}\n");
         Files.writeString(config.resolve("commands.yml"), "hub: [lobby, hub]\n");
-        for (String resource : List.of("config/features.yml", "config/commands.yml")) {
+        for (String resource : List.of("config/single/features.yml", "internal/legacy/commands.yml")) {
             when(plugin.getResource(resource)).thenAnswer(call -> getClass().getResourceAsStream("/" + resource));
         }
         ConfigMigrator.completeCommandSettings(plugin, true);

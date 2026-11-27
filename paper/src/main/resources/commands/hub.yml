@@ -1,5 +1,7 @@
-# Enable commands.custom-names.enabled in config.yml to use the names below.
-# Restart the backend after changing registered names or aliases.
+# To register /hub, set features.hub and features.spawn to true in the active
+# profile's features.yml. Choose hub-server in its general.yml and restart.
+# To rename /hub, also enable commands.custom-names.enabled in the root
+# config.yml and custom-name.enabled below. Players use telehop.hub.
 
 hub:
   custom-name:

@@ -7,7 +7,6 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,7 +22,8 @@ import java.util.regex.Pattern;
 
 /** Validated startup command names shared by registration, help text and clickable actions. */
 public final class CommandNames {
-    private static final String RESOURCE = "config/commands.yml";
+    static final String LEGACY_TEMPLATE = "internal/legacy/commands.yml";
+    static final String LEGACY_INPUT = "config/commands.yml";
     private static final Pattern COMMAND = Pattern.compile("(?<![\\w</:.-])/([a-z0-9_-]+)(?![\\w:/-])");
     static final List<String> GROUPS = List.of("admin", "back", "homes", "hub", "lastlocation", "playerinfo",
             "player-warps", "rtp", "spawn", "teleport", "tpa", "warps");
@@ -46,17 +46,17 @@ public final class CommandNames {
         Map<String, List<String>> names = new HashMap<>();
         Set<String> used = new HashSet<>();
         for (String key : configured.getKeys(false)) {
-            if (!defaults.contains(key)) throw new IllegalArgumentException("Unknown command in " + RESOURCE + ": " + key);
+            if (!defaults.contains(key)) throw new IllegalArgumentException("Unknown configured command: " + key);
         }
         for (String key : defaults.getKeys(false)) {
             if (key.equals("hub") && !hubEnabled) continue;
             Object value = configured.get(key, defaults.get(key));
             if (!(value instanceof List<?> list) || list.isEmpty()) {
-                throw new IllegalArgumentException(RESOURCE + ": " + key + " needs a non-empty list of names");
+                throw new IllegalArgumentException("Command " + key + " needs a non-empty list of names");
             }
             for (Object item : list) {
                 if (!(item instanceof String name) || !name.matches("[a-z0-9_-]+") || !used.add(name)) {
-                    throw new IllegalArgumentException(RESOURCE + ": invalid or duplicate label '" + item + "' for " + key);
+                    throw new IllegalArgumentException("Invalid or duplicate command label '" + item + "' for " + key);
                 }
             }
             names.put(key, list.stream().map(String.class::cast).toList());
@@ -90,22 +90,31 @@ public final class CommandNames {
     public static CommandNames loadAt(JavaPlugin plugin, Path data, PaperSettings settings, File profile, boolean custom,
                                       boolean additional, boolean hubRegistered) {
         try {
-            var defaults = resource(plugin, RESOURCE);
+            var defaults = new YamlConfiguration();
             var overrides = new YamlConfiguration();
             var variants = new LinkedHashMap<String, TravelVariant>();
             Path directory = data.resolve("commands");
             if (Files.isSymbolicLink(directory)) throw new IllegalArgumentException("Expected a command directory inside TeleHop");
             Files.createDirectories(directory);
-            var source = data.resolve(RESOURCE).toFile();
+            var source = data.resolve(LEGACY_INPUT).toFile();
             boolean needsImport = GROUPS.stream().anyMatch(group -> !Files.exists(directory.resolve(group + ".yml")));
-            var legacy = needsImport && source.isFile() ? read(source) : new YamlConfiguration();
+            boolean importing = needsImport && source.isFile();
+            var legacy = importing ? read(source) : new YamlConfiguration();
+            var legacyDefaults = new YamlConfiguration();
+            if (importing) legacyDefaults.loadFromString(PaperProfiles.resource(plugin, LEGACY_TEMPLATE));
             var rtp = new RtpPolicy(read(new File(profile, "rtp.yml")), settings,
                     () -> plugin.getServer().getWorlds().stream().map(org.bukkit.World::getName).toList());
             for (String group : GROUPS) {
                 String name = group + ".yml";
-                var template = resource(plugin, "commands/" + name);
+                String sourceText = PaperProfiles.resource(plugin, "commands/" + name);
+                var template = new YamlConfiguration();
+                template.loadFromString(sourceText);
                 var file = directory.resolve(name);
-                if (!Files.exists(file)) install(file, template, defaults, legacy);
+                for (String id : template.getKeys(false)) {
+                    var naming = TravelVariant.section(template, id + ".custom-name");
+                    defaults.set(id, TravelVariant.labels(naming));
+                }
+                if (!Files.exists(file)) install(file, sourceText, template, legacyDefaults, legacy);
                 var configured = read(file.toFile());
                 TravelVariant.keys(configured, template.getKeys(false));
                 for (String id : template.getKeys(false)) {
@@ -137,15 +146,6 @@ public final class CommandNames {
         }
     }
 
-    private static YamlConfiguration resource(JavaPlugin plugin, String name) throws IOException, InvalidConfigurationException {
-        try (var input = Objects.requireNonNull(plugin.getResource(name), name);
-             var reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
-            var yaml = new YamlConfiguration();
-            yaml.load(reader);
-            return yaml;
-        }
-    }
-
     private static YamlConfiguration read(File file) throws IOException, InvalidConfigurationException {
         var path = file.toPath();
         if (!Files.isRegularFile(path, java.nio.file.LinkOption.NOFOLLOW_LINKS) || Files.size(path) > 2_000_000)
@@ -153,8 +153,9 @@ public final class CommandNames {
         return PaperProfiles.yaml(path);
     }
 
-    private static void install(Path file, YamlConfiguration template, YamlConfiguration defaults,
+    private static void install(Path file, String sourceText, YamlConfiguration template, YamlConfiguration defaults,
                                 YamlConfiguration legacy) throws IOException {
+        boolean changed = false;
         for (String id : template.getKeys(false)) {
             if (!legacy.contains(id) || Objects.equals(legacy.get(id), defaults.get(id))) continue;
             var value = legacy.get(id);
@@ -163,10 +164,11 @@ public final class CommandNames {
             template.set(id + ".custom-name.enabled", true);
             template.set(id + ".custom-name.name", old.getFirst());
             template.set(id + ".custom-name.aliases", old.subList(1, old.size()));
+            changed = true;
         }
         Path tmp = Files.createTempFile(file.getParent(), ".command-", ".tmp");
         try {
-            Files.writeString(tmp, template.saveToString(), StandardCharsets.UTF_8);
+            Files.writeString(tmp, changed ? template.saveToString() : sourceText, StandardCharsets.UTF_8);
             Files.move(tmp, file);
         } finally {
             Files.deleteIfExists(tmp);

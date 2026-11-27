@@ -10,3 +10,11 @@ rtp:
   additional-commands:
     enabled: false
     commands: {}
+    # Example replacement for the empty mapping above. Set the world to one
+    # loaded on your backend. A world-only command runs on the current backend.
+    # commands:
+    #   quarry-trip:
+    #     name: quarryhop
+    #     destination: {world: quarry}
+    #     gui: {enabled: false}
+    #     permissions: {require-command-permission: true}

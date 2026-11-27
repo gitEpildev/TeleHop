@@ -8,7 +8,7 @@ permissions:
 jobs:
 
   paper-adapters:
-    name: "Paper ${{ matrix.mc-version }}"
+    name: "Backend world adapter for Minecraft ${{ matrix.mc-version }}"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -20,7 +20,7 @@ jobs:
             java-build: "21"
             java-runtime: "21"
 
-          - mc-version: "26.1.2 and 26.2"
+          - mc-version: "26.1+"
             module: paper-versions/paper.26.1.x
             adapter-class: com/telehop/paper/v26_1/Paper261Adapter.class
             java-build: "25"
@@ -66,7 +66,7 @@ jobs:
           esac
           echo "Bytecode major version: $MAJOR (Java $JAVA_VER)"
           if [[ "$JAVA_VER" != "21" ]]; then
-            echo "::error::Adapter bytecode targets Java $JAVA_VER. The shared Paper JAR requires Java 21 bytecode."
+            echo "::error::Adapter bytecode targets Java $JAVA_VER. The shared backend JAR requires Java 21 bytecode."
             exit 1
           fi
           echo "BYTECODE_JAVA=$JAVA_VER" >> $GITHUB_ENV
@@ -74,7 +74,7 @@ jobs:
       - name: Write job summary
         run: |
           cat >> $GITHUB_STEP_SUMMARY << EOF
-          ### Paper ${{ matrix.mc-version }} Adapter
+          ### Backend world adapter for Minecraft ${{ matrix.mc-version }}
 
           | Property | Value |
           |----------|-------|
@@ -146,16 +146,16 @@ jobs:
       - name: Build shaded JARs
         run: mvn -B package -DskipTests --no-transfer-progress
 
-      - name: Verify adapters in shaded Paper JAR
+      - name: Verify adapters in the shaded Bukkit backend JAR
         run: |
           echo "Checking shaded JAR contents..."
-          PAPER_JAR=$(ls paper/target/telehop-paper-*.jar | head -1)
-          JAR_SIZE=$(du -h "$PAPER_JAR" | cut -f1)
-          echo "Paper JAR: $PAPER_JAR ($JAR_SIZE)"
+          BACKEND_JAR=$(ls paper/target/telehop-bukkit-*.jar | head -1)
+          JAR_SIZE=$(du -h "$BACKEND_JAR" | cut -f1)
+          echo "Bukkit backend JAR: $BACKEND_JAR ($JAR_SIZE)"
 
-          FOUND_121=$(jar tf "$PAPER_JAR" | grep "Paper121Adapter.class" || true)
-          FOUND_261=$(jar tf "$PAPER_JAR" | grep "Paper261Adapter.class" || true)
-          FOUND_API=$(jar tf "$PAPER_JAR" | grep "VersionAdapter.class" || true)
+          FOUND_121=$(jar tf "$BACKEND_JAR" | grep "Paper121Adapter.class" || true)
+          FOUND_261=$(jar tf "$BACKEND_JAR" | grep "Paper261Adapter.class" || true)
+          FOUND_API=$(jar tf "$BACKEND_JAR" | grep "VersionAdapter.class" || true)
 
           FAIL=0
           if [ -z "$FOUND_121" ]; then
@@ -181,7 +181,7 @@ jobs:
           VEL_SIZE=$(du -h "$VEL_JAR" | cut -f1)
           echo "Velocity JAR: $VEL_JAR ($VEL_SIZE)"
 
-          echo "PAPER_JAR_SIZE=$JAR_SIZE" >> $GITHUB_ENV
+          echo "BACKEND_JAR_SIZE=$JAR_SIZE" >> $GITHUB_ENV
           echo "VEL_JAR_SIZE=$VEL_SIZE" >> $GITHUB_ENV
           [ $FAIL -eq 0 ] || exit 1
 
@@ -206,7 +206,7 @@ jobs:
 
           | JAR | Size | Adapters Included |
           |-----|------|-------------------|
-          | telehop-paper | ${{ env.PAPER_JAR_SIZE }} | \`Paper121Adapter\`, \`Paper261Adapter\`, \`VersionAdapter\` API |
+          | telehop-bukkit | ${{ env.BACKEND_JAR_SIZE }} | \`Paper121Adapter\`, \`Paper261Adapter\`, \`VersionAdapter\` API |
           | telehop-velocity | ${{ env.VEL_JAR_SIZE }} | N/A (proxy bridge) |
 
           EOF

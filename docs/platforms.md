@@ -1,6 +1,6 @@
 # Backend platforms
 
-Install the same `telehop-paper-4.0.0.jar` in the `plugins` directory of each supported game server. Install `telehop-velocity-4.0.0.jar` on each Velocity proxy in a network. A standalone backend needs its database and its selected configuration profile. [Setup](setup.md) · [Configuration](configuration.md)
+Install the same `telehop-bukkit-4.0.0.jar` in the `plugins` directory of each supported game server. Install `telehop-velocity-4.0.0.jar` on each Velocity proxy in a network. A standalone backend needs its database and its selected configuration profile. [Setup](setup.md) · [Configuration](configuration.md)
 
 | Implementation | Verified scope | Backend behaviour |
 | --- | --- | --- |
@@ -14,6 +14,8 @@ Install the same `telehop-paper-4.0.0.jar` in the `plugins` directory of each su
 Bukkit is an API. The CraftBukkit test exercises the implementation built from the original Bukkit API, including interactive chat on an API without Spigot's component method. The mixed-backend test connects a client to Velocity, then visits a named destination on Spigot, Paper and CraftBukkit. It checks coordinates and rotation on each server. Standalone player checks also exercise safe random placement inside an offset world border. The 1.21.11 CraftBukkit check follows a real death and respawn back onto a prepared surface.
 
 ## Detection and travel
+
+On Spigot, `/telehop platform info` reports Spigot, the Minecraft version, the world-name adapter, Bukkit main-thread teleport and chunks, and the Spigot component bridge. Paper and Purpur select native asynchronous operations when the server exposes both required methods.
 
 The startup log reports the implementation, game and Bukkit API versions, Java runtime, world-name adapter, teleport and chunk provider, and message bridge. Select a deployment profile in `config.yml` to describe your topology. The server chooses its platform adapter independently. The distinction matters on a fork that supplies some Paper APIs. TeleHop checks for both required asynchronous methods before selecting the native operations.
 

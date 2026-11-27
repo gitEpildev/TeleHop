@@ -1,5 +1,7 @@
 # Enable commands.custom-names.enabled in config.yml to use the names below.
 # Restart the backend after changing registered names or aliases.
+# For /spawn <name>, add the location to the active profile's spawns.yml.
+# The additional command below is optional and gives a destination its own label.
 
 spawn:
   custom-name:
@@ -10,3 +12,10 @@ spawn:
   additional-commands:
     enabled: false
     commands: {}
+    # Example replacement for the empty mapping above. Supply your own ID,
+    # command label and an existing destination from spawns.yml.
+    # commands:
+    #   garden-trip:
+    #     name: visitgarden
+    #     destination: {type: NAMED_SPAWN, target: garden}
+    #     permissions: {require-command-permission: true}

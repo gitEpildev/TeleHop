@@ -28,7 +28,7 @@ public final class SpawnConfigFile {
     public SpawnRoutes configuration() { return configuration; }
 
     public static SpawnConfigFile edit(File folder, String name, SpawnPoint point) throws Exception {
-        return edit(folder.toPath().resolve("config/spawns.yml"), name, point);
+        return edit(PaperProfiles.operationalDirectory(folder.toPath()).resolve("spawns.yml"), name, point);
     }
 
     public static SpawnConfigFile edit(Path path, String name, SpawnPoint point) throws Exception {

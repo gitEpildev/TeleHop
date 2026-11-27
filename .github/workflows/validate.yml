@@ -68,8 +68,14 @@ jobs:
           "$RUNNER_TEMP/telehop-yaml/bin/pip" install PyYAML==6.0.3
           echo "$RUNNER_TEMP/telehop-yaml/bin" >> "$GITHUB_PATH"
 
+      - name: Check the editable Paper template layout
+        run: python3 .github/release/paper_layout.py
+
       - name: Check published command and permission references
         run: python3 .github/tests/check_command_docs.py
+
+      - name: Check local documentation links and headings
+        run: node .github/release/check-doc-links.mjs
 
       - name: Save approved release notes
         if: inputs.publishing
@@ -80,41 +86,8 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      # ── 3b. YAML syntax validation ───────────────────────────────────────
-      # Validates every config template and language file with Python's yaml
-      # parser. Catches typos like missing quotes, bad indentation, duplicate
-      # keys, etc. before they reach a live server.
-      - name: Validate YAML files
-        run: |
-          python3 - <<'PYEOF'
-          import sys, os, glob, yaml
-
-          errors = []
-          files = (
-            glob.glob("paper/src/main/resources/config/*.yml") +
-            glob.glob("paper/src/main/resources/commands/*.yml") +
-            glob.glob("paper/src/main/resources/languages/*.yml")
-          )
-          if not files:
-            print("::warning::No YAML files found to validate.")
-            sys.exit(0)
-
-          for path in sorted(files):
-            try:
-              with open(path, "r", encoding="utf-8") as f:
-                yaml.safe_load(f)
-              print(f"  OK  {path}")
-            except yaml.YAMLError as e:
-              errors.append((path, str(e)))
-              print(f"  FAIL {path}: {e}")
-
-          if errors:
-            for path, msg in errors:
-              print(f"::error file={path}::{msg}")
-            sys.exit(1)
-          else:
-            print(f"All {len(files)} YAML files are valid.")
-          PYEOF
+      - name: Validate all backend YAML templates and metadata
+        run: python3 .github/tests/validate_templates.py
 
       # ── 3c. Language file key parity ────────────────────────────────────
       # Every non-English language file must contain every key present in
@@ -197,6 +170,7 @@ jobs:
               r'\bneighbor\b': 'neighbour',
               r'\bneighbors\b': 'neighbours',
               r'\bbehavior\b': 'behaviour',
+              r'\bcustomize\b': 'customise',
               r'\bcenter\b': 'centre',
               r'\bcenters\b': 'centres',
               r'\btheater\b': 'theatre',
@@ -221,13 +195,21 @@ jobs:
           files = (
               glob.glob("docs/**/*.md", recursive=True) +
               glob.glob("*.md") +
+              glob.glob("paper/src/main/resources/**/*.md", recursive=True) +
               glob.glob("paper/src/main/resources/languages/*.yml")
+          )
+          templates = (
+              glob.glob("paper/src/main/resources/config/**/*.yml", recursive=True) +
+              glob.glob("paper/src/main/resources/commands/*.yml") +
+              ["paper/src/main/resources/config.yml"]
           )
 
           errors = []
-          for path in sorted(files):
+          for path in sorted(files + templates):
               with open(path, encoding="utf-8") as f:
                   for i, line in enumerate(f, 1):
+                      if path in templates and not line.lstrip().startswith("#"):
+                          continue
                       if SKIP_LINE.search(line):
                           continue
                       for pattern, fix in US_TO_UK.items():
@@ -239,7 +221,7 @@ jobs:
                   print(f"::error file={path},line={lineno}::US spelling found (use '{fix}'): {line}")
               sys.exit(1)
           else:
-              print(f"No US English spellings in {len(files)} files.")
+              print(f"Checked UK spelling in {len(files)} documents and translations and {len(templates)} configuration templates.")
           PYEOF
 
       # ── 3f. No TODO / FIXME left in source ─────────────────────────────

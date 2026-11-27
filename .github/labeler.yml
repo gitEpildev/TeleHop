@@ -8,7 +8,7 @@ common:
 
 paper:
   - changed-files:
-      - any-glob-to-any-file: 'paper/**'
+      - any-glob-to-any-file: ['paper/**', 'paper-versions/**']
 
 velocity:
   - changed-files:
@@ -30,4 +30,4 @@ dependencies:
 
 tests:
   - changed-files:
-      - any-glob-to-any-file: '**/src/test/**'
+      - any-glob-to-any-file: ['**/src/test/**', '.github/tests/**']

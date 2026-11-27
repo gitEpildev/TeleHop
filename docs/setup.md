@@ -1,6 +1,8 @@
 # Install TeleHop
 
-Use the backend and proxy JARs from the same TeleHop 4.0.0 build. For a standalone server, install only the backend JAR. All participating instances need access to one MySQL or MariaDB database. [Platform and Java compatibility](version-compatibility.md)
+Place `telehop-bukkit-4.0.0.jar` on each supported Paper, CraftBukkit, Spigot or Purpur server. Use `telehop-velocity-4.0.0.jar` on each proxy. For a standalone server, install only the backend JAR. All participating instances need access to one MySQL or MariaDB database. [Platform and Java compatibility](version-compatibility.md)
+
+You can read the [backend's bundled setup guide](../paper/src/main/resources/config/WIKI.md) before installation. When the plugin starts it installs this guide at `plugins/TeleHop/config/WIKI.md`.
 
 ## Step 1 - Create the MySQL Database
 

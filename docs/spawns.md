@@ -1,10 +1,10 @@
 # Custom spawn destinations
 
-On a fresh installation, `/spawn` follows the existing regional or network hub setting and uses the destination backend's saved spawn. Operators choose every additional destination name. The same Paper backend can host several Multiverse worlds, and one Velocity proxy can connect several Paper backends.
+On a fresh installation, `/spawn` follows the existing regional or network hub setting and uses the destination backend's saved spawn. Operators choose every additional destination name. The same backend can host several Multiverse worlds, and one Velocity proxy can connect several backends.
 
 ## Define your own names in YAML
 
-On the Paper backend that owns the location, edit `plugins/TeleHop/config/<profile>/spawns.yml`, replacing `<profile>` with `single`, `multi` or `custom`. The following example defines two destinations. Replace the names, worlds and coordinates with values from your server.
+On the backend that owns the location, edit `plugins/TeleHop/config/<profile>/spawns.yml`, replacing `<profile>` with `single`, `multi` or `custom`. The following example defines two destinations. Replace the names, worlds and coordinates with values from your server.
 
 ```yaml
 destinations:
@@ -38,7 +38,7 @@ Names are case-insensitive. Use one to 32 letters from the English alphabet, dig
 
 ## Change what bare `/spawn` does
 
-Configure routes on the **source** Paper backend. In the example below, `/spawn` in the training world uses the gardens location owned by the survival backend. In other worlds players go to the hub backend's existing default spawn.
+Configure routes on the **source** backend. In the example below, `/spawn` in the training world uses the gardens location owned by the survival backend. In other worlds players go to the hub backend's existing default spawn.
 
 ```yaml
 routing:
@@ -54,7 +54,7 @@ Reload after editing routes.
 
 ## Enable the hub command
 
-On each Paper backend where players should use the command, edit `plugins/TeleHop/config/<profile>/features.yml`. Set these entries under the existing `features` mapping.
+On each backend where players should use the command, edit `plugins/TeleHop/config/<profile>/features.yml`. Set these entries under the existing `features` mapping.
 
 ```yaml
 features:

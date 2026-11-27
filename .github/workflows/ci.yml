@@ -124,7 +124,7 @@ jobs:
         with:
           name: ${{ steps.bundle.outputs.name }}
           path: |
-            release-bundle/telehop-paper-${{ steps.bundle.outputs.version }}.jar
+            release-bundle/telehop-bukkit-${{ steps.bundle.outputs.version }}.jar
             release-bundle/telehop-velocity-${{ steps.bundle.outputs.version }}.jar
             release-bundle/command-probe.jar
             release-bundle/SHA256SUMS
@@ -214,12 +214,12 @@ jobs:
         with:
           name: ${{ needs.test.outputs.bundle }}
           path: bundle
-      - name: Upload Paper JAR
+      - name: Upload Bukkit backend JAR
         if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: telehop-paper
-          path: bundle/telehop-paper-*.jar
+          name: telehop-bukkit
+          path: bundle/telehop-bukkit-*.jar
           if-no-files-found: error
 
       - name: Upload Velocity JAR

@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 #  TeleHop - Database Configuration
 # ═══════════════════════════════════════════════════════════════════════
-#  All Paper servers AND the Velocity proxy must connect to the SAME
+#  All participating backends and Velocity proxies must connect to the same
 #  MySQL / MariaDB database. This is how cross-server teleportation,
 #  warps, homes, and TPA requests are shared.
 #
@@ -20,7 +20,7 @@ mysql:
   # Create it beforehand: CREATE DATABASE telehop;
   database: "telehop"
 
-  # Credentials - the user needs SELECT, INSERT, UPDATE, DELETE, CREATE TABLE.
+  # The database account needs SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER and INDEX.
   username: "telehop"
   password: "change-me"
 

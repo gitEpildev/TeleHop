@@ -21,6 +21,9 @@ import java.util.regex.Pattern;
 /** Startup-selected runtime operations. Platform features and versioned storage rules are independent. */
 public final class BackendPlatform {
     private static final Pattern GAME_VERSION = Pattern.compile("(\\d+)\\.(\\d+)(?:\\.\\d+)?");
+    // The channel describes the server build. A Minecraft pre-release suffix is part of the game version.
+    private static final Pattern BUKKIT_VERSION = Pattern.compile(
+            "(\\d+\\.\\d+(?:\\.\\d+)?)(?:-R\\d+\\.\\d+(?:-SNAPSHOT)?|\\.build\\.\\d+-(?:alpha|beta|stable))?");
     private final JavaPlugin plugin;
     private final WorldOperations nativeOperations;
     private final PlatformCapabilities capabilities;
@@ -56,9 +59,11 @@ public final class BackendPlatform {
                 version, name, description);
     }
 
-    /** Modern Paper appends the distribution build number before its release channel. */
+    /** Accept numeric game releases and the API version formats emitted by Bukkit and Paper. */
     static String gameVersion(String bukkitVersion) {
-        return bukkitVersion.split("-", 2)[0].replaceFirst("\\.build\\.\\d+$", "");
+        Matcher match = BUKKIT_VERSION.matcher(bukkitVersion);
+        if (!match.matches()) throw new IllegalStateException("Unrecognised Bukkit API release: " + bukkitVersion);
+        return match.group(1);
     }
 
     static VersionAdapter select(String game, int javaVersion, PlatformCapabilities capabilities) {
@@ -69,7 +74,7 @@ public final class BackendPlatform {
         if (!match.matches()) throw new IllegalStateException("Unrecognised Minecraft release: " + game);
         int generation = Integer.parseInt(match.group(1));
         int minor = Integer.parseInt(match.group(2));
-        if (generation < 1 || generation == 1 && minor < 21 || generation > 1 && generation < 26) {
+        if (generation < 26 && (generation != 1 || minor != 21)) {
             throw new IllegalStateException("Minecraft " + game + " is outside the 1.21.x and 26.1+ compatibility range.");
         }
         if (generation == 26 && minor < 1) throw new IllegalStateException("Minecraft 26.1 or later is required.");

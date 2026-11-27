@@ -112,6 +112,7 @@
     </dependencies>
 
     <build>
+        <finalName>telehop-bukkit-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

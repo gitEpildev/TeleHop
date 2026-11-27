@@ -2,6 +2,8 @@
 
 Paper uses `plugins/TeleHop/`. Choose `SINGLE`, `MULTI` or `CUSTOM` in the root `config.yml`. The first start creates the three profile directories. Only the selected directory is read during normal operation. Replace `<profile>` below with its lowercase directory name.
 
+The [backend resource directory](../paper/src/main/resources/) shows the editable defaults using the same paths as the installed plugin. Open the [bundled setup guide](../paper/src/main/resources/config/WIKI.md) for step-by-step instructions or inspect a profile directly. [Single](../paper/src/main/resources/config/single/) · [Multi](../paper/src/main/resources/config/multi/) · [Custom](../paper/src/main/resources/config/custom/)
+
 | Profile | Use |
 | --- | --- |
 | `SINGLE` | Standalone worlds, Multiverse or multiple backends on one Velocity proxy. Redis is optional infrastructure and the proxy does not connect to it in this mode. |

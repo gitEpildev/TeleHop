@@ -58,7 +58,7 @@ jobs:
         with:
           name: release-${{ github.run_id }}-${{ github.run_attempt }}
           path: |
-            release-bundle/telehop-paper-${{ needs.validate.outputs.version }}.jar
+            release-bundle/telehop-bukkit-${{ needs.validate.outputs.version }}.jar
             release-bundle/telehop-velocity-${{ needs.validate.outputs.version }}.jar
             release-bundle/command-probe.jar
             release-bundle/SHA256SUMS
@@ -125,7 +125,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: python3 .github/release/publish.py github
-      - name: Publish or verify Paper and Velocity on Modrinth
+      - name: Publish or verify backend and Velocity releases on Modrinth
         env:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
         run: python3 .github/release/publish.py modrinth

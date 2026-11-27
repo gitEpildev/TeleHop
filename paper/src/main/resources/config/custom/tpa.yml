@@ -1,7 +1,7 @@
 # ═══════════════════════════════════════════════════════════════════════
 #  TeleHop - TPA Configuration
 # ═══════════════════════════════════════════════════════════════════════
-#  Controls the behavior of /tpa, /tpahere, /tpaaccept, /tpadeny.
+#  Controls the behaviour of /tpa, /tpahere, /tpaaccept, /tpadeny.
 #  Reloadable with /telehop reload (no restart needed).
 
 tpa:

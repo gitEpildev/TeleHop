@@ -10,27 +10,32 @@ import sys
 import time
 
 NETWORK = Path(__file__).resolve().parents[1] / "network"
+sys.path.insert(0, str(NETWORK.parent))
 sys.path.insert(0, str(NETWORK))
 from run import Process, assert_entity_values, entity_vector
+from platform_detection import signature
 
 
 def prepare(root, port, backend, hub, plugin, server, cache=None):
     root.mkdir(parents=True, exist_ok=False)
     (root / "eula.txt").write_text("eula=true\n")
     (root / "server.properties").write_text(
-        f"server-ip=127.0.0.1\nserver-port={port}\nonline-mode=false\nenforce-secure-profile=false\n"
+        f"server-ip=127.0.0.1\nserver-port={port}\nonline-mode=false\nenforce-secure-profile=false\npause-when-empty-seconds=-1\n"
         'generator-settings={"biome":"minecraft:plains","layers":[{"height":1,"block":"minecraft:bedrock"},'
         '{"height":2,"block":"minecraft:dirt"},{"height":1,"block":"minecraft:grass_block"}]}\n'
         "level-type=minecraft:flat\nmax-tick-time=180000\nview-distance=2\nsimulation-distance=2\nspawn-protection=0\ngenerate-structures=false\nlevel-seed=925\n")
     config = root / "plugins/TeleHop/config"
     config.mkdir(parents=True)
-    # Exercise the upgrade from a configured split installation, including its existing database.
+    profile = config / "single"
+    profile.mkdir()
+    # Deploy a V4 SINGLE profile. The separate upgrade suite boots a published 3.x JAR.
+    (config.parent / "config.yml").write_text("config-version: 1\nmode: SINGLE\n")
     (config / "database.yml").write_text(
         f"mysql: {{host: 127.0.0.1, port: {int(os.environ['MYSQL_PORT'])}, database: telehop_ci, "
         "username: telehop, password: ci-password, pool-size: 2}\n")
-    (config / "general.yml").write_text(f"server-name: {backend}\nhub-server: {hub}\n")
+    (profile / "general.yml").write_text(f"server-name: {backend}\nhub-server: {hub}\n")
     destination = f"landing-{backend}"
-    (config / "spawns.yml").write_text(
+    (profile / "spawns.yml").write_text(
         f"destinations:\n  {destination}: {{world: world, x: 4.5, y: 220, z: 8.5, yaw: 45, pitch: 12, access: public}}\n")
     shutil.copy(plugin, root / "plugins")
     shutil.copy(server, root / "server.jar")
@@ -45,18 +50,15 @@ def boot(stack, root):
                                 "-jar", "server.jar", "--nogui"], "stop")
 
 
-def ready(server, backend, platform):
+def ready(server, backend, platform, game):
     server.wait(r"Done \(", seconds=360)
     server.wait("Startup complete! Server: " + re.escape(backend), seconds=3)
-    method = "Paper asynchronous" if platform in ("Purpur", "Paper") else "Bukkit main-thread"
-    server.wait("Platform detection completed: " + re.escape(platform) + ", .*" + method, seconds=3)
+    server.wait("Platform detection completed: " + signature(platform, game), seconds=3)
 
 
 def console_checks(server, backend, platform, game):
-    ready(server, backend, platform)
-    exact = r"Minecraft " + re.escape(game) + r", Bukkit API "
-    server.wait(exact, seconds=3)
-    server.command("telehop platform info", exact)
+    ready(server, backend, platform, game)
+    server.command("telehop platform info", "Platform: " + signature(platform, game))
     server.command("telehop config validate", "active configuration is valid")
     server.command("telehop diagnostics", r"(?i)database circuit closed")
     server.command("telehop help", r"/spawn \[name\]")
@@ -70,10 +72,12 @@ def run(args):
     backend = args.platform.lower() + "-" + args.game.replace(".", "-")
     destination = prepare(root, port, backend, backend, args.plugin, args.server, args.cache)
     # Standalone protocol clients connect directly to a loopback server. Exercise its standalone respawn policy.
-    (root / "plugins/TeleHop/config/messaging.yml").write_text("messaging: {network-enabled: false}\n")
-    (root / "plugins/TeleHop/config/home.yml").write_text(
+    profile = root / "plugins/TeleHop/config/single"
+    with (profile / "general.yml").open("a") as general:
+        general.write("messaging: {network-enabled: false}\n")
+    (profile / "home.yml").write_text(
         "homes: {bed-set: WATER, bed-empty: AIR, bed-locked: MISSING_MATERIAL}\n")
-    (root / "plugins/TeleHop/config/rtp.yml").write_text(
+    (profile / "rtp.yml").write_text(
         "rtp: {max-radius: 48, dimensions: {surface: world}, default-dimension: surface, "
         "gui: {select-dimension-without-region: false}}\n")
     with ExitStack() as stack:
@@ -99,7 +103,8 @@ def player_checks(stack, root, server, port, destination, args):
     name = "Test" + args.platform[0] + args.game.replace(".", "_")
     bot = Process(stack, bot_dir, ["node", str(NETWORK / "client.cjs"), str(port), name, args.game, args.client_schema], None)
     bot.wait("LOGIN_HANDSHAKE " + re.escape(args.game) + r" \d+", seconds=60)
-    bot.wait("CLIENT_READY", seconds=60)
+    # Match the login window used by the cross-server tests under concurrent first-world generation.
+    bot.wait("CLIENT_READY", seconds=150)
     server.command("minecraft:forceload add 4 8", r"(?i)marked chunk|already|no chunks")
     server.command("minecraft:fill 3 219 7 8 219 11 minecraft:stone", r"(?i)filled|no blocks")
     server.command(f"minecraft:tp {name} 7.5 220 10.5", "Teleported")

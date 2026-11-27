@@ -1,6 +1,6 @@
 # TeleHop
 
-TeleHop is a cross-server teleportation suite for Paper and Velocity Minecraft networks. The same backend JAR also runs on standalone servers and compatible Bukkit implementations. Players can use the same commands whether their destination is in another world on the same backend or on another server.
+TeleHop is a cross-server teleportation suite for Paper and Velocity Minecraft networks. The Bukkit backend JAR also runs on standalone servers, Spigot, CraftBukkit and supported Paper forks. Players can use the same commands whether their destination is in another world on the same backend or on another server.
 
 Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
 
@@ -12,8 +12,8 @@ Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`
 
 | Where | Install in `plugins/` | Platform and Java |
 |---|---|---|
-| Each Paper backend | `telehop-paper-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25+ |
-| Each supported CraftBukkit, Spigot or Purpur backend | `telehop-paper-4.0.0.jar` | See the [exact implementation, Minecraft and Java combinations](docs/version-compatibility.md) |
+| Each Paper backend | `telehop-bukkit-4.0.0.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21+, or 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25+ |
+| Each supported CraftBukkit, Spigot or Purpur backend | `telehop-bukkit-4.0.0.jar` | See the [exact implementation, Minecraft and Java combinations](docs/version-compatibility.md) |
 | Each Velocity proxy | `telehop-velocity-4.0.0.jar` | Velocity 3.3 and 3.5 on Java 21, or 4.3.1 on Java 25 |
 
 Two additional client versions passed a login and named teleport through Velocity. Minecraft 1.21.2 joined Paper 1.21.3 on Velocity 3.5, and Minecraft 26.1 joined Paper 26.1.2 on Velocity 4.3.1. Each pair shares a wire protocol.
@@ -35,7 +35,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` and Paper has restarted | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` after the backend restarts | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
 | `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
@@ -90,7 +90,7 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 | Command | Action | Permission |
 |---|---|---|
 | `/telehop`, `/telehop help` | Display command help | Everyone |
-| `/telehop version`, `/telehop ver` | Display the Paper plugin version | Everyone |
+| `/telehop version`, `/telehop ver` | Display the backend plugin version | Everyone |
 | `/telehop perms`, `/telehop permissions` | Display the permission reference | `telehop.admin.permissions` |
 | `/telehop reload` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
 | `/telehop reload config` | Reload Paper settings, messages and spawn routes | `telehop.admin.reload` |
@@ -123,7 +123,7 @@ The default aliases for `/pwarp` are `/playerwarp` and `/pwarps`. Both accept th
 
 ## Permissions
 
-These tables list every permission declared by the Paper plugin and the configurable patterns for travel commands, RTP destinations, named spawns, individual warps and personal warp limits. A permissions manager such as LuckPerms can grant or deny individual nodes.
+These tables list every permission declared by the backend plugin and the configurable patterns for travel commands, RTP destinations, named spawns, individual warps and personal warp limits. A permissions manager such as LuckPerms can grant or deny individual nodes.
 
 ### Member permissions
 
@@ -253,6 +253,8 @@ The moderator in this example can inspect a home list. Grant `telehop.admin.home
 
 ## Configuration
 
+Start with the [backend setup guide installed with the plugin](paper/src/main/resources/config/WIKI.md). The repository and backend JAR both contain the editable defaults under the same paths as the server folder. [Root config](paper/src/main/resources/config.yml) · [Single](paper/src/main/resources/config/single/) · [Multi](paper/src/main/resources/config/multi/) · [Custom](paper/src/main/resources/config/custom/)
+
 The root `config.yml` selects **SINGLE** for a standalone or single-proxy network, **MULTI** for multiple proxies and Redis, or **CUSTOM** for individually selected settings. Throughout this guide, replace `<profile>` with the lowercase directory name. Start with the active profile’s `general.yml`, turn features on in `features.yml` and define destinations in `spawns.yml`. Use the global `commands/` folder for labels, aliases and additional travel variants. [Configuration reference](docs/configuration.md) · [RTP settings](docs/rtp.md)
 
 ```text
@@ -292,7 +294,7 @@ mvn clean verify
 bash .github/tests/bundle.sh 4.0.0
 ```
 
-The packaging step writes the two distributable files, `telehop-paper-4.0.0.jar` and `telehop-velocity-4.0.0.jar`, to `release-bundle/` alongside `SHA256SUMS`. Install the first on each supported backend and the second on each Velocity proxy. CI checks command and language resources, release versions, the changelog and runtime compatibility before publishing to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
+The packaging step writes the two distributable files, `telehop-bukkit-4.0.0.jar` and `telehop-velocity-4.0.0.jar`, to `release-bundle/` alongside `SHA256SUMS`. Install the first on each supported backend and the second on each Velocity proxy. CI checks command and language resources, release versions, the changelog and runtime compatibility before publishing to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
 
 ## Further reading
 

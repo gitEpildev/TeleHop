@@ -16,7 +16,7 @@ import zipfile
 import uuid
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from server_smoke import SERVERS, mysql
+from server_smoke import SERVERS, mysql, filename as distribution_name
 from runtime_download import download
 
 PLUGINS = {
@@ -107,8 +107,6 @@ def regional_settings(radius, dimension="meadow"):
 
 
 def configure_variants(plugin):
-    (plugin / "config.yml").write_text("config-version: 1\nmode: SINGLE\ncommands:\n"
-        "  custom-names: {enabled: true}\n  additional-commands: {enabled: true}\n")
     root = plugin / "commands"
     root.mkdir(exist_ok=True)
     (root / "rtp.yml").write_text("""rtp:
@@ -138,7 +136,7 @@ def configure_variants(plugin):
 
 
 def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=None, rtp=None,
-          features=None, commands=None, variants=False,
+          features=None, hub_command=None, variants=False, profile="single", regions=None, messaging=None,
           folder_name=None, plugin_jar=None, extra_plugins=PLUGINS):
     folder = root / (folder_name or name)
     folder.mkdir()
@@ -162,17 +160,29 @@ def paper(stack, args, name, port, root, *, general=None, spawns=None, storage=N
     (config / "database.yml").write_text(
         f"mysql:\n  host: 127.0.0.1\n  port: {os.environ['MYSQL_PORT']}\n  database: telehop_ci\n"
         "  username: telehop\n  password: ci-password\n  pool-size: 2\n")
-    (config / "general.yml").write_text(general or f"server-name: {name}\nhub-server: hub\n")
-    # An omitted file comes from the installed JAR, including on a rolled-back backend.
-    for filename, content in (("features.yml", features), ("commands.yml", commands),
-                              ("spawns.yml", spawns), ("rtp.yml", rtp)):
+    # The rollback JAR reads the original split layout. V4 fixtures write the selected profile directly.
+    if plugin_jar:
+        config_root = config
+    else:
+        config_root = config / profile
+        config_root.mkdir()
+        flags = ("commands:\n  custom-names: {enabled: true}\n  additional-commands: {enabled: true}\n"
+                 if variants else "")
+        (config.parent / "config.yml").write_text(f"config-version: 1\nmode: {profile.upper()}\n" + flags)
+    (config_root / "general.yml").write_text(general or f"server-name: {name}\nhub-server: hub\n")
+    for filename, content in (("features.yml", features), ("spawns.yml", spawns), ("rtp.yml", rtp),
+                              ("messaging.yml", messaging), ("regions.yml", regions)):
         if content is not None:
-            (config / filename).write_text(content)
+            (config_root / filename).write_text(content)
     if variants:
         configure_variants(config.parent)
+    if hub_command:
+        folder_commands = config.parent / "commands"
+        folder_commands.mkdir(exist_ok=True)
+        (folder_commands / "hub.yml").write_text(hub_command)
     if storage:
         (config.parent / "storage.yml").write_text(storage)
-    shutil.copy(plugin_jar or args.bundle / f"telehop-paper-{args.version}.jar", folder / "plugins")
+    shutil.copy(plugin_jar or args.bundle / distribution_name("paper", args.version), folder / "plugins")
     for filename in extra_plugins:
         shutil.copy(root / filename, folder / "plugins")
     return Process(stack, folder, ["java", "-Xms256m", "-Xmx1000m", "-XX:ActiveProcessorCount=2",
@@ -354,10 +364,12 @@ def run(args):
         hub = paper(stack, args, "hub", ports[1], root, features=features, spawns="destinations: {}\n",
                     general="server-name: hub\n" + topology, rtp=regional_settings(32), variants=True)
         survival = paper(stack, args, "survival", ports[2], root, features=features, general="server-name: survival\n" + topology,
-                         commands="hub: [lobby, hub]\n", spawns=routes, rtp=regional_settings(32), variants=True)
+                         hub_command="hub: {custom-name: {enabled: true, name: lobby, aliases: [hub]}}\n", spawns=routes, rtp=regional_settings(32), variants=True)
         bridge = proxy(stack, args, root, ports)
         for server in (hub, survival, bridge):
             server.wait(r"Done \(", seconds=180)
+        # First generation can block the game thread long enough to disconnect an idle client.
+        survival.command("mv create training normal", r"(?i)world 'training' created")
         client_dir = root / "client"
         client_dir.mkdir()
         client = Process(stack, client_dir, ["node", str(Path(__file__).with_name("client.cjs").resolve()), str(ports[0])], None)
@@ -385,7 +397,6 @@ def run(args):
         client.command("/telehop spawn set gardens public", "Saved gardens")
         client.command("/sethome review", "Home review set")
         client.command("/setwarp review", "Warp review created")
-        survival.command("mv create training normal", r"(?i)world 'training' created")
         survival.command("mv tp ReviewMember training", r"(?i)teleport")
         time.sleep(1)
         client.command("/telehop spawn set staff-room restricted", "Saved staff-room")

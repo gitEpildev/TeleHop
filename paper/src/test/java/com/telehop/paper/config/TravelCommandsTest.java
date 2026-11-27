@@ -53,10 +53,23 @@ class TravelCommandsTest {
                 """ + variant.indent(8));
     }
 
+    @Test void freshCommandGroupsKeepTheirPackagedBytes() throws Exception {
+        load(false, false);
+        for (String id : CommandNames.GROUPS) {
+            String resource = "commands/" + id + ".yml";
+            try (var expected = plugin.getResource(resource)) {
+                assertArrayEquals(expected.readAllBytes(), Files.readAllBytes(data.resolve(resource)), resource);
+            }
+        }
+    }
+
     @Test void migrationRetainsEveryLegacyAliasAndOperatorEditsOnRestart() throws Exception {
-        Files.writeString(data.resolve("config/commands.yml"), "tp: [travel, jumpto]\n");
+        Files.writeString(data.resolve("config/commands.yml"), "tp: [travel, jumpto]\nspawn: [spawn]\n");
         assertEquals(List.of("travel", "jumpto"), load(true,false).labels().get("tp"));
         assertTrue(Files.readString(data.resolve("commands/teleport.yml")).contains("enabled: true"));
+        try (var expected = plugin.getResource("commands/spawn.yml")) {
+            assertArrayEquals(expected.readAllBytes(), Files.readAllBytes(data.resolve("commands/spawn.yml")));
+        }
         Files.writeString(data.resolve("commands/teleport.yml"), "tp: {custom-name: {enabled: true, name: goto, aliases: [go]}}\n");
         assertEquals(List.of("goto","go"), load(true,false).labels().get("tp"));
         assertEquals(List.of("tp"), load(false,false).labels().get("tp"));

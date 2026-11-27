@@ -5,6 +5,8 @@ import com.telehop.common.config.DeploymentConfig;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -25,6 +27,11 @@ class PaperProfilesTest {
     @Test void freshInstallationHasThreeProfilesAndOnlySharedFilesInTheConfigRoot() throws Exception {
         var selected = PaperProfiles.prepareFiles(dir, plugin(), true);
         assertEquals(DeploymentConfig.Mode.SINGLE, selected.mode());
+        assertFalse(ConfigMigrator.needsMigration(plugin()));
+        var selector = Files.readString(dir.resolve("config.yml"));
+        ConfigMigrator.migrate(plugin());
+        assertEquals(selector, Files.readString(dir.resolve("config.yml")));
+        assertFalse(Files.exists(dir.resolve("config.yml.old")));
         var identity = ConfigYaml.read(selected.profileDirectory(dir).resolve("general.yml"));
         assertNotEquals("lobby", identity.get("server-name"));
         assertEquals(identity.get("server-name"), identity.get("hub-server"));
@@ -47,6 +54,45 @@ class PaperProfilesTest {
                         files.map(p -> p.getFileName().toString()).collect(java.util.stream.Collectors.toSet()));
             }
         }
+    }
+
+    @ParameterizedTest
+    @EnumSource(DeploymentConfig.Mode.class)
+    void everyInstalledProfileUsesItsPackagedTemplates(DeploymentConfig.Mode active) throws Exception {
+        var plugin = plugin();
+        Files.writeString(dir.resolve("config.yml"), "mode: " + active + "\n");
+        PaperProfiles.prepareFiles(dir, plugin, true);
+        for (var mode : DeploymentConfig.Mode.values()) {
+            Path profile = dir.resolve("config").resolve(mode.name().toLowerCase(java.util.Locale.ROOT));
+            try (var installed = Files.list(profile)) {
+                for (var file : installed.toList()) {
+                    String name = file.getFileName().toString();
+                    String contents = PaperProfiles.resource(plugin, PaperProfiles.template(mode, name));
+                    if (!name.equals("general.yml")) {
+                        assertEquals(contents, Files.readString(file), file.toString());
+                        continue;
+                    }
+                    var expected = ConfigYaml.parse(contents, name);
+                    var generated = ConfigYaml.read(file);
+                    var backend = generated.get("server-name");
+                    assertNotEquals("", backend);
+                    expected.put("server-name", backend);
+                    expected.put("hub-server", backend);
+                    assertEquals(expected, generated, file.toString());
+                    assertEquals(mode == DeploymentConfig.Mode.MULTI, ConfigYaml.flag(generated, "multi-proxy.enabled", false));
+                }
+            }
+        }
+    }
+
+    @Test void existingFlatStandaloneMessagingOverridesTheBundledInlineDefaults() throws Exception {
+        var old = Files.createDirectories(dir.resolve("config"));
+        Files.writeString(old.resolve("messaging.yml"), "messaging: {network-enabled: false, request-timeout-ms: 18300}\n");
+        var profile = PaperProfiles.prepareFiles(dir, plugin(), true).profileDirectory(dir);
+        var general = ConfigYaml.read(profile.resolve("general.yml"));
+        assertFalse(ConfigYaml.flag(general, "messaging.network-enabled", true));
+        assertEquals(18300, ConfigYaml.get(general, "messaging.request-timeout-ms", null));
+        assertFalse(Files.exists(profile.resolve("messaging.yml")));
     }
 
     @Test void explicitReplacementWinsWhileObsoleteHubFlagIsRemoved() throws Exception {

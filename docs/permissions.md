@@ -1,8 +1,8 @@
 # Permissions
 
-Use this reference to grant member, moderator and administrator access on the Paper backends where players run TeleHop commands. The in-game reference is available through `/telehop perms` or `/telehop permissions` with `telehop.admin.permissions`. [Command syntax and aliases](commands.md)
+Use this reference to grant member, moderator and administrator access on the backends where players run TeleHop commands. The in-game reference is available through `/telehop perms` or `/telehop permissions` with `telehop.admin.permissions`. [Command syntax and aliases](commands.md)
 
-These tables list every permission declared by the Paper plugin and its configurable permission patterns. A permissions manager such as LuckPerms can grant or deny individual nodes.
+These tables list every permission declared by the backend plugin and its configurable permission patterns. A permissions manager such as LuckPerms can grant or deny individual nodes.
 
 ## Member permissions
 

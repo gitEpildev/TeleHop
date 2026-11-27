@@ -34,7 +34,7 @@ homes:
   gui-rows: 5
 
   # ── Bed Colours ─────────────────────────────────────────────────────
-  #  Customize the bed item shown for each slot state.
+  #  Customise the bed item shown for each slot state.
   #  Use any Minecraft bed Material name:
   #    WHITE_BED, ORANGE_BED, MAGENTA_BED, LIGHT_BLUE_BED, YELLOW_BED,
   #    LIME_BED, PINK_BED, GRAY_BED, LIGHT_GRAY_BED, CYAN_BED,

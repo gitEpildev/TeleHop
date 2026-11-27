@@ -91,7 +91,7 @@ jobs:
           if [[ -n "$CLIENT" ]]; then checks=(--client-schema "$CLIENT"); fi
           for platform in "${platforms[@]}"; do
             python3 .github/tests/platforms/boot.py "$platform" "tools/${platform,,}-$GAME.jar" \
-              "bundle/telehop-paper-$VERSION.jar" "test-$platform" --game "$GAME" "${checks[@]}"
+              "bundle/telehop-bukkit-$VERSION.jar" "test-$platform" --game "$GAME" "${checks[@]}"
           done
       - name: Check travel across CraftBukkit, Spigot and Paper through Velocity
         if: matrix.distribution == 'BuildTools' && matrix.game == '1.21.11'
@@ -113,7 +113,7 @@ jobs:
         if: matrix.distribution == 'Purpur'
         env:
           VERSION: ${{ inputs.version }}
-        run: python3 .github/tests/platforms/folia.py "bundle/telehop-paper-$VERSION.jar" test-folia
+        run: python3 .github/tests/platforms/folia.py "bundle/telehop-bukkit-$VERSION.jar" test-folia
       - name: Preserve the server and client logs
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

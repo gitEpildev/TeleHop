@@ -8,10 +8,15 @@ import secrets
 import shutil
 import subprocess
 import time
+import sys
 import zipfile
 import socket
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "release"))
+from artefacts import filename
+from paper_layout import verify_install
 from runtime_download import prepare_server
+from platform_detection import signature
 
 COMPATIBILITY = json.loads((Path(__file__).resolve().parents[1] / "release/compatibility.json").read_text())
 # The release job and the runtime checks use the same PaperMC download pins.
@@ -79,7 +84,7 @@ def check_migration():
 def configure(directory, platform, bundle, version):
     plugins = directory / "plugins"
     plugins.mkdir()
-    shutil.copy(bundle / f"telehop-{platform}-{version}.jar", plugins)
+    shutil.copy(bundle / filename(platform, version), plugins)
     port = int(os.environ["MYSQL_PORT"])
     with socket.socket() as reservation:
         reservation.bind(("127.0.0.1", 0))
@@ -128,7 +133,7 @@ def check_legacy_paper_config(directory, original):
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
 
 
-def boot(directory, platform, second):
+def boot(directory, platform, second, *, game=None):
     paper = platform == "paper"
     args = ["java", "-Xms256m", "-Xmx1400m", "-XX:ActiveProcessorCount=2", "-Dterminal.jline=false",
             "-Dterminal.ansi=false", f"-Dtelehop.test.custom={str(second).lower()}", "-jar", "server.jar"]
@@ -153,6 +158,10 @@ def boot(directory, platform, second):
                 time.sleep(0.5)
             else:
                 raise TimeoutError(f"Missing startup evidence {ready}: {content[-6000:]}")
+            if paper and game is not None:
+                expected = "Platform detection completed: " + signature("Paper", game)
+                if not re.search(expected, content):
+                    raise AssertionError(f"{log}: incorrect platform, version adapter, travel provider or chat bridge for Paper {game}")
             proc.communicate("telehop help\nstop\n" if paper else "shutdown\n", timeout=60)
             content = ANSI.sub("", log.read_text(errors="replace"))
             if paper:
@@ -198,8 +207,10 @@ def main():
             teleport = yaml.safe_load(tp_file.read_text())
             teleport["tp"]["custom-name"] = {"enabled": True, "name": "networktp", "aliases": ["ntp"]}
             tp_file.write_text(yaml.safe_dump(teleport, sort_keys=False))
-        boot(directory, platform, second)
+        boot(directory, platform, second, game=args.server.split("-", 1)[1])
         check_migration()
+        if platform == "paper":
+            verify_install(directory / "plugins/TeleHop", args.bundle / filename("paper", args.version))
         if legacy:
             check_legacy_paper_config(directory, legacy)
     print(f"{args.server}: both startups, shutdowns and legacy home migration checks passed")
