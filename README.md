@@ -10,7 +10,7 @@ Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`
 
 ## Installation
 
-Replace `<version>` with the release you downloaded. Use the same TeleHop version across the network.
+Download the release for your installation and replace `<version>` below with its version number. Use the same TeleHop version across the network. [GitHub releases](https://github.com/gitEpildev/TeleHop/releases) · [Modrinth downloads](https://modrinth.com/plugin/telehop/versions)
 
 | Where | Install in `plugins/` | Platform and Java |
 |---|---|---|
@@ -299,11 +299,13 @@ mvn clean verify
 bash .github/tests/bundle.sh
 ```
 
-The packaging step writes the two distributable files, `telehop-bukkit-<version>.jar` and `telehop-velocity-<version>.jar`, to `release-bundle/` alongside `SHA256SUMS`. Install the first on each supported backend and the second on each Velocity proxy. CI checks command and language resources, release versions, the changelog and runtime compatibility before publishing to GitHub and Modrinth. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
+The packaging step writes `telehop-bukkit-<version>.jar`, `telehop-velocity-<version>.jar` and `SHA256SUMS` to `release-bundle/`. A successful CI run on `main` makes both JARs available as workflow artefacts. To publish them on GitHub Releases and Modrinth, a maintainer starts the Release workflow or pushes a version tag. [Release guide](docs/releases/publishing.md) · [Contributing](CONTRIBUTING.md)
 
 ## Further reading
 
 [Legacy upgrade notes](LEGACY.md) · [Command guide](docs/commands.md) · [Network protocol](docs/protocol.md) · [Troubleshooting](docs/troubleshooting.md) · [Release history](CHANGELOG.md)
+
+For help with your server, mention `@Epildev` on Discord. For a suspected security issue or a conduct concern, use the private contact instructions. [Support Discord](https://discord.gg/E8kpxdGbxn) · [Security reporting](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md)
 
 ## Author and licence
 

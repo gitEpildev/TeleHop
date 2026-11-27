@@ -22,7 +22,7 @@ The home tooltip shows the server and world dimension with configurable colours:
 - **Nether** - red-to-gold gradient by default
 - **The End** - purple-to-blue gradient by default
 
-Server names also display with per-server colours (e.g. Lobby in grey, USA in red, EU in blue). Customise all of these in `home.yml` under `world-colors` and `server-colors`.
+Server names appear in white by default. To give a backend its own display name or colour, add its name under `homes.server-colors` in the active `home.yml`. Dimension colours are set under `homes.world-colors`.
 
 Coordinates can be hidden by setting `show-location: false`.
 
@@ -38,7 +38,7 @@ Clicking an occupied home opens a sub-menu with:
 Homes are identified by a custom name chosen by the player (e.g. `MYCOOLBASE`, `nether_hub`, `farm`).
 
 - Names are case-insensitive: `Base` and `base` are treated as the same home
-- Names must be alphanumeric with underscores only (no spaces or special characters)
+- Names can contain English letters, digits, spaces and underscores
 - Maximum name length: 32 characters
 - Overwriting: if you `/sethome` with an existing name, the location is updated
 

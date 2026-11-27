@@ -2,6 +2,8 @@
 
 TeleHop welcomes clear reports and small, verifiable changes. Include the backend implementation, Minecraft and Java versions, the TeleHop version and any Velocity version. Describe the command, expected and observed behaviour, and whether the route crosses worlds or backends. Replace player names, private addresses, database credentials and forwarding secrets with examples.
 
+For suspected security issues or concerns about conduct, contact the maintainer privately using the relevant guide. [Security reporting](SECURITY.md) · [Code of conduct](CODE_OF_CONDUCT.md)
+
 The server-specific spawn request and follow-up about delegated staff permissions came from [@InvisibleT4rget](https://github.com/InvisibleT4rget). The public discussion explains why operators want local spawn defaults on one backend and a shared hub on another. Operator-defined destination names extend that use case. [Issue 1](https://github.com/gitEpildev/TeleHop/issues/1) · [Issue 2](https://github.com/gitEpildev/TeleHop/issues/2)
 
 The `paper/` Maven module produces `telehop-bukkit-<version>.jar` for supported game servers. The `velocity/` module produces the separate proxy JAR. The package checks inspect both files and their checksums, and a live server must report the expected world adapter, travel provider and chat bridge. [Compatibility matrix](docs/version-compatibility.md)

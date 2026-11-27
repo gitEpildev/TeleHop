@@ -1,6 +1,6 @@
 # Plugin Messaging Protocol
 
-TeleHop uses a custom plugin messaging protocol over the Velocity proxy channel for all cross-server communication.
+TeleHop sends packets between a backend and its connected Velocity proxy over a Minecraft plugin channel. When players connect through different proxies, Velocity relays cross-proxy messages through Redis. [Multi-proxy routing](multi-proxy.md) · [Redis configuration](redis.md)
 
 ## Channel
 
@@ -8,7 +8,7 @@ TeleHop uses a custom plugin messaging protocol over the Velocity proxy channel 
 telehop:network
 ```
 
-Registered on both Paper (outgoing + incoming) and Velocity (incoming from all servers).
+Each networked backend registers the channel for incoming and outgoing messages. Velocity receives messages from its registered backend connections.
 
 ## Wire Format
 
