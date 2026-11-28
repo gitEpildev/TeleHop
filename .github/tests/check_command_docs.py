@@ -35,18 +35,23 @@ def main():
     labels = {label for names in commands.values() for label in names}
     missing = []
 
+    # A release can document new labels and nodes once in its changelog.
+    # Only the identifier that leads a reference bullet counts.
+    sections = re.findall(r"^### Command and permission additions\n(.*?)(?=^#|\Z)",
+                          Path("CHANGELOG.md").read_text(), re.MULTILINE | re.DOTALL)
+    additions = set(re.findall(r"^- `([^`]+)` ", "\n".join(sections), re.MULTILINE))
     for name in ("README.md", "telehop.md", "docs/permissions.md", "docs/commands.md"):
         body = Path(name).read_text()
         if name != "docs/commands.md":
             # Require a reference row, so incidental mentions in examples cannot mask an omission.
             rows = set(re.findall(r"^\| `(telehop\.[^`]+)` \|", body, re.MULTILINE))
-            for node in sorted(set(permissions) | PERMISSION_PATTERNS):
-                if node not in rows:
-                    missing.append(f"{name}: missing permission row for {node}")
+            for node in sorted((set(permissions) | PERMISSION_PATTERNS) - rows - additions):
+                missing.append(f"{name} and changelog additions: missing permission row for {node}")
         if name != "docs/permissions.md":
             documented = set(re.findall(r"`/([\w-]+)(?=[ `])", body))
             for label in sorted(labels - documented):
-                missing.append(f"{name}: missing command or alias /{label}")
+                if "/" + label not in additions:
+                    missing.append(f"{name} and changelog additions: missing command or alias /{label}")
 
     if missing:
         raise SystemExit("\n".join(missing))

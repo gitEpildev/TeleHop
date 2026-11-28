@@ -16,11 +16,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 ### Changed
 
 - The current allowance determines which pages open, even after a rank change. Homes beyond a reduced allowance stay saved and can still be visited by name.
-- The active home configuration can set an optional creation cap for all ranks. Upgrades retain a previous limit below ten and retire the old ten-slot default.
+- Set `homes.creation-cap` in the active profile’s `home.yml` to cap all ranks, including unlimited players. A value of zero uses permissions alone. Upgrades keep an old `homes.max-slots` setting from one to nine. Set the new cap to ten if your network needs that limit.
 
 ### Fixed
 
 - Two simultaneous saves for the same player respect their home limit across backends sharing a database.
+
+### Command and permission additions
+
+- `/homes` opens the menu. Use `/homes <name>` to visit a saved home.
+- `telehop.homes.<number>` grants a numbered allowance. For example, `lp group builder permission set telehop.homes.50 true` grants five pages of ten slots.
+- `telehop.homes.unlimited` lets players open further pages and save more homes, subject to the configured creation cap.
 
 ## [4.0.0] - 2026-11-27
 

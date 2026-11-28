@@ -1,23 +1,10 @@
 # Homes
 
-Players can save named homes up to the allowance their administrator grants. Homes persist in the shared MySQL or MariaDB database and work across backends.
+TeleHop's homes system lets players save up to 10 named personal teleport locations. Homes persist in MySQL and work cross-server.
 
 ## GUI
 
-Run `/home` or `/homes` to open the chest menu. Both commands also suggest your own saved names and accept a name for direct travel. The default five-row chest displays ten centred beds across two rows. Each page contains at most ten saved homes. The chest header shows your configured title on the left and the current page on the right, starting at Page 1.
-
-Your allowance determines which pages you can open, including empty pages. The gold **Next Page** arrow appears when another page is available. The red barrier shows **Exit** on page one and **Back** on later pages.
-
-| Effective allowance | Pages | What the player sees |
-| --- | --- | --- |
-| 1 (default) | 1 | One available slot and nine locked slots on a new account. Exit is the only navigation control. |
-| 10 | 1 | Ten slots and Exit. |
-| 17 | 2 | Seven usable slots on the last page. |
-| 20 | 2 | Ten slots on each page. Page two shows only Back. |
-| 50 | 5 | Ten slots on each page. Page five shows only Back. |
-| Unlimited | As needed | Next Page stays available beyond the saved homes when the profile cap is zero. |
-
-Click an empty bed to save a home there. For example, the first bed on page three saves `Home 21`. If a rank drops from 50 to 10, only page one opens. Homes outside those ten slots are still accessible with `/homes <name>` and reappear in the menu when the allowance increases.
+Running `/home` opens a large chest GUI (5 rows by default, configurable via `gui-rows`). Home beds are spread across two rows for up to 10 homes.
 
 | Slot State | Default Material | Description |
 |------------|------------------|-------------|
@@ -69,8 +56,8 @@ Empty bed slots on blocked servers show "Cannot set homes on this server" in red
 
 | Command | Description |
 |---------|-------------|
-| `/home`, `/homes` | Opens the homes GUI |
-| `/home <name>`, `/homes <name>` | Quick-teleport to a named home |
+| `/home` | Opens the homes GUI |
+| `/home <name>` | Quick-teleport to a named home |
 | `/sethome <name>` | Sets a named home at your current location |
 | `/delhome <name>` | Deletes a named home |
 | `/forcedelhome <player>` | Admin: lists a player's homes with clickable delete buttons |
@@ -91,12 +78,10 @@ Empty bed slots on blocked servers show "Cannot set homes on this server" in red
 | `telehop.homes.7` | - | Access 7 homes |
 | `telehop.homes.8` | - | Access 8 homes |
 | `telehop.homes.9` | - | Access 9 homes |
-| `telehop.homes.10` | - | Access 10 homes on one page |
-| `telehop.homes.<number>` | - | Use a positive whole-number allowance such as 10, 20, 100 or 240 |
-| `telehop.homes.unlimited` | - | Create unlimited homes unless the profile sets a cap |
+| `telehop.homes.10` | - | Access 10 homes |
 | `telehop.admin.homes.delete` | Granted by `telehop.admin` | Use `/forcedelhome` |
 
-The highest matching `telehop.homes.<N>` permission determines how many homes a player can create. For example, run `lp group builder permission set telehop.homes.240 true` in the server console. Existing homes can still be visited, updated and deleted after a downgrade. The optional `homes.creation-cap` limits creation on that backend. Zero delegates the allowance to permissions. On upgrade, the previous stock ten-slot limit is retired. Existing positive limits below ten are honoured until you set `creation-cap` explicitly.
+The highest matching `telehop.homes.<N>` permission determines how many homes a player can create. Use LuckPerms to assign higher counts to ranks.
 
 ## Configuration
 
@@ -104,7 +89,7 @@ The active `config/<profile>/home.yml` accepts the following settings.
 
 ```yaml
 homes:
-  creation-cap: 0
+  max-slots: 10
   confirm-set: true
   gui-title: "<gradient:red:gold>Your Homes</gradient>"
   gui-rows: 5

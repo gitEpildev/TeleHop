@@ -54,10 +54,6 @@ Install matching 3.0.1 builds. Paper adds missing entries to the existing `comma
 
 Stop the network and save a consistent database and configuration backup. Install both matching builds. Start one backend and proxy first, verify their selected profiles, then start the remaining instances. Use the new group files in `commands/` for future edits. Additional commands require a V4 proxy and V4 destination. [Migration and recovery](docs/migration.md) · [Active configuration](docs/configuration.md)
 
-## From 4.0.0 to 4.1.0
-
-Install the matching backend and Velocity JARs. Existing named homes use the same database rows. Review the active home cap and any custom aliases, then check a saved destination and the final menu page with a member account. [4.1 home settings](docs/migration.md#upgrading-homes-from-40-to-41)
-
 ## Returning to the previous release
 
 Stop the upgraded instances and keep a copy of their logs. Restore the previous JARs, configuration folders and matching database backup together, then start the proxies and backends. A database restore returns player data to the backup time. Check a saved home and the normal spawn route before reopening the network.

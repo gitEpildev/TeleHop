@@ -62,13 +62,11 @@ When a player has TPA toggled off:
 
 | Command | Description | Permission |
 |---------|-------------|------------|
-| `/home`, `/homes` | Open the paginated homes GUI | `telehop.homes` |
-| `/home <name>`, `/homes <name>` | Quick-teleport to a named home | `telehop.homes` |
+| `/home` | Open the homes GUI | `telehop.homes` |
+| `/home <name>` | Quick-teleport to a named home | `telehop.homes` |
 | `/sethome <name>` | Set a named home at your current location | `telehop.sethome` |
 | `/delhome <name>` | Delete a named home | `telehop.delhome` |
 | `/lastlocation` (`/lastloc`, `/backlast`, `/ll`) | Teleport to your last logout location | `telehop.lastlocation` |
-
-Both home commands suggest only the player’s own names, including saved homes beyond a reduced rank. A bare command opens the pages granted by the current allowance. [Home menu and rank examples](homes.md#gui)
 
 Creating homes is blocked on backends listed in `homes.blocked-servers` or matched by `homes.blocked-server-prefixes` in `home.yml`. Players can still open the GUI and teleport to existing homes from any server.
 

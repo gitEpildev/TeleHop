@@ -2,36 +2,25 @@
 
 **Cross-server teleportation suite for Paper and Velocity Minecraft networks.**
 
-Give each Multiverse world its own `/spawn`, let players visit their homes and friends, or send them to a hub on another server. TeleHop works on a **standalone backend**, behind **one Velocity proxy**, or across **multiple Velocity proxies**. Players use the same commands in each setup.
-
-This guide covers **4.1.0**. On **4.0.0**, homes use the original ten-slot menu. If you run **3.0.1**, use its version-specific guide for the original JAR names, configuration paths and commands. [TeleHop 3.0.1 guide](https://github.com/gitEpildev/TeleHop/blob/v3.0.1/README.md)
+TeleHop supports **single-proxy and multi-proxy Velocity networks**. Use homes, warps, teleport requests, random teleportation and named spawns across your network. Players use the same commands when their destination is another Multiverse world on the same Paper server or a different backend behind Velocity.
 
 [Downloads](https://modrinth.com/plugin/telehop/versions) · [GitHub](https://github.com/gitEpildev/TeleHop) · [Documentation](https://github.com/gitEpildev/TeleHop/tree/main/docs) · [Setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/setup.md) · [Commands](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md) · [Permissions](https://github.com/gitEpildev/TeleHop/blob/main/docs/permissions.md) · [Configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md) · [Multi-proxy setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/multi-proxy.md) · [Report an issue](https://github.com/gitEpildev/TeleHop/issues) · [Support Discord](https://discord.gg/E8kpxdGbxn)
 
-## 🏠 New in 4.1.0
-
-Browse saved homes ten at a time and tab-complete their names with `/home` or `/homes`. Grant `telehop.homes.50` for five pages of ten slots or `telehop.homes.unlimited` to keep opening pages. The title shows the current page at the top right.
-
 ## ✨ New in 4.0.0
 
-- **One backend JAR, one proxy JAR.** The Bukkit JAR detects the server implementation and Minecraft version on startup. Use it on supported Paper, CraftBukkit, Spigot and Purpur servers. The Velocity JAR adapts to supported Velocity 3 and 4 proxies. [Tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md)
-- **YAML profiles.** Choose `SINGLE`, `MULTI` or `CUSTOM` in each instance’s `config.yml`. An upgrade imports existing settings and records the migration and its backups. [Upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
-- **Commands you name.** Give players a direct command for a named spawn, the hub or a random teleport destination. You choose the label, aliases and access rules in YAML. [Command examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md)
-- **Multi-proxy teleport requests.** Friends can use `/tpa` and `/tpahere` when they joined through different proxies, including when other players on the same backend used a third proxy. [Multi-proxy setup](https://github.com/gitEpildev/TeleHop/blob/main/docs/multi-proxy.md)
+The `telehop-bukkit-<version>.jar` download detects the backend platform on startup, and one proxy JAR covers Velocity 3 and 4. Use the **SINGLE**, **MULTI** or **CUSTOM** deployment profile, rename command roots by category and define your own direct RTP, spawn and hub commands. Existing configuration migrates with a recovery history. Local and destination permissions are checked for additional travel commands. [Platforms and tested versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/platforms.md) · [Configuration and upgrade guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/migration.md)
 
-## 📍 Named spawns
+## Named spawns in 3.0.0
 
 Choose your own destinations in `spawns.yml`. Stand where players should arrive, face the direction they should look and run `/telehop spawn set market public`. Players can then use `/spawn market` from any participating backend. For a staff destination, use `/telehop spawn set staff-room restricted` and grant `telehop.spawn.destination.staff-room` to the appropriate group.
 
-## 🧩 Standalone, single-proxy and multi-proxy setups
+## 🧩 Single-proxy and multi-proxy networks
 
-The backend places the player in the destination world. Velocity handles trips between backends. MySQL or MariaDB stores saved locations in every setup.
+Paper places players at their destination. Velocity routes them between backends, and the shared database holds their saved locations.
 
-| Your setup | Profile | How travel works |
-|---|---|---|
-| Standalone server | `SINGLE` | Install only the backend JAR. Players can travel between loaded worlds, including worlds managed by Multiverse. |
-| One Velocity proxy | `SINGLE` | Install the proxy JAR and a backend JAR on each server. Trips stay local when both worlds share a backend. Velocity handles trips to another server. |
-| Several Velocity proxies | `MULTI` | Each proxy connects to the same database and Redis service. The traveller’s own proxy handles the transfer. |
+- **One proxy and one Paper server:** Give each loaded Multiverse world its own spawn. Travel between worlds on that backend happens locally.
+- **One proxy and several backends:** Send players to an exact world, position and facing direction on another registered server.
+- **Several proxies and shared backends:** The traveller's own proxy handles the transfer even when other players on the backend entered through another proxy. A shared Redis service supports cross-proxy player tracking, player lists and request forwarding.
 
 Bare `/spawn` follows the existing regional or network hub route by default. Override it per world or backend, or enable a separate `/hub` command for the global hub. Staff permissions for inspecting, visiting, setting and deleting homes can now be granted independently.
 
@@ -55,6 +44,7 @@ routing:
   default: {server: survival}
   worlds:
     creative: {server: survival, spawn: gallery}
+
 ```
 
 Save this in `plugins/TeleHop/config/<profile>/spawns.yml` and run `/telehop reload` on the owning backend. Replace the backend name, world and coordinates with your own. A valid reload publishes the updated locations and access rules to the shared database. Invalid edits keep the previously accepted settings active. [Spawn configuration and examples](https://github.com/gitEpildev/TeleHop/blob/main/docs/spawns.md)
@@ -75,7 +65,7 @@ Use `/back` for the location before a teleport and `/back death` for the last de
 
 ### 🏠 Named homes
 
-Save a home with `/sethome <name>` or click an available bed in `/home`. A saved bed opens a menu to travel or confirm deletion. Locked beds show which slots are unavailable. Ten saved homes fit on each page. Use the gold Next Page arrow to reach the slots your rank grants. Unlimited ranks can continue to new pages and save homes by clicking empty beds. The red barrier goes back or exits on the first page. Owners can customise the menu size, bed colours, server and world labels, coordinate visibility and the servers where new homes may be set. Players can visit existing homes from a backend that blocks setting new ones.
+Save a home with `/sethome <name>` or click an available bed in `/home`. A saved bed opens a menu to travel or confirm deletion. Locked beds show which slots are unavailable. Players can have up to ten homes according to their rank and the configured limit. Owners can customise the menu size, bed colours, server and world labels, coordinate visibility and the servers where new homes may be set. Players can visit existing homes from a backend that blocks setting new ones.
 
 ### 📍 Last logout location
 
@@ -97,17 +87,15 @@ Staff can inspect player records, manage homes and warps, publish spawn destinat
 
 These are the default names. Replace `<arguments>` with your values and omit `[optional arguments]` when you do not need them. To rename a command, enable `commands.custom-names.enabled` in the root `config.yml`. In its group under `commands/`, enable `custom-name.enabled`, set the name and aliases, then restart the backend. To change a destination name, edit `config/<profile>/spawns.yml` on its owning backend and run `/telehop reload`. [Command configuration](https://github.com/gitEpildev/TeleHop/blob/main/docs/configuration.md#command-names-and-aliases)
 
-To add a direct command such as `/gallery`, create the named spawn first. Enable `commands.additional-commands.enabled` in the root configuration, then define the command under `spawn.additional-commands` in `commands/spawn.yml`. Hub and RTP commands have their own groups in `commands/hub.yml` and `commands/rtp.yml`. Use the same command identifier on each participating backend and restart to register the label. [Worked YAML example and permissions](https://github.com/gitEpildev/TeleHop/blob/main/docs/commands.md)
-
 ### Spawn, homes and travel
 
 | Command | Action | Permission |
 |---|---|---|
 | `/spawn` | Follow the source world's route, the backend default or the existing regional or network hub | `telehop.spawn` |
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
-| `/hub` | Visit the global hub's default spawn. Enable `features.spawn` and `features.hub` in the active `features.yml`, then restart the backend to register the command. | `telehop.hub` |
+| `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` after the backend restarts | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
-| `/home`, `/homes`, `/home <name>`, `/homes <name>` | Open the paginated menu or tab-complete and visit one of your own homes | `telehop.homes` |
+| `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
 | `/delhome <name>` | Delete one of your homes | `telehop.delhome` |
 | `/lastlocation` (`/lastloc`, `/backlast`, `/ll`) | Return to your saved logout location | `telehop.lastlocation` |
@@ -279,7 +267,7 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 
 ### Additional home slots
 
-Members start with one home. Grant the highest allowance a rank needs, for example 20, 100 or 240. A lower allowance limits the menu to the new rank’s pages. Extra homes remain saved and accessible by name. An optional positive `homes.creation-cap` limits creation even for unlimited ranks.
+These nodes default to false. TeleHop uses the highest granted slot count up to `homes.max-slots`. Members receive `telehop.homes.1` by default.
 
 | Permission | Purpose |
 |---|---|
@@ -292,8 +280,6 @@ Members start with one home. Grant the highest allowance a rank needs, for examp
 | `telehop.homes.8` | Allow up to 8 homes. |
 | `telehop.homes.9` | Allow up to 9 homes. |
 | `telehop.homes.10` | Allow up to 10 homes. |
-| `telehop.homes.<number>` | Allow that many homes, including numbers above ten. |
-| `telehop.homes.unlimited` | Allow unlimited homes, subject to any configured creation cap. |
 
 ### Permissions generated from your configuration
 
@@ -328,8 +314,7 @@ The moderator in this example can inspect a home list. Grant `telehop.admin.home
 | Install location | File for your release | Supported platform |
 |---|---|---|
 | Each Paper backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | Paper 1.21, 1.21.1 and 1.21.3 through 1.21.11 on Java 21, or Paper 26.1.1, 26.1.2, 26.2 and 26.3 on Java 25 |
-| Each CraftBukkit or Spigot backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | 1.21 through 1.21.11 on Java 21, and 26.1 through 26.3 on Java 25. On 26.2 and 26.3, verification covers server startup, database access and console commands. |
-| Each supported Purpur backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | Purpur 1.21.11 on Java 21 |
+| Each supported CraftBukkit, Spigot or Purpur backend’s `plugins/` folder | `telehop-bukkit-<version>.jar` | See the [tested backend versions](https://github.com/gitEpildev/TeleHop/blob/main/docs/version-compatibility.md) |
 | Each Velocity proxy’s `plugins/` folder | `telehop-velocity-<version>.jar` | Velocity 3.3 and 3.5 on Java 21, or Velocity 4.3.1 on Java 25 |
 
 Minecraft 1.21.2 clients passed a login and named teleport through Velocity 3.5 to Paper 1.21.3. Minecraft 26.1 clients passed the same checks through Velocity 4.3.1 to Paper 26.1.2. TeleHop 4.0.0 also passed two-player network tests with Multiverse-Core 5.8.2 and LuckPerms 5.5.71.
@@ -338,11 +323,11 @@ Standalone Bukkit-compatible backends can run local travel, including named dest
 
 ## ⚙️ Setup
 
-1. Install the JAR for each instance. Use the same TeleHop version across a network. Start each instance once to generate its files, then stop it to configure it.
-2. Choose the deployment profile in each root `config.yml`. Set the database connection in `config/database.yml`. All instances use the same MySQL 8.0+ or MariaDB 10.5+ database, including a standalone server. TeleHop creates and upgrades its tables on startup.
-3. In the active backend `general.yml`, set `server-name` and `hub-server`. On a standalone server, give both the same local name. Behind Velocity, match each backend name to its registration in `velocity.toml` and set the hub to the backend that owns it. [Installation guide](https://github.com/gitEpildev/TeleHop/blob/main/docs/setup.md)
+1. Install matching TeleHop JARs on every proxy and backend. Start the instances once to generate their configuration.
+2. Connect all instances to the same MySQL 8.0+ or MariaDB 10.5+ database. TeleHop creates and upgrades its database tables on startup.
+3. Give each backend a unique `server-name` matching its Velocity registration. Set `hub-server` to the backend that owns the global hub.
 4. For a multi-proxy network, register the same backends on every proxy, give each proxy a unique `proxy.id` in its active profile and configure the shared Redis service. Redis supports TLS, certificate and hostname verification and a custom CA certificate.
-5. Start any proxies first, then the backends. Use `/telehop platform info` to see the detected server and `/telehop config validate` to check the active settings. Join as a member and test a home, a named spawn and a random teleport.
+5. Restart the proxies and backends, then test a home, a named spawn and a regional RTP destination as a member.
 
 ## 📁 Configuration layout
 
@@ -411,7 +396,7 @@ TeleHop includes English, Dutch, German, Spanish, Simplified Chinese and Polish 
 
 ## 🔄 Updating an existing network
 
-Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching TeleHop builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/main/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md)
+Back up the shared database, both installed JARs and each instance's TeleHop folder. Install matching 4.0.0 builds across the network. Follow the checks for your installed version and each subsequent upgrade. [Full upgrade and recovery guide](https://github.com/gitEpildev/TeleHop/blob/main/LEGACY.md) · [Changelog](https://github.com/gitEpildev/TeleHop/blob/main/CHANGELOG.md)
 
 | Upgrading from | What to check |
 |---|---|
@@ -425,15 +410,13 @@ Back up the shared database, both installed JARs and each instance's TeleHop fol
 
 ## 🧪 Building from source
 
-Configure Maven toolchains for Java 21 and 25. From the repository root, install the release checker, build both plugins and assemble the distribution.
+Use Java 21 for Maven and configure the Java 25 toolchain for the newer Paper adapter. Run the following from the repository root.
 
 ```sh
-npm ci --prefix .github/release --ignore-scripts
 mvn clean verify
-bash .github/tests/bundle.sh
 ```
 
-The `release-bundle/` directory contains both installable JARs and their SHA-256 checksums. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
+Installable outputs are `paper/target/telehop-bukkit-<version>.jar` and `velocity/target/telehop-velocity-<version>.jar`. [Source code](https://github.com/gitEpildev/TeleHop) · [Contributing](https://github.com/gitEpildev/TeleHop/blob/main/CONTRIBUTING.md)
 
 ## 👤 Author and company
 
@@ -449,7 +432,7 @@ Developed by **Epildev** at **Epildevconnect Ltd**, registered in England and Wa
 | TeleHop on GitHub | [Repository](https://github.com/gitEpildev/TeleHop) · [Report an issue](https://github.com/gitEpildev/TeleHop/issues) |
 | TeleHop on Modrinth | [Project page](https://modrinth.com/plugin/telehop) · [Version downloads](https://modrinth.com/plugin/telehop/versions) |
 
-When reporting a problem, include your TeleHop version, server software, Minecraft and Java versions, and the command you ran. For network travel, include your Velocity version and whether the players joined through different proxies. For a suspected security issue, ask `@Epildev` for a private conversation. [Security reporting](https://github.com/gitEpildev/TeleHop/blob/main/SECURITY.md) · [Code of conduct](https://github.com/gitEpildev/TeleHop/blob/main/CODE_OF_CONDUCT.md)
+When reporting a problem, include your TeleHop, Paper, Velocity and Java versions, the command you ran and whether the route crossed a world, backend or proxy.
 
 ## 📄 Licence
 

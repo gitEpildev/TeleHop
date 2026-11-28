@@ -21,6 +21,4 @@ Use the database address reachable from the particular Minecraft process. In sep
 | `tpa_requests` | Request participants, type and timestamp |
 | `spawn_backends`, `spawn_routes`, `named_spawns` | Each backend's published spawn settings, overrides and named destinations, including access and revision |
 
-Home creation uses a per-player database lock so simultaneous saves on different backends respect the same allowance. Empty menu slots consume no database rows. Changing a rank leaves the stored locations intact.
-
 At startup a database lock serialises schema upgrades across instances. Older numerical home slots migrate to named homes while preserving stored locations. Back up the entire database and every instance's TeleHop folder before upgrading. Migration snapshots include configuration; the SQL backup and runtime storage must be captured separately. [Backup and recovery](migration.md) · [Named spawn synchronisation](spawns.md)

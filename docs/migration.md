@@ -4,12 +4,6 @@ On each stopped backend, move the previous `telehop-paper-*.jar` out of `plugins
 
 Stop player traffic, back up the shared database and retain each instance's plugin JAR and data folder. Upgrade the Velocity proxies first, then each backend. Complete the upgrade before enabling command variants or depending on V4 permission checks across servers. A production rollback needs the JAR, configuration and database backup from the same deployment.
 
-## Upgrading homes from 4.0 to 4.1
-
-Replace both JARs with the matching 4.1.0 builds. Existing named homes stay in the same database table. In the active profile’s `home.yml`, `homes.creation-cap: 0` lets permissions set the limit. A positive cap also applies to unlimited players. If the new key is absent, an old `homes.max-slots` value from 1 to 9 still applies. Set `homes.creation-cap: 10` explicitly if ten should remain the server-wide limit.
-
-With the default command names, both `/home` and `/homes` open the menu. If you enabled custom naming for the home command, check the labels in `commands/homes.yml` and include `homes` in its aliases if wanted. Restart the backend after changing registered labels. Check a saved destination by name, then check the last page with a member’s normal rank. [Homes and rank examples](homes.md#gui)
-
 ## Existing installations
 
 Each instance determines its own profile from its existing multi-proxy switch. An explicit `true` selects `MULTI`. A false or absent switch preserves the previous single-proxy behaviour with `SINGLE`. Names of servers and regions play no part in this decision. Use `CUSTOM` for manual control. An invalid switch stops the migration so you can correct it before any files are applied.

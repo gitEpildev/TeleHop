@@ -146,9 +146,6 @@ See the [bundled English file](../paper/src/main/resources/languages/en.yml) for
 - `home-not-found` - Home doesn't exist.
 - `home-no-empty-slot` - All slots used.
 - `home-blocked-server` - `/sethome` blocked on this server.
-- `home-page-title` supplies the translated page label at the right of the chest title. Its `<page>` placeholder starts at 1.
-- `home-page-next`, `home-page-back` and `home-page-exit` label the arrow and barrier in the menu.
-- `home-save-failed` is shown when the database cannot complete a save.
 - `home-invalid-name` - Invalid characters in home name.
 - `home-name-too-long` - Name exceeds max length. Placeholder: `<max>`
 
@@ -208,7 +205,7 @@ All `help-*` keys control the output of `/telehop help`. They use MiniMessage fo
 
 All `perms-*` keys control the output of `/telehop perms`. Same display rules as help. Keys:
 
-`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-tpa-toggle`, `perms-homes-header`, `perms-homes`, `perms-sethome`, `perms-delhome`, `perms-homes-limit`, `perms-homes-unlimited`, `perms-lastloc`, `perms-back`, `perms-back-death`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tp-coordinates`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
+`perms-header`, `perms-player-header`, `perms-spawn`, `perms-rtp`, `perms-warp`, `perms-pwarp`, `perms-tpa`, `perms-tpahere`, `perms-tpa-accept`, `perms-tpa-deny`, `perms-tpa-cancel`, `perms-tpa-toggle`, `perms-homes-header`, `perms-homes`, `perms-sethome`, `perms-delhome`, `perms-homes-limit`, `perms-lastloc`, `perms-back`, `perms-back-death`, `perms-per-warp-header`, `perms-warp-access`, `perms-warp-limits-header`, `perms-warps-number`, `perms-warps-unlimited`, `perms-admin-header`, `perms-admin`, `perms-tp`, `perms-tp-coordinates`, `perms-tphere`, `perms-bypass-header`, `perms-rtp-bypass`, `perms-rtp-bypass-delay`, `perms-tpa-bypass`
 
 ## Example: Custom Purple Theme
 

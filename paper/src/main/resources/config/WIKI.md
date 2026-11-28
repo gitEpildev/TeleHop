@@ -70,9 +70,3 @@ Define RTP destinations in the active `rtp.yml`. Empty dimension mappings discov
 | Deployment profile, backend identity, database connection, transport settings, command labels or hub registration | Restart the affected instance. |
 
 When upgrading a stopped backend, remove the previous plugin JAR from `plugins/` before installing its replacement. The existing `plugins/TeleHop/` folder holds your settings. Before upgrading, save each instance's whole plugin folder and a database backup from the same point in time. The migration journal and private backups cover configuration. Keep them with the matching plugin release for recovery. TeleHop refreshes recognised stock copies of this guide on startup and preserves copies that an administrator has edited.
-
-## Home allowances and pages
-
-Members start with one home. Grant a numbered permission such as `telehop.homes.20` or `telehop.homes.240`, or grant `telehop.homes.unlimited`. The active profile's `home.yml` accepts an optional `homes.creation-cap`. Zero leaves the allowance to permissions. A lower rank or cap limits the menu to the permitted pages. Extra saved homes remain accessible by name.
-
-Both `/home` and `/homes` suggest the player's own names. Each page has ten beds. An allowance of 10 shows one page with Exit, 20 shows two pages, and 50 shows five. The top right of the menu displays the current page. Unlimited ranks can open further pages and click an empty bed to save a home there. The gold Next Page arrow advances, and the red barrier goes back or exits on page one.

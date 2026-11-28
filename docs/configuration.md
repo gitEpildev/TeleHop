@@ -59,7 +59,7 @@ Use `/telehop config validate` to check the candidate and `/telehop reload` or `
 | `features.warps` | boolean | `true` | Enable/disable admin warps |
 | `features.player-warps` | boolean | `true` | Enable/disable player warps |
 | `features.admin-tp` | boolean | `true` | Enable/disable `/tp`, `/tphere` |
-| `features.homes` | boolean | `true` | Enable `/home`, `/homes`, `/sethome` and `/delhome` |
+| `features.homes` | boolean | `true` | Enable/disable `/home`, `/sethome` |
 | `features.back` | boolean | `true` | Enable/disable `/back` |
 | `features.tpa-toggle` | boolean | `true` | Enable/disable `/tpatoggle` |
 | `features.random-respawn` | boolean | `true` | Enable random death respawn on this backend |
@@ -133,9 +133,9 @@ Leave `random-respawn.world` empty to search the world where the player died. En
 
 | Key | Type | Default | Description |
 |-----|------|---------|-------------|
-| `homes.creation-cap` | int | `0` | Zero uses rank permissions alone. A positive value caps home creation, including unlimited ranks. The menu follows this limit. Existing homes beyond it remain accessible by name. |
+| `homes.max-slots` | int | `10` | Maximum home slots (1-10) |
 | `homes.confirm-set` | boolean | `true` | Retained for compatibility. The homes menu saves an empty slot when clicked and confirms deletion separately. |
-| `homes.gui-title` | string | `"<gradient:red:gold>Your Homes</gradient>"` | Left-hand title (MiniMessage). The menu reserves the right-hand side for the translated page number. |
+| `homes.gui-title` | string | `"<gradient:red:gold>Your Homes</gradient>"` | Homes GUI title (MiniMessage) |
 | `homes.gui-rows` | int | `5` | Inventory rows (1-6). Ten beds require at least two rows. When space permits, a blank row separates the two groups of beds. |
 | `homes.bed-set` | string | `"LIME_BED"` | Bed material for occupied home slots |
 | `homes.bed-empty` | string | `"RED_BED"` | Bed material for available (empty) slots |
