@@ -174,11 +174,15 @@ public final class CommandNames {
         return PaperProfiles.yaml(path);
     }
 
+    static boolean legacyDefault(String id, Object labels, Object currentDefault) {
+        return Objects.equals(labels, currentDefault) || ("home".equals(id) && List.of("home").equals(labels));
+    }
+
     private static void install(Path file, String sourceText, YamlConfiguration template, YamlConfiguration defaults,
                                 YamlConfiguration legacy) throws IOException {
         boolean changed = false;
         for (String id : template.getKeys(false)) {
-            if (!legacy.contains(id) || Objects.equals(legacy.get(id), defaults.get(id))) continue;
+            if (!legacy.contains(id) || legacyDefault(id, legacy.get(id), defaults.get(id))) continue;
             var value = legacy.get(id);
             if (!(value instanceof List<?> old) || old.isEmpty() || old.stream().anyMatch(v -> !(v instanceof String)))
                 throw new IllegalArgumentException("Invalid legacy command labels for " + id);

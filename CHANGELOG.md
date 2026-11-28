@@ -5,6 +5,23 @@ Format follows [Keep a Changelog](https://keepachangelog.com/).
 
 ---
 
+## [4.1.0] - 2026-11-28
+
+### Added
+
+- Open the homes menu with `/home` or `/homes`. Both commands suggest your saved names as you type and take you directly to the home you select.
+- Browse ten slots per page. The title shows the page number at the top right. A gold arrow opens the next page, and the red barrier goes back or exits. Click an empty bed to save your current location.
+- Grant any positive whole-number home allowance or unlimited homes through permissions. A limit of ten gives one page, twenty gives two and fifty gives five. Unlimited players can keep opening pages.
+
+### Changed
+
+- The current allowance determines which pages open, even after a rank change. Homes beyond a reduced allowance stay saved and can still be visited by name.
+- The active home configuration can set an optional creation cap for all ranks. Upgrades retain a previous limit below ten and retire the old ten-slot default.
+
+### Fixed
+
+- Two simultaneous saves for the same player respect their home limit across backends sharing a database.
+
 ## [4.0.0] - 2026-11-27
 
 ### Added

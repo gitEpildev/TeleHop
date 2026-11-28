@@ -23,7 +23,7 @@ import java.nio.file.Path;
 @Plugin(
         id = "telehop-velocity",
         name = "TeleHop-Velocity",
-        version = "4.0.0",
+        version = "4.1.0",
         url = "https://developer.epildevconnect.uk",
         description = "Cross-server teleportation proxy bridge for TeleHop",
         authors = {"Epildev"}

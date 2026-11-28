@@ -3,6 +3,7 @@ package com.telehop.paper.command.home;
 import com.telehop.paper.platform.PlatformText;
 import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
+import co.aikar.commands.annotation.CommandCompletion;
 import co.aikar.commands.annotation.Default;
 import co.aikar.commands.annotation.Optional;
 import com.telehop.common.PermissionNodes;
@@ -19,6 +20,7 @@ public class HomeCommand extends BaseCommand {
     }
 
     @Default
+    @CommandCompletion("@ownhomes")
     public void execute(Player player, @Optional String nameArg) {
         if (!plugin.isFeatureEnabled("homes")) {
             PlatformText.send(player, plugin.msg("feature-disabled"));
@@ -41,6 +43,7 @@ public class HomeCommand extends BaseCommand {
     private void quickTeleport(Player player, String name) {
         plugin.services().homeService().find(player.getUniqueId().toString(), name).thenAccept(opt -> {
             org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
+                if (!player.isOnline()) return;
                 if (opt.isEmpty()) {
                     PlatformText.send(player, plugin.msg("home-not-found"));
                     return;

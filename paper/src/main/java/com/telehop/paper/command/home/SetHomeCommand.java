@@ -5,9 +5,7 @@ import co.aikar.commands.BaseCommand;
 import co.aikar.commands.annotation.CommandAlias;
 import co.aikar.commands.annotation.Default;
 import com.telehop.common.PermissionNodes;
-import com.telehop.common.model.HomeRecord;
 import com.telehop.paper.NetworkPaperPlugin;
-import org.bukkit.Location;
 import org.bukkit.entity.Player;
 
 import java.util.Map;
@@ -51,43 +49,6 @@ public class SetHomeCommand extends BaseCommand {
             return;
         }
 
-        int maxSlots = resolveMaxSlots(player);
-        String uuid = player.getUniqueId().toString();
-
-        plugin.services().homeService().find(uuid, name).thenAccept(existing -> {
-            if (existing.isPresent()) {
-                Location loc = player.getLocation();
-                HomeRecord home = new HomeRecord(uuid, existing.get().name(),
-                        plugin.settings().serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
-                        loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
-                plugin.services().homeService().upsert(home).thenRun(() ->
-                        org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
-                                PlatformText.send(player, plugin.msg("home-set", Map.of("name", existing.get().name())))));
-                return;
-            }
-
-            plugin.services().homeService().countByPlayer(uuid).thenAccept(count -> {
-                org.bukkit.Bukkit.getScheduler().runTask(plugin, () -> {
-                    if (count >= maxSlots) {
-                        PlatformText.send(player, plugin.msg("home-no-empty-slot"));
-                        return;
-                    }
-                    Location loc = player.getLocation();
-                    HomeRecord home = new HomeRecord(uuid, name,
-                            plugin.settings().serverName(), plugin.versionAdapter().getWorldName(loc.getWorld()),
-                            loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
-                    plugin.services().homeService().upsert(home).thenRun(() ->
-                            org.bukkit.Bukkit.getScheduler().runTask(plugin, () ->
-                                    PlatformText.send(player, plugin.msg("home-set", Map.of("name", name)))));
-                });
-            });
-        });
-    }
-
-    private int resolveMaxSlots(Player player) {
-        for (int i = plugin.settings().homeMaxSlots(); i >= 1; i--) {
-            if (player.hasPermission(PermissionNodes.HOME_LIMIT_PREFIX + i)) return i;
-        }
-        return 0;
+        com.telehop.paper.service.HomeCreation.save(plugin, player, name, true, () -> {});
     }
 }

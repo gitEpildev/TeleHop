@@ -101,7 +101,7 @@ public final class PaperProfiles {
             if (Files.exists(legacy.resolve("commands.yml"))) {
                 var defaults = ConfigYaml.parse(resource(plugin, CommandNames.LEGACY_TEMPLATE), "bundled command defaults");
                 custom = ConfigYaml.read(legacy.resolve("commands.yml")).entrySet().stream()
-                        .anyMatch(entry -> !entry.getValue().equals(defaults.get(entry.getKey())));
+                        .anyMatch(entry -> !CommandNames.legacyDefault(entry.getKey(), entry.getValue(), defaults.get(entry.getKey())));
             }
             installSelector(plugin, selector, mode, custom);
         } else {

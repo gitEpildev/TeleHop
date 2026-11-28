@@ -81,7 +81,9 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 
 ## Additional home slots
 
-These nodes default to false. TeleHop uses the highest granted slot count up to `homes.max-slots`. Members receive `telehop.homes.1` by default.
+For a five-page rank, run `lp group builder permission set telehop.homes.50 true` in the backend console. Reopen `/homes` to see the new allowance.
+
+Members start with one home. Grant the highest allowance a rank needs, for example 20, 100 or 240. A lower allowance limits the menu to the new rank’s pages. Extra homes remain saved and accessible by name. An optional positive `homes.creation-cap` limits creation even for unlimited ranks.
 
 | Permission | Purpose |
 |---|---|
@@ -94,6 +96,8 @@ These nodes default to false. TeleHop uses the highest granted slot count up to 
 | `telehop.homes.8` | Allow up to 8 homes. |
 | `telehop.homes.9` | Allow up to 9 homes. |
 | `telehop.homes.10` | Allow up to 10 homes. |
+| `telehop.homes.<number>` | Allow that many homes, including numbers above ten. |
+| `telehop.homes.unlimited` | Allow unlimited homes, subject to any configured creation cap. |
 
 ## Permissions generated from your configuration
 

@@ -39,7 +39,7 @@ public record PaperSettings(
         boolean auditEnabled,
         Map<String, Boolean> features,
         String language,
-        int homeMaxSlots,
+        int homeCreationCap,
         boolean homeConfirmSet,
         String homeGuiTitle,
         Material homeSetBed,
@@ -146,7 +146,7 @@ public record PaperSettings(
                 general.getBoolean("audit.enabled", false),
                 Collections.unmodifiableMap(features),
                 general.getString("language", "en"),
-                Math.clamp(homeFile.getInt("homes.max-slots", 10), 1, 10),
+                homeCreationCap(homeFile),
                 homeFile.getBoolean("homes.confirm-set", true),
                 homeFile.getString("homes.gui-title", "<gradient:red:gold>Your Homes</gradient>"),
                 parseMaterial(homeFile.getString("homes.bed-set", "LIME_BED"), Material.LIME_BED),
@@ -222,7 +222,7 @@ public record PaperSettings(
                 cfg.getBoolean("audit.enabled", false),
                 Collections.unmodifiableMap(features),
                 cfg.getString("language", "en"),
-                5, true, "<gradient:red:gold>Your Homes</gradient>",
+                homeCreationCap(cfg), true, "<gradient:red:gold>Your Homes</gradient>",
                 Material.LIME_BED, Material.RED_BED, Material.LIGHT_BLUE_BED, 3,
                 true,
                 "<green>Overworld</green>",
@@ -372,8 +372,8 @@ public record PaperSettings(
         for (String key : List.of("messaging.dedupe-window-ms", "messaging.request-timeout-ms")) range(messaging, key, 1, 86400000);
         if (messaging.contains("messaging.network-enabled") && !messaging.isBoolean("messaging.network-enabled"))
             throw new IllegalArgumentException("messaging.network-enabled must be true or false");
+        range(homes, "homes.creation-cap", 0, Integer.MAX_VALUE);
         range(homes, "homes.gui-rows", 1, 6);
-        range(homes, "homes.max-slots", 1, 54);
         range(tpa, "tpa.timeout-seconds", 1, 86400);
         range(tpa, "tpa.cooldown-seconds", 0, 86400);
         range(tpa, "tpa.delay-seconds", 0, 86400);
@@ -381,6 +381,13 @@ public record PaperSettings(
         range(rtp, "rtp.delay-seconds", 0, 86400);
         range(rtp, "rtp.max-radius", 1, 30000000);
         range(respawn, "random-respawn.radius", 1, 30000000);
+    }
+
+    static int homeCreationCap(FileConfiguration config) {
+        if (config.contains("homes.creation-cap")) return config.getInt("homes.creation-cap");
+        // The stock 4.0 limit of ten was a GUI constraint. Preserve smaller operator limits on upgrade.
+        int legacy = config.getInt("homes.max-slots", 10);
+        return legacy > 0 && legacy < 10 ? legacy : 0;
     }
 
     private static void range(FileConfiguration config, String key, int min, int max) {

@@ -461,6 +461,14 @@ def run(args):
         client.command("/spawn staff-room", "destination is unavailable")
         delegated_staff(stack, root, ports[0], client, survival)
         menu_travel(root, client, hub, survival)
+        if args.proxy == "velocity-3.5":
+            from homes import check
+            folder = root / "homes-member"
+            folder.mkdir()
+            homes_client = Process(stack, folder, ["node", str(Path(__file__).with_name("client.cjs").resolve()),
+                                                  str(ports[0]), "HomesReview"], None)
+            homes_client.wait("CLIENT_READY")
+            check(homes_client, hub, "HomesReview")
         print("Passed YAML reload, exact placement, delegated staff actions, home and regional RTP menus with two clients.")
 
 

@@ -7,25 +7,17 @@
 #  Reloadable with /telehop reload (no restart needed).
 
 homes:
-  # Maximum number of named homes available (1-10).
-  # Players unlock slots via permissions:
-  #   telehop.homes.1  - 1 home  (default: everyone)
-  #   telehop.homes.2  - 2 homes
-  #   telehop.homes.3  - 3 homes
-  #   ...
-  #   telehop.homes.10 - 10 homes
-  #
-  # The highest matching permission determines how many homes a player
-  # can create. Use LuckPerms to assign higher counts to ranks:
-  #   lp group vip permission set telehop.homes.5
-  #   lp group mvp permission set telehop.homes.10
-  max-slots: 10
+  # Each page holds ten beds. The highest granted telehop.homes.<number>
+  # controls creation, or grant telehop.homes.unlimited. Existing homes
+  # remain available after a rank change. Members start with one home.
+  # Set a positive cap to limit all member creation here, including unlimited ranks.
+  creation-cap: 0
 
   # If true, setting a home opens a small confirmation GUI first.
   # If false, clicking an empty slot immediately sets the home.
   confirm-set: true
 
-  # Title displayed at the top of the /home chest GUI.
+  # Title on the left of the homes menu. The page number appears on the right.
   # Supports MiniMessage formatting: <red>, <bold>, <gradient:...>, etc.
   gui-title: "<gradient:red:gold>Your Homes</gradient>"
 

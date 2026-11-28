@@ -21,15 +21,52 @@ public class HomeRepository {
     }
 
     public void upsert(HomeRecord home) {
+        saveWithinLimit(home, Integer.MAX_VALUE, true);
+    }
+
+    /** Serialises member creations for one owner across all backends sharing the database. */
+    public boolean saveWithinLimit(HomeRecord home, int allowance, boolean replace) {
+        try (Connection conn = dataSource.getConnection()) {
+            String lock = "TeleHop:homes:" + home.uuid();
+            try (PreparedStatement acquire = conn.prepareStatement("SELECT GET_LOCK(?, 5)")) {
+                acquire.setString(1, lock);
+                try (ResultSet rows = acquire.executeQuery()) {
+                    if (!rows.next() || rows.getInt(1) != 1) throw new SQLException("Home owner lock timed out");
+                }
+            }
+            try (PreparedStatement release = conn.prepareStatement("SELECT RELEASE_LOCK(?)")) {
+                try (PreparedStatement check = conn.prepareStatement(
+                        "SELECT COUNT(*), MAX(CASE WHEN LOWER(name) = LOWER(?) THEN name END) FROM homes WHERE uuid = ?")) {
+                    check.setString(1, home.name());
+                    check.setString(2, home.uuid());
+                    String storedName;
+                    try (ResultSet rows = check.executeQuery()) {
+                        rows.next();
+                        storedName = rows.getString(2);
+                        if (storedName == null && rows.getLong(1) >= allowance) return false;
+                        if (storedName != null && !replace) return false;
+                    }
+                    write(conn, home, storedName == null ? home.name() : storedName);
+                    return true;
+                } finally {
+                    release.setString(1, lock);
+                    release.execute();
+                }
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save home within allowance", e);
+        }
+    }
+
+    private static void write(Connection conn, HomeRecord home, String storedName) throws SQLException {
         String sql = """
                 INSERT INTO homes (uuid, name, server, world, x, y, z, yaw, pitch)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON DUPLICATE KEY UPDATE server=?, world=?, x=?, y=?, z=?, yaw=?, pitch=?
                 """;
-        try (Connection conn = dataSource.getConnection();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, home.uuid());
-            ps.setString(2, home.name());
+            ps.setString(2, storedName);
             ps.setString(3, home.server());
             ps.setString(4, home.world());
             ps.setDouble(5, home.x());
@@ -45,8 +82,6 @@ public class HomeRepository {
             ps.setFloat(15, home.yaw());
             ps.setFloat(16, home.pitch());
             ps.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("Failed to upsert home", e);
         }
     }
 
@@ -65,6 +100,21 @@ public class HomeRepository {
             throw new RuntimeException("Failed to list homes", e);
         }
         return result;
+    }
+
+    /** Loads only the names needed for private tab completion. */
+    public List<String> names(String uuid) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement query = conn.prepareStatement("SELECT name FROM homes WHERE uuid = ? ORDER BY name")) {
+            query.setString(1, uuid);
+            try (ResultSet rows = query.executeQuery()) {
+                List<String> names = new ArrayList<>();
+                while (rows.next()) names.add(rows.getString(1));
+                return List.copyOf(names);
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read home names", e);
+        }
     }
 
     public Optional<HomeRecord> find(String uuid, String name) {

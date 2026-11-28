@@ -7,7 +7,7 @@ forcedelhome-confirm: [forcedelhome-confirm]
 forcedelwarp: [forcedelwarp]
 forcelastloc: [forcelastloc, forcell]
 forcesethome: [forcesethome]
-home: [home]
+home: [home, homes]
 # Enable features.hub in features.yml and restart Paper to register these names.
 hub: [hub]
 lastlocation: [lastlocation, lastloc, backlast, ll]

@@ -1,5 +1,5 @@
 name: TeleHop
-version: 4.0.0
+version: 4.1.0
 main: com.telehop.paper.NetworkPaperPlugin
 api-version: "1.21"
 authors: [Epildev]
@@ -48,6 +48,9 @@ permissions:
   telehop.delhome:
     description: Use /delhome (delete a named home)
     default: true
+  telehop.homes.unlimited:
+    description: Create any number of personal homes
+    default: false
   telehop.homes.1:
     description: Access 1 home slot
     default: true

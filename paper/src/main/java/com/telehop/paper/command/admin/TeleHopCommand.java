@@ -135,7 +135,7 @@ public class TeleHopCommand extends BaseCommand {
             "perms-player-header", "perms-spawn", "perms-spawn-routes", "perms-rtp", "perms-warp", "perms-pwarp",
             "perms-tpa", "perms-tpahere", "perms-tpa-accept", "perms-tpa-deny", "perms-tpa-cancel",
             "perms-tpa-toggle",
-            "perms-homes-header", "perms-homes", "perms-sethome", "perms-delhome", "perms-homes-limit",
+            "perms-homes-header", "perms-homes", "perms-sethome", "perms-delhome", "perms-homes-limit", "perms-homes-unlimited",
             "perms-lastloc",
             "perms-back", "perms-back-death",
             "perms-per-warp-header", "perms-warp-access",

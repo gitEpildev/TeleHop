@@ -5,7 +5,7 @@ home:
   custom-name:
     enabled: false
     name: home
-    aliases: []
+    aliases: [homes]
 
 sethome:
   custom-name:

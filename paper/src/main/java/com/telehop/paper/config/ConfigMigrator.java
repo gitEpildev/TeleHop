@@ -33,6 +33,8 @@ public final class ConfigMigrator {
     private static final String GUIDE = "config/WIKI.md";
     // Historical distribution bytes identify our guide even on installations with no ownership metadata.
     private static final Set<String> PREVIOUS_GUIDES = Set.of(
+            "9679fb61a9be9545a492d8628d539e98bffb9222a9aa47a0dd9f04c2bf1ac79e",
+            "6d50bacbeb38ceed9d430caec9d58d3de1ef324249de9ca08d5c20f4c75b5b1b",
             "5f203d5fcf734268cfc24d21ff36a453fbac0435aca2a33f0d7a82d6132cf2b9",
             "58f6cf2b28d7993168fa222a2906f866db0b24c0eee4f8e60f7d5e05910c589b",
             "d4afdc564020fee21cbfc214b4f62811a8123b098a84ab62af11a6012f03be3c",
@@ -40,7 +42,9 @@ public final class ConfigMigrator {
             "5fdc26662df27b460104aa19ec979edefbae71e45bb183318258934edfb060f8",
             "b4b68c1bb38d16c14af5766b829f8827656e5791353c089ee890708ccf014395",
             "4da481a533217850aa850846b2870e0c1c01775770ebc8693ecf7927c5708378",
-            "e525fb181e8282bf181ebf9a04e7d038f836e3ce0d9dce36e40d9fe5c37f552f");
+            "e525fb181e8282bf181ebf9a04e7d038f836e3ce0d9dce36e40d9fe5c37f552f",
+            "04105a0db82ceccc5a10ee6d01ff88635111bca1dd602cf71e089e7cd16eead6",
+            "dcd7fc019e6e460881197172fb458d87d4cfc3de48bd60b10f4c2333dda4aadc");
 
     private ConfigMigrator() {}
 

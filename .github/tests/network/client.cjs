@@ -46,6 +46,26 @@ bot.on('windowOpen', window => {
   console.log('MENU', items.join(' '))
 })
 readline.createInterface({ input: process.stdin }).on('line', line => {
+  if (line === ':title') {
+    const title = bot.currentWindow.title
+    const ChatMessage = require('prismarine-chat')(bot.registry)
+    console.log('MENU_TITLE', JSON.stringify(ChatMessage.fromNotch(title).toString()))
+    return
+  }
+  if (line.startsWith(':item ')) {
+    const item = bot.currentWindow?.slots[Number(line.slice(6))]
+    console.log('ITEM_NAME', JSON.stringify(item?.customName ?? null))
+    return
+  }
+  if (line.startsWith(':complete ')) {
+    return bot.tabComplete(line.slice(10), true, false).then(matches =>
+      console.log('COMPLETIONS', JSON.stringify(matches.map(entry => entry.match ?? entry))))
+      .catch(error => console.error('Completion error', error))
+  }
+  if (line === ':close') {
+    if (bot.currentWindow) bot.closeWindow(bot.currentWindow)
+    return
+  }
   if (!line.startsWith(':click ')) return bot.chat(line)
   const [, slot, material] = line.split(' ')
   const window = bot.currentWindow

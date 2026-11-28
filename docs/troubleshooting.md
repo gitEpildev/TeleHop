@@ -16,6 +16,10 @@ For `/spawn <name>`, use `/telehop spawn list` to check the owner and access pol
 
 Check that the Bukkit backend and Velocity proxy JARs are from the same TeleHop release. Each backend needs a unique `server-name`, matching the name registered on every proxy. Check `servers.backends` on each proxy and the shared database connection. For cross-proxy player lookups, also check `proxy.id`, Redis connectivity and the channel prefix. [Multi-proxy setup and partial upgrades](multi-proxy.md)
 
+## A home menu has fewer or more pages than expected
+
+Reopen `/homes` after changing a rank. In the backend console, check the player’s effective grant with `lp user <player> permission check telehop.homes.50` (substitute the intended number) and check `telehop.homes.unlimited` for an inherited grant. The highest granted number wins. Also check `homes.creation-cap` in the active profile’s `home.yml`. Ten slots give one page with Exit, and fifty give five pages. After a downgrade a player can still use `/home <name>` for a saved home outside the current pages. [Home allowances and navigation](homes.md#gui)
+
 ## A player cannot set or use a warp
 
 - `/setwarp` requires `telehop.admin.warps.set` and `/delwarp` requires `telehop.admin.warps.delete`.

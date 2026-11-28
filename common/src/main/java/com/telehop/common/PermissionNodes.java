@@ -25,6 +25,7 @@ public final class PermissionNodes {
     public static final String RTP_BYPASS_DELAY = "telehop.rtp.bypassdelay";
     public static final String TPA_BYPASS_COOLDOWN = "telehop.tpa.bypasscooldown";
     public static final String HOMES = "telehop.homes";
+    public static final String HOMES_UNLIMITED = "telehop.homes.unlimited";
     public static final String HOME_LIMIT_PREFIX = "telehop.homes.";
     public static final String SETHOME = "telehop.sethome";
     public static final String DELHOME = "telehop.delhome";

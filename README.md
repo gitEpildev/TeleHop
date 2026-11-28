@@ -4,6 +4,8 @@ TeleHop is a cross-server teleportation suite for Paper and Velocity Minecraft n
 
 Name destinations in `spawns.yml` so members can visit them with `/spawn <name>`. A backend can have a different default for each loaded world, including Multiverse worlds. With the supplied configuration, bare `/spawn` still follows the existing regional or network hub route. Staff can delegate destination management and individual teleport actions through LuckPerms. [Spawn setup and examples](docs/spawns.md)
 
+**4.1.0** adds ten-slot home pages, personal name suggestions for `/home` and `/homes`, and numbered or unlimited allowances. A 50-home rank has five pages, even before the player fills them. [Homes and permissions](docs/homes.md)
+
 **4.0.0** adds deployment profiles, grouped command files and configurable RTP and spawn commands. The backend detects its platform at startup. [Platform matrix](docs/platforms.md) · [New configuration](docs/configuration.md) · [Upgrade from 3.0.1](docs/migration.md) · [V4 implementation and verification](docs/releases/4.0.0.md)
 
 [Installation](#installation) · [Commands](#commands) · [Permissions](#permissions) · [Upgrade guide](LEGACY.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Licence](LICENSE)
@@ -39,7 +41,7 @@ These are the default names. Replace `<arguments>` with your values and omit `[o
 | `/spawn <name>` | Visit a configured destination | `telehop.spawn` and `telehop.spawn.named`, plus access to the destination |
 | `/hub` | Visit the global hub's default spawn when `features.hub` is enabled in `config/<profile>/features.yml` after the backend restarts | `telehop.hub` |
 | `/rtp` | Choose a region and dimension, then travel to a safe random location | `telehop.rtp` |
-| `/home`, `/home <name>` | Open the homes menu or travel directly to a named home | `telehop.homes` |
+| `/home`, `/homes`, `/home <name>`, `/homes <name>` | Open the paginated menu or tab-complete and visit one of your own homes | `telehop.homes` |
 | `/sethome <name>` | Save a home at your current location | `telehop.sethome` |
 | `/delhome <name>` | Delete one of your homes | `telehop.delhome` |
 | `/lastlocation` (`/lastloc`, `/backlast`, `/ll`) | Return to your saved logout location | `telehop.lastlocation` |
@@ -211,7 +213,7 @@ Each node defaults to false and is granted through `telehop.admin`. You can also
 
 ### Additional home slots
 
-These nodes default to false. TeleHop uses the highest granted slot count up to `homes.max-slots`. Members receive `telehop.homes.1` by default.
+Members start with one home. Grant the highest allowance a rank needs, for example 20, 100 or 240. A lower allowance limits the menu to the new rank’s pages. Extra homes remain saved and accessible by name. An optional positive `homes.creation-cap` limits creation even for unlimited ranks.
 
 | Permission | Purpose |
 |---|---|
@@ -224,6 +226,8 @@ These nodes default to false. TeleHop uses the highest granted slot count up to 
 | `telehop.homes.8` | Allow up to 8 homes. |
 | `telehop.homes.9` | Allow up to 9 homes. |
 | `telehop.homes.10` | Allow up to 10 homes. |
+| `telehop.homes.<number>` | Allow that many homes, including numbers above ten. |
+| `telehop.homes.unlimited` | Allow unlimited homes, subject to any configured creation cap. |
 
 ### Permissions generated from your configuration
 

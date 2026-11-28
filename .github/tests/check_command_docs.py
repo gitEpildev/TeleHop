@@ -11,6 +11,7 @@ PERMISSION_PATTERNS = {
     "telehop.spawn.destination.<name>",
     "telehop.warp.<name>",
     "telehop.warps.<number>",
+    "telehop.homes.<number>",
     "telehop.command.<id>",
     "telehop.rtp.region.<id>",
     "telehop.rtp.server.<id>",

@@ -3,7 +3,7 @@ package com.telehop.paper.command;
 import co.aikar.commands.BukkitCommandManager;
 import com.telehop.common.PermissionNodes;
 import com.telehop.common.service.PlayerWarpService;
-import com.telehop.paper.service.PersonalWarpSuggestions;
+import com.telehop.common.service.PlayerNameSuggestions;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import com.telehop.paper.NetworkPaperPlugin;
@@ -19,10 +19,11 @@ import org.bukkit.event.player.PlayerCommandSendEvent;
 public final class TravelCommandRegistry implements Listener {
     private final NetworkPaperPlugin plugin;
 
-    private final PersonalWarpSuggestions personal;
+    private final PlayerNameSuggestions personal;
     private TravelCommandRegistry(NetworkPaperPlugin plugin, PlayerWarpService warps) {
         this.plugin = plugin;
-        personal = new PersonalWarpSuggestions(warps);
+        personal = new PlayerNameSuggestions(id -> warps.listByOwner(id)
+                .thenApply(records -> records.stream().map(com.telehop.common.model.PlayerWarpRecord::name).toList()));
     }
 
     public static void checkOwnership(NetworkPaperPlugin plugin, CommandNames commands) {
@@ -55,10 +56,15 @@ public final class TravelCommandRegistry implements Listener {
 
     public static void register(NetworkPaperPlugin plugin, BukkitCommandManager manager, PlayerWarpService warps) {
         var registry = new TravelCommandRegistry(plugin, warps);
+        manager.getCommandCompletions().registerCompletion("ownhomes", context -> {
+            var player = context.getPlayer();
+            return player != null && plugin.isFeatureEnabled("homes") && player.hasPermission(PermissionNodes.HOMES)
+                    ? plugin.services().homeService().suggestions().list(player.getUniqueId().toString()) : java.util.List.of();
+        });
         manager.getCommandCompletions().registerCompletion("playerwarps", context -> {
             var player = context.getPlayer();
             return player != null && plugin.isFeatureEnabled("player-warps") && player.hasPermission(PermissionNodes.PWARP)
-                    ? registry.personal.list(player.getUniqueId()) : java.util.List.of();
+                    ? registry.personal.list(player.getUniqueId().toString()) : java.util.List.of();
         });
         plugin.commandNames().variants().forEach((id, variant) -> variant.labels().forEach(label ->
                 manager.registerCommand(new TravelVariantCommand(label, id, plugin))));
@@ -67,12 +73,18 @@ public final class TravelCommandRegistry implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
+        if (plugin.isFeatureEnabled("homes") && event.getPlayer().hasPermission(PermissionNodes.HOMES))
+            plugin.services().homeService().suggestions().list(event.getPlayer().getUniqueId().toString());
         if (plugin.isFeatureEnabled("player-warps") && event.getPlayer().hasPermission(PermissionNodes.PWARP))
-            personal.list(event.getPlayer().getUniqueId());
+            personal.list(event.getPlayer().getUniqueId().toString());
     }
 
     @EventHandler
-    public void onQuit(PlayerQuitEvent event) { personal.forget(event.getPlayer().getUniqueId()); }
+    public void onQuit(PlayerQuitEvent event) {
+        var id = event.getPlayer().getUniqueId().toString();
+        personal.forget(id);
+        plugin.services().homeService().suggestions().forget(id);
+    }
 
     @EventHandler
     public void visibleCommands(PlayerCommandSendEvent event) {
